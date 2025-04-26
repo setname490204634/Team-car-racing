@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/Team Racing/UserSettings
+/Team Racing/Logs
+/Team Racing/Library
