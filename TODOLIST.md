@@ -1,6 +1,7 @@
-1. setup git -DONE
-2. make unity project
-3. make car model
-4. make map/maps
-5. setup gym/python learning
-6. ...
+setup git -DONE
+make unity project -DONE
+make car model -KINDA DONE
+make map tiles -WORK IN PROGRESS
+map/maps
+setup gym/python learning
+...
