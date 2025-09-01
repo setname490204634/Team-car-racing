@@ -15,11 +15,11 @@ public class CarController : MonoBehaviour
     public Transform RRWheelMesh;
 
     [Header("Car Settings")]
-    public float driveSpeed = 3000f;        // torque for acceleration
+    public float driveSpeed = 4000f;        // torque for acceleration
     public float maxSteeringAngle = 40f;    // max steering angle
-    public float downforce = 10000f;          // downforce coefficient
-    public float forwardStiffness = 2f;     // wheel grip forward
-    public float sidewaysStiffness = 2f;    // wheel grip sideways
+    public float downforce = 2f;          // downforce coefficient
+    public float forwardStiffness = 2.5f;     // wheel grip forward
+    public float sidewaysStiffness = 2.5f;    // wheel grip sideways
 
     private Rigidbody rb;
     private float horizontalInput;
@@ -52,7 +52,7 @@ public class CarController : MonoBehaviour
     void FixedUpdate()
     {
         // Speed-sensitive steering
-        float speedFactor = rb.linearVelocity.magnitude / 100f;
+        float speedFactor = rb.linearVelocity.magnitude / 30f;
         float steering = maxSteeringAngle / (1 + speedFactor) * horizontalInput;
 
         // Apply steering to front wheels
@@ -64,11 +64,11 @@ public class CarController : MonoBehaviour
         RRWheel.motorTorque = verticalInput * driveSpeed;
 
         // Apply downforce to Rigidbody
-        float currentDownforce = downforce * rb.linearVelocity.magnitude;
+        float currentDownforce = downforce * rb.linearVelocity.magnitude ;
         rb.AddForce(-transform.up * currentDownforce);
 
         // Increase wheel friction based on downforce
-        float gripMultiplier = 1f + currentDownforce / 100000f; // tweak denominator for effect
+        float gripMultiplier = 1f + currentDownforce / 50000f; // tweak denominator for effect
         SetWheelFriction(LFWheel, gripMultiplier);
         SetWheelFriction(RFWheel, gripMultiplier);
         SetWheelFriction(LRWheel, gripMultiplier);
