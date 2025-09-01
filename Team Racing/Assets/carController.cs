@@ -52,7 +52,7 @@ public class CarController : MonoBehaviour
     void FixedUpdate()
     {
         // Speed-sensitive steering
-        float speedFactor = rb.linearVelocity.magnitude / 30f;
+        float speedFactor = rb.linearVelocity.magnitude / 10f;
         float steering = maxSteeringAngle / (1 + speedFactor) * horizontalInput;
 
         // Apply steering to front wheels
