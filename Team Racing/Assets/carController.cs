@@ -22,22 +22,29 @@ public class CarController : MonoBehaviour
     public float forwardStiffness = 3f;
     public float sidewaysStiffness = 3f;
 
+    [Header("Surface Grip Settings")]
+    public float roadGripMultiplier = 1f;       // Normal grip
+    public float grassGripMultiplier = 0.4f;    // Reduced grip on grass
+    public float grassSpeedMultiplier = 0.6f;   // Reduce torque on grass
+
     private Rigidbody rb;
     private ICarInputProvider inputProvider;
+
+    private float currentGripMultiplier = 1f;   // Updated each wheel per frame
+    private float currentSpeedMultiplier = 1f;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.centerOfMass = new Vector3(0, -0.5f, 0);
 
-        // Default to player input if none is assigned
         inputProvider = GetComponent<ICarInputProvider>();
 
-        // Apply base friction
-        SetWheelFriction(LFWheel);
-        SetWheelFriction(RFWheel);
-        SetWheelFriction(LRWheel);
-        SetWheelFriction(RRWheel);
+        // Apply base friction to all wheels
+        SetWheelFriction(LFWheel, roadGripMultiplier);
+        SetWheelFriction(RFWheel, roadGripMultiplier);
+        SetWheelFriction(LRWheel, roadGripMultiplier);
+        SetWheelFriction(RRWheel, roadGripMultiplier);
     }
 
     void FixedUpdate()
@@ -49,40 +56,66 @@ public class CarController : MonoBehaviour
 
         float steering = maxSteeringAngle * steeringInput;
 
-        // Apply speed-sensitive steering if requested
+        // Speed-sensitive steering
         if (inputProvider.UseSpeedSteering())
         {
-            float speedFactor = rb.linearVelocity.magnitude / 10f;
+            float speedFactor = rb.linearVelocity.magnitude / 5.5f;
             steering = maxSteeringAngle / (1f + speedFactor) * steeringInput;
         }
 
-        // Apply steering to front wheels
+        // Apply steering
         LFWheel.steerAngle = steering;
         RFWheel.steerAngle = steering;
 
-        // Apply torque to rear wheels
-        LRWheel.motorTorque = throttleInput * driveSpeed;
-        RRWheel.motorTorque = throttleInput * driveSpeed;
+        // Reset multipliers
+        currentGripMultiplier = roadGripMultiplier;
+        currentSpeedMultiplier = 1f;
 
-        // Downforce
+        // Adjust grip and speed based on surface for each wheel
+        AdjustWheelGripAndSpeed(LFWheel);
+        AdjustWheelGripAndSpeed(RFWheel);
+        AdjustWheelGripAndSpeed(LRWheel);
+        AdjustWheelGripAndSpeed(RRWheel);
+
+        // Apply motor torque with speed multiplier
+        LRWheel.motorTorque = throttleInput * driveSpeed * currentSpeedMultiplier;
+        RRWheel.motorTorque = throttleInput * driveSpeed * currentSpeedMultiplier;
+
+        // Apply downforce
         float currentDownforce = downforce * rb.linearVelocity.magnitude;
         rb.AddForce(-transform.up * currentDownforce);
 
-        // Dynamic grip scaling
-        float gripMultiplier = 1f + currentDownforce / 50000f;
-        SetWheelFriction(LFWheel, gripMultiplier);
-        SetWheelFriction(RFWheel, gripMultiplier);
-        SetWheelFriction(LRWheel, gripMultiplier);
-        SetWheelFriction(RRWheel, gripMultiplier);
+        // Apply final grip scaling
+        float gripMultiplierWithDownforce = currentGripMultiplier * (1f + currentDownforce / 50000f);
+        SetWheelFriction(LFWheel, gripMultiplierWithDownforce);
+        SetWheelFriction(RFWheel, gripMultiplierWithDownforce);
+        SetWheelFriction(LRWheel, gripMultiplierWithDownforce);
+        SetWheelFriction(RRWheel, gripMultiplierWithDownforce);
 
-        // Update visuals
+        // Update wheel visuals
         UpdateWheelVisuals(LFWheel, LFWheelMesh);
         UpdateWheelVisuals(RFWheel, RFWheelMesh);
         UpdateWheelVisuals(LRWheel, LRWheelMesh);
         UpdateWheelVisuals(RRWheel, RRWheelMesh);
     }
 
-    private void SetWheelFriction(WheelCollider wheel, float multiplier = 1f)
+    private void AdjustWheelGripAndSpeed(WheelCollider wheel)
+    {
+        if (wheel.GetGroundHit(out WheelHit hit))
+        {
+            if (hit.collider != null)
+            {
+                int grassLayer = LayerMask.NameToLayer("Grass");
+                if (hit.collider.gameObject.layer == grassLayer)
+                {
+                    currentGripMultiplier = Mathf.Min(currentGripMultiplier, grassGripMultiplier);
+                    currentSpeedMultiplier = Mathf.Min(currentSpeedMultiplier, grassSpeedMultiplier);
+                }
+            }
+        }
+    }
+
+    private void SetWheelFriction(WheelCollider wheel, float multiplier)
     {
         WheelFrictionCurve f = wheel.forwardFriction;
         f.stiffness = forwardStiffness * multiplier;
