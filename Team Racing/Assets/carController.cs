@@ -1,12 +1,13 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class CarController : MonoBehaviour
 {
     [Header("Wheel Colliders")]
-    public WheelCollider LFWheel; // Left Front
-    public WheelCollider RFWheel; // Right Front
-    public WheelCollider LRWheel; // Left Rear
-    public WheelCollider RRWheel; // Right Rear
+    public WheelCollider LFWheel;
+    public WheelCollider RFWheel;
+    public WheelCollider LRWheel;
+    public WheelCollider RRWheel;
 
     [Header("Wheel Meshes")]
     public Transform LFWheelMesh;
@@ -15,67 +16,73 @@ public class CarController : MonoBehaviour
     public Transform RRWheelMesh;
 
     [Header("Car Settings")]
-    public float driveSpeed = 4000f;        // torque for acceleration
-    public float maxSteeringAngle = 40f;    // max steering angle
-    public float downforce = 2f;          // downforce coefficient
-    public float forwardStiffness = 2.5f;     // wheel grip forward
-    public float sidewaysStiffness = 2.5f;    // wheel grip sideways
+    public float driveSpeed = 1000f;
+    public float maxSteeringAngle = 25f;
+    public float downforce = 300f;
+    public float forwardStiffness = 3f;
+    public float sidewaysStiffness = 3f;
 
     private Rigidbody rb;
-    private float horizontalInput;
-    private float verticalInput;
+    private ICarInputProvider inputProvider;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.centerOfMass = new Vector3(0, -0.5f, 0); // lower center for stability
+        rb.centerOfMass = new Vector3(0, -0.5f, 0);
 
-        // Apply friction stiffness to all wheels
+        // Default to player input if none is assigned
+        inputProvider = GetComponent<ICarInputProvider>();
+
+        // Apply base friction
         SetWheelFriction(LFWheel);
         SetWheelFriction(RFWheel);
         SetWheelFriction(LRWheel);
         SetWheelFriction(RRWheel);
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
+        if (inputProvider == null) return;
 
-        // Update wheel meshes visually
+        float steeringInput = Mathf.Clamp(inputProvider.GetSteering(), -100f, 100f) / 100f;
+        float throttleInput = Mathf.Clamp(inputProvider.GetThrottle(), -100f, 100f) / 100f;
+
+        float steering = maxSteeringAngle * steeringInput;
+
+        // Apply speed-sensitive steering if requested
+        if (inputProvider.UseSpeedSteering())
+        {
+            float speedFactor = rb.linearVelocity.magnitude / 10f;
+            steering = maxSteeringAngle / (1f + speedFactor) * steeringInput;
+        }
+
+        // Apply steering to front wheels
+        LFWheel.steerAngle = steering;
+        RFWheel.steerAngle = steering;
+
+        // Apply torque to rear wheels
+        LRWheel.motorTorque = throttleInput * driveSpeed;
+        RRWheel.motorTorque = throttleInput * driveSpeed;
+
+        // Downforce
+        float currentDownforce = downforce * rb.linearVelocity.magnitude;
+        rb.AddForce(-transform.up * currentDownforce);
+
+        // Dynamic grip scaling
+        float gripMultiplier = 1f + currentDownforce / 50000f;
+        SetWheelFriction(LFWheel, gripMultiplier);
+        SetWheelFriction(RFWheel, gripMultiplier);
+        SetWheelFriction(LRWheel, gripMultiplier);
+        SetWheelFriction(RRWheel, gripMultiplier);
+
+        // Update visuals
         UpdateWheelVisuals(LFWheel, LFWheelMesh);
         UpdateWheelVisuals(RFWheel, RFWheelMesh);
         UpdateWheelVisuals(LRWheel, LRWheelMesh);
         UpdateWheelVisuals(RRWheel, RRWheelMesh);
     }
 
-    void FixedUpdate()
-    {
-        // Speed-sensitive steering
-        float speedFactor = rb.linearVelocity.magnitude / 10f;
-        float steering = maxSteeringAngle / (1 + speedFactor) * horizontalInput;
-
-        // Apply steering to front wheels
-        LFWheel.steerAngle = steering;
-        RFWheel.steerAngle = steering;
-
-        // Apply motor torque to rear wheels
-        LRWheel.motorTorque = verticalInput * driveSpeed;
-        RRWheel.motorTorque = verticalInput * driveSpeed;
-
-        // Apply downforce to Rigidbody
-        float currentDownforce = downforce * rb.linearVelocity.magnitude ;
-        rb.AddForce(-transform.up * currentDownforce);
-
-        // Increase wheel friction based on downforce
-        float gripMultiplier = 1f + currentDownforce / 50000f; // tweak denominator for effect
-        SetWheelFriction(LFWheel, gripMultiplier);
-        SetWheelFriction(RFWheel, gripMultiplier);
-        SetWheelFriction(LRWheel, gripMultiplier);
-        SetWheelFriction(RRWheel, gripMultiplier);
-    }
-
-    void SetWheelFriction(WheelCollider wheel, float multiplier)
+    private void SetWheelFriction(WheelCollider wheel, float multiplier = 1f)
     {
         WheelFrictionCurve f = wheel.forwardFriction;
         f.stiffness = forwardStiffness * multiplier;
@@ -86,24 +93,15 @@ public class CarController : MonoBehaviour
         wheel.sidewaysFriction = s;
     }
 
-    void UpdateWheelVisuals(WheelCollider collider, Transform mesh)
+    private void UpdateWheelVisuals(WheelCollider collider, Transform mesh)
     {
+        if (mesh == null) return;
+
         Vector3 pos;
         Quaternion quat;
         collider.GetWorldPose(out pos, out quat);
 
         mesh.position = pos;
         mesh.rotation = quat * Quaternion.Euler(0f, 0f, 90f);
-    }
-
-    void SetWheelFriction(WheelCollider wheel)
-    {
-        WheelFrictionCurve forwardFriction = wheel.forwardFriction;
-        forwardFriction.stiffness = forwardStiffness;
-        wheel.forwardFriction = forwardFriction;
-
-        WheelFrictionCurve sidewaysFriction = wheel.sidewaysFriction;
-        sidewaysFriction.stiffness = sidewaysStiffness;
-        wheel.sidewaysFriction = sidewaysFriction;
     }
 }
