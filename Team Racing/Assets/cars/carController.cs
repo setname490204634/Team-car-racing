@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public class CarController : MonoBehaviour
+public class CarController : MonoBehaviour, ICarObserver
 {
     [Header("Wheel Colliders")]
     public WheelCollider LFWheel;
@@ -21,26 +21,42 @@ public class CarController : MonoBehaviour
     public float downforce = 300f;
     public float forwardStiffness = 3f;
     public float sidewaysStiffness = 3f;
+    public float brakeForce = 3000f;
 
     [Header("Surface Grip Settings")]
-    public float roadGripMultiplier = 1f;       // Normal grip
-    public float grassGripMultiplier = 0.4f;    // Reduced grip on grass
-    public float grassSpeedMultiplier = 0.6f;   // Reduce torque on grass
+    public float roadGripMultiplier = 1f;
+    public float grassGripMultiplier = 0.4f;
+    public float grassSpeedMultiplier = 0.6f;
 
+    [Header("Camera")]
+    public Camera carCamera;
+    public int renderTextureWidth = 128;
+    public int renderTextureHeight = 128;
+
+    private RenderTexture carTexture;
     private Rigidbody rb;
     private ICarInputProvider inputProvider;
 
-    private float currentGripMultiplier = 1f;   // Updated each wheel per frame
+    private float currentGripMultiplier = 1f;
     private float currentSpeedMultiplier = 1f;
 
-    void Start()
+    void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.centerOfMass = new Vector3(0, -0.5f, 0);
+        rb.centerOfMass = new Vector3(0f, -0.5f, 0f);
 
+        // Setup camera RenderTexture dynamically
+        if (carCamera != null)
+        {
+            carTexture = new RenderTexture(renderTextureWidth, renderTextureHeight, 24, RenderTextureFormat.ARGB32);
+            carTexture.name = $"{name}_RT";
+            carCamera.targetTexture = carTexture;
+        }
+
+        // Default input provider
         inputProvider = GetComponent<ICarInputProvider>();
 
-        // Apply base friction to all wheels
+        // Initialize friction
         SetWheelFriction(LFWheel, roadGripMultiplier);
         SetWheelFriction(RFWheel, roadGripMultiplier);
         SetWheelFriction(LRWheel, roadGripMultiplier);
@@ -54,16 +70,13 @@ public class CarController : MonoBehaviour
         float steeringInput = Mathf.Clamp(inputProvider.GetSteering(), -100f, 100f) / 100f;
         float throttleInput = Mathf.Clamp(inputProvider.GetThrottle(), -100f, 100f) / 100f;
 
+        // Steering
         float steering = maxSteeringAngle * steeringInput;
-
-        // Speed-sensitive steering
         if (inputProvider.UseSpeedSteering())
         {
             float speedFactor = rb.linearVelocity.magnitude / 5.5f;
             steering = maxSteeringAngle / (1f + speedFactor) * steeringInput;
         }
-
-        // Apply steering
         LFWheel.steerAngle = steering;
         RFWheel.steerAngle = steering;
 
@@ -71,17 +84,22 @@ public class CarController : MonoBehaviour
         currentGripMultiplier = roadGripMultiplier;
         currentSpeedMultiplier = 1f;
 
-        // Adjust grip and speed based on surface for each wheel
+        // Adjust grip/speed by surface
         AdjustWheelGripAndSpeed(LFWheel);
         AdjustWheelGripAndSpeed(RFWheel);
         AdjustWheelGripAndSpeed(LRWheel);
         AdjustWheelGripAndSpeed(RRWheel);
 
-        // Apply motor torque with speed multiplier
-        LRWheel.motorTorque = throttleInput * driveSpeed * currentSpeedMultiplier;
-        RRWheel.motorTorque = throttleInput * driveSpeed * currentSpeedMultiplier;
+        // Reset brakes
+        LFWheel.brakeTorque = 0f;
+        RFWheel.brakeTorque = 0f;
+        LRWheel.brakeTorque = 0f;
+        RRWheel.brakeTorque = 0f;
 
-        // Apply downforce
+        // Throttle / brake logic
+        ApplyMotorTorqueAndBrakes(throttleInput);
+
+        // Downforce
         float currentDownforce = downforce * rb.linearVelocity.magnitude;
         rb.AddForce(-transform.up * currentDownforce);
 
@@ -92,25 +110,59 @@ public class CarController : MonoBehaviour
         SetWheelFriction(LRWheel, gripMultiplierWithDownforce);
         SetWheelFriction(RRWheel, gripMultiplierWithDownforce);
 
-        // Update wheel visuals
+        // Update visual wheels
         UpdateWheelVisuals(LFWheel, LFWheelMesh);
         UpdateWheelVisuals(RFWheel, RFWheelMesh);
         UpdateWheelVisuals(LRWheel, LRWheelMesh);
         UpdateWheelVisuals(RRWheel, RRWheelMesh);
     }
 
+    private void ApplyMotorTorqueAndBrakes(float throttleInput)
+    {
+        float forwardVel = Vector3.Dot(rb.linearVelocity, transform.forward);
+
+        if (throttleInput > 0f)
+        {
+            // Forward drive
+            LRWheel.motorTorque = throttleInput * driveSpeed * currentSpeedMultiplier;
+            RRWheel.motorTorque = throttleInput * driveSpeed * currentSpeedMultiplier;
+        }
+        else if (throttleInput < 0f)
+        {
+            if (forwardVel > 0.1f)
+            {
+                // Brake instead of instantly reversing
+                float brake = brakeForce * -throttleInput;
+                LFWheel.brakeTorque = brake;
+                RFWheel.brakeTorque = brake;
+                LRWheel.brakeTorque = brake;
+                RRWheel.brakeTorque = brake;
+
+                LRWheel.motorTorque = 0f;
+                RRWheel.motorTorque = 0f;
+            }
+            else
+            {
+                // Reverse
+                LRWheel.motorTorque = throttleInput * driveSpeed * 0.4f * currentSpeedMultiplier;
+                RRWheel.motorTorque = throttleInput * driveSpeed * 0.4f * currentSpeedMultiplier;
+            }
+        }
+        else
+        {
+            LRWheel.motorTorque = 0f;
+            RRWheel.motorTorque = 0f;
+        }
+    }
+
     private void AdjustWheelGripAndSpeed(WheelCollider wheel)
     {
         if (wheel.GetGroundHit(out WheelHit hit))
         {
-            if (hit.collider != null)
+            if (hit.collider != null && hit.collider.gameObject.layer == LayerMask.NameToLayer("Grass"))
             {
-                int grassLayer = LayerMask.NameToLayer("Grass");
-                if (hit.collider.gameObject.layer == grassLayer)
-                {
-                    currentGripMultiplier = Mathf.Min(currentGripMultiplier, grassGripMultiplier);
-                    currentSpeedMultiplier = Mathf.Min(currentSpeedMultiplier, grassSpeedMultiplier);
-                }
+                currentGripMultiplier = Mathf.Min(currentGripMultiplier, grassGripMultiplier);
+                currentSpeedMultiplier = Mathf.Min(currentSpeedMultiplier, grassSpeedMultiplier);
             }
         }
     }
@@ -131,10 +183,18 @@ public class CarController : MonoBehaviour
         if (mesh == null) return;
 
         Vector3 pos;
-        Quaternion quat;
-        collider.GetWorldPose(out pos, out quat);
+        Quaternion rot;
+        collider.GetWorldPose(out pos, out rot);
 
         mesh.position = pos;
-        mesh.rotation = quat * Quaternion.Euler(0f, 0f, 90f);
+        mesh.rotation = rot * Quaternion.Euler(0f, 0f, 90f);
     }
+
+    // ----------------- ICarObserver -----------------
+
+    public RenderTexture GetCameraTexture() => carTexture;
+
+    public float GetSpeed() => rb.linearVelocity.magnitude * 3.6f; // km/h
+
+    public float GetSteeringAngle() => LFWheel.steerAngle;
 }
