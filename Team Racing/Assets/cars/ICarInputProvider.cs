@@ -10,5 +10,7 @@ public interface ICarInputProvider
 
     // Should steering be speed-sensitive?
     bool UseSpeedSteering();
+
+    void SetInputs(float steering, float throttle, bool useSpeedSteering);
 }
 

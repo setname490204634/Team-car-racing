@@ -5,20 +5,28 @@ public class PlayerCarInput : MonoBehaviour, ICarInputProvider
     [Tooltip("Enable speed-sensitive steering (less steering at high speeds).")]
     public bool useSpeedSensitiveSteering = true;
 
-    public float GetSteering()
+    private float steeringInput;
+    private float throttleInput;
+    private bool useSpeedSteeringFlag;
+
+    void Update()
     {
-        // A/D or Left/Right arrows
-        return Input.GetAxis("Horizontal") * 100f;
+        // Read player input every frame
+        steeringInput = Input.GetAxis("Horizontal") * 100f;
+        throttleInput = Input.GetAxis("Vertical") * 100f;
+        useSpeedSteeringFlag = useSpeedSensitiveSteering;
     }
 
-    public float GetThrottle()
-    {
-        // W/S or Up/Down arrows
-        return Input.GetAxis("Vertical") * 100f;
-    }
+    // ICarInputProvider implementation
+    public float GetSteering() => steeringInput;
+    public float GetThrottle() => throttleInput;
+    public bool UseSpeedSteering() => useSpeedSteeringFlag;
 
-    public bool UseSpeedSteering()
+    // Allows external scripts (ML agents etc.) to override input
+    public void SetInputs(float steering, float throttle, bool useSpeedSteering)
     {
-        return useSpeedSensitiveSteering;
+        steeringInput = Mathf.Clamp(steering, -100f, 100f);
+        throttleInput = Mathf.Clamp(throttle, -100f, 100f);
+        useSpeedSteeringFlag = useSpeedSteering;
     }
 }

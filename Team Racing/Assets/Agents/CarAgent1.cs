@@ -16,7 +16,7 @@ public class CarAgent : Agent
         observer = car; // CarController implements ICarObserver
 
         // Create input provider for this agent
-        inputProvider = new AgentInputProvider();
+        inputProvider = GetComponent<ICarInputProvider>();
         car.GetType().GetField("inputProvider",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             .SetValue(car, inputProvider);
@@ -36,7 +36,7 @@ public class CarAgent : Agent
     public override void CollectObservations(VectorSensor sensor)
     {
         // Speed (normalized)
-        sensor.AddObservation(observer.GetSpeed() / 200f);
+        sensor.AddObservation(observer.GetSpeed() / 500f);
 
         // Steering angle (normalized)
         sensor.AddObservation(observer.GetSteeringAngle() / car.maxSteeringAngle);
@@ -68,7 +68,14 @@ public class CarAgent : Agent
         float steering = Mathf.Clamp(actions.ContinuousActions[0], -1f, 1f) * 100f;
         float throttle = Mathf.Clamp(actions.ContinuousActions[1], -1f, 1f) * 100f;
 
-        ((AgentInputProvider)inputProvider).SetInputs(steering, throttle, true);
+        inputProvider.SetInputs(steering, throttle, false);
+
+        AddReward(observer.GetSpeed() * 0.001f); // reward forward speed
+
+        // Penalize steering too much
+        AddReward(-Mathf.Abs(steering) * 0.0005f);
+
+        // Optional: check if car goes off road -> EndEpisode() + big penalty
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
@@ -77,23 +84,4 @@ public class CarAgent : Agent
         continuous[0] = Input.GetAxis("Horizontal");
         continuous[1] = Input.GetAxis("Vertical");
     }
-}
-
-// Input provider for the agent
-public class AgentInputProvider : ICarInputProvider
-{
-    private float steering;
-    private float throttle;
-    private bool useSpeedSteering;
-
-    public void SetInputs(float s, float t, bool speedSteer)
-    {
-        steering = s;
-        throttle = t;
-        useSpeedSteering = speedSteer;
-    }
-
-    public float GetSteering() => steering;
-    public float GetThrottle() => throttle;
-    public bool UseSpeedSteering() => useSpeedSteering;
 }
