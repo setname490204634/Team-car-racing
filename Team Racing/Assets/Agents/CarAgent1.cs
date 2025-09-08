@@ -50,7 +50,7 @@ public class CarAgent : Agent
 
     private void AddVisualObservation(RenderTexture rt)
     {
-        // Using Unity�s built-in camera observation system:
+        // Using Unity built-in camera observation system:
         var cam = car.carCamera;
         if (cam != null)
         {

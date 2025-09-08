@@ -42,6 +42,7 @@ public class CarController : MonoBehaviour, ICarObserver
 
     void Awake()
     {
+        Debug.Log("OnActionReceived called");
         rb = GetComponent<Rigidbody>();
         rb.centerOfMass = new Vector3(0f, -0.5f, 0f);
 
