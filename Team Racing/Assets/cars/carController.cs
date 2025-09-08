@@ -67,18 +67,8 @@ public class CarController : MonoBehaviour, ICarObserver
     {
         if (inputProvider == null) return;
 
-        float steeringInput = Mathf.Clamp(inputProvider.GetSteering(), -100f, 100f) / 100f;
+        ApplySteering(inputProvider);
         float throttleInput = Mathf.Clamp(inputProvider.GetThrottle(), -100f, 100f) / 100f;
-
-        // Steering
-        float steering = maxSteeringAngle * steeringInput;
-        if (inputProvider.UseSpeedSteering())
-        {
-            float speedFactor = rb.linearVelocity.magnitude / 5.5f;
-            steering = maxSteeringAngle / (1f + speedFactor) * steeringInput;
-        }
-        LFWheel.steerAngle = steering;
-        RFWheel.steerAngle = steering;
 
         // Reset multipliers
         currentGripMultiplier = roadGripMultiplier;
@@ -110,11 +100,22 @@ public class CarController : MonoBehaviour, ICarObserver
         SetWheelFriction(LRWheel, gripMultiplierWithDownforce);
         SetWheelFriction(RRWheel, gripMultiplierWithDownforce);
 
-        // Update visual wheels
-        UpdateWheelVisuals(LFWheel, LFWheelMesh);
-        UpdateWheelVisuals(RFWheel, RFWheelMesh);
-        UpdateWheelVisuals(LRWheel, LRWheelMesh);
-        UpdateWheelVisuals(RRWheel, RRWheelMesh);
+        UpdateAllWheelVisuals();
+    }
+
+    private void ApplySteering(ICarInputProvider provider)
+    {
+        float steeringInput = Mathf.Clamp(inputProvider.GetSteering(), -100f, 100f) / 100f;
+
+        // Steering
+        float steering = maxSteeringAngle * steeringInput;
+        if (inputProvider.UseSpeedSteering())
+        {
+            float speedFactor = rb.linearVelocity.magnitude / 5.5f;
+            steering = maxSteeringAngle / (1f + speedFactor) * steeringInput;
+        }
+        LFWheel.steerAngle = steering;
+        RFWheel.steerAngle = steering;
     }
 
     private void ApplyMotorTorqueAndBrakes(float throttleInput)
@@ -188,6 +189,14 @@ public class CarController : MonoBehaviour, ICarObserver
 
         mesh.position = pos;
         mesh.rotation = rot * Quaternion.Euler(0f, 0f, 90f);
+    }
+
+    private void UpdateAllWheelVisuals()
+    {
+        UpdateWheelVisuals(LFWheel, LFWheelMesh);
+        UpdateWheelVisuals(RFWheel, RFWheelMesh);
+        UpdateWheelVisuals(LRWheel, LRWheelMesh);
+        UpdateWheelVisuals(RRWheel, RRWheelMesh);
     }
 
     // ----------------- ICarObserver -----------------
