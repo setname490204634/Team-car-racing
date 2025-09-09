@@ -2,7 +2,7 @@
     "name": "root",
     "metadata": {
         "timer_format_version": "0.1.0",
-        "start_time_seconds": "1757318786",
+        "start_time_seconds": "1757411235",
         "python_version": "3.9.13 (tags/v3.9.13:6de2ca5, May 17 2022, 16:36:42) [MSC v.1929 64 bit (AMD64)]",
         "command_line_arguments": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\venv39\\Scripts\\mlagents-learn .\\ML-Agents\\config\\CarTrainer1.yaml --run-id=car_training_1 --force",
         "mlagents_version": "0.30.0",
@@ -10,36 +10,31 @@
         "communication_protocol_version": "1.5.0",
         "pytorch_version": "2.8.0+cpu",
         "numpy_version": "1.21.2",
-        "end_time_seconds": "1757318818"
+        "end_time_seconds": "1757411242"
     },
-    "total": 32.6620701,
+    "total": 7.608814099999999,
     "count": 1,
-    "self": 0.004101300000002084,
+    "self": 0.0054107999999981615,
     "children": {
         "run_training.setup": {
-            "total": 0.1260528999999999,
+            "total": 0.060770699999999955,
             "count": 1,
-            "self": 0.1260528999999999
+            "self": 0.060770699999999955
         },
         "TrainerController.start_learning": {
-            "total": 32.5319159,
+            "total": 7.542632600000001,
             "count": 1,
-            "self": 0.0002743000000009488,
+            "self": 5.0300000000724765e-05,
             "children": {
                 "TrainerController._reset_env": {
-                    "total": 32.5316317,
+                    "total": 7.542572000000001,
                     "count": 1,
-                    "self": 32.5316317
-                },
-                "trainer_threads": {
-                    "total": 9.000000034120603e-07,
-                    "count": 1,
-                    "self": 9.000000034120603e-07
+                    "self": 7.542572000000001
                 },
                 "TrainerController._save_models": {
-                    "total": 8.999999998593466e-06,
+                    "total": 1.0299999999574538e-05,
                     "count": 1,
-                    "self": 8.999999998593466e-06
+                    "self": 1.0299999999574538e-05
                 }
             }
         }

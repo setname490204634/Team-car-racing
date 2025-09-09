@@ -1,1 +1,0 @@
-how was car made: https://www.youtube.com/watch?v=7K_NcOBuWRw&ab_channel=Omogonix

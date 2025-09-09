@@ -4,6 +4,7 @@ using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
 
 [RequireComponent(typeof(CarController))]
+[RequireComponent(typeof(ICarInputProvider))]
 public class CarAgent : Agent
 {
     private CarController car;
@@ -12,76 +13,72 @@ public class CarAgent : Agent
 
     public override void Initialize()
     {
+        // Get references
         car = GetComponent<CarController>();
         observer = car; // CarController implements ICarObserver
-
-        // Create input provider for this agent
         inputProvider = GetComponent<ICarInputProvider>();
-        car.GetType().GetField("inputProvider",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .SetValue(car, inputProvider);
+
+        // Assign the input provider to the CarController
+        var inputField = car.GetType().GetField(
+            "inputProvider",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+        );
+        if (inputField != null)
+            inputField.SetValue(car, inputProvider);
+        else
+            Debug.LogError("CarController does not have an inputProvider field!");
     }
 
     public override void OnEpisodeBegin()
     {
-        // Reset car
+        // Reset car position and rotation
         transform.localPosition = Vector3.zero + Vector3.up * 0.5f;
         transform.localRotation = Quaternion.identity;
 
-        Rigidbody rb = GetComponent<Rigidbody>();
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
+        // Reset physics
+        if (TryGetComponent<Rigidbody>(out var rb))
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // Speed (normalized)
+        // Add speed (normalized)
         sensor.AddObservation(observer.GetSpeed() / 500f);
 
-        // Steering angle (normalized)
+        // Add steering angle (normalized)
         sensor.AddObservation(observer.GetSteeringAngle() / car.maxSteeringAngle);
 
-        // Visual observation using RenderTexture
-        if (observer.GetCameraTexture() != null)
-        {
-            AddVisualObservation(observer.GetCameraTexture());
-        }
-    }
-
-    private void AddVisualObservation(RenderTexture rt)
-    {
-        // Using Unity built-in camera observation system:
-        var cam = car.carCamera;
-        if (cam != null)
-        {
-            var visualObs = new CameraSensorComponent();
-            visualObs.Camera = cam;
-            visualObs.Width = rt.width;
-            visualObs.Height = rt.height;
-            visualObs.Grayscale = false; // keep color
-            visualObs.ObservationStacks = 1;
-        }
+        // Visual observations handled via Camera Sensor Component in Inspector
+        // No manual RenderTexture processing needed
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
+        // Convert continuous actions [-1,1] to steering/throttle
         float steering = Mathf.Clamp(actions.ContinuousActions[0], -1f, 1f) * 100f;
         float throttle = Mathf.Clamp(actions.ContinuousActions[1], -1f, 1f) * 100f;
 
+        // Send inputs to the car via the interface
         inputProvider.SetInputs(steering, throttle, false);
 
-        AddReward(observer.GetSpeed() * 0.001f); // reward forward speed
+        // Reward forward speed
+        AddReward(observer.GetSpeed() * 0.001f);
 
-        // Penalize steering too much
+        // Penalize excessive steering
         AddReward(-Mathf.Abs(steering) * 0.0005f);
 
-        // Optional: check if car goes off road -> EndEpisode() + big penalty
+        // Optional: penalize going off-road or collisions
+        // if (car.OffRoad) EndEpisode();
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
+        // Allow manual control with keyboard
         var continuous = actionsOut.ContinuousActions;
-        continuous[0] = Input.GetAxis("Horizontal");
-        continuous[1] = Input.GetAxis("Vertical");
+        continuous[0] = Input.GetAxis("Horizontal"); // steering
+        continuous[1] = Input.GetAxis("Vertical");   // throttle
     }
 }
