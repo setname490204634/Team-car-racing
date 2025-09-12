@@ -67,6 +67,7 @@
     <Compile Include="Assets\cars\carAppearance.cs" />
     <Compile Include="Assets\cars\carController.cs" />
     <Compile Include="Assets\FreeCameraController.cs" />
+    <Compile Include="Assets\cars\mirror.cs" />
     <Compile Include="Assets\cars\carCameraSetup.cs" />
     <Compile Include="Assets\cars\PlayerCarInput.cs" />
     <Compile Include="Assets\Agents\CarAgent1.cs" />
