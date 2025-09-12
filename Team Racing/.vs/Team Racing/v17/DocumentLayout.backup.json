@@ -1,13 +1,13 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\",
+  "WorkspaceRootPath": "C:\\Users\\SetName490204634\\Desktop\\baka\\team-car-racing\\Team Racing\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|c:\\users\\jakub\\desktop\\team-car-racing\\team racing\\assets\\agents\\caragent1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|c:\\users\\setname490204634\\desktop\\baka\\team-car-racing\\team racing\\assets\\agents\\caragent1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|solutionrelative:assets\\agents\\caragent1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|c:\\users\\jakub\\desktop\\team-car-racing\\team racing\\assets\\cars\\carcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|C:\\Users\\SetName490204634\\Desktop\\baka\\team-car-racing\\Team Racing\\assets\\cars\\carcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|solutionrelative:assets\\cars\\carcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -18,17 +18,21 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "CarAgent1.cs",
-              "DocumentMoniker": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\Agents\\CarAgent1.cs",
+              "DocumentMoniker": "C:\\Users\\SetName490204634\\Desktop\\baka\\team-car-racing\\Team Racing\\Assets\\Agents\\CarAgent1.cs",
               "RelativeDocumentMoniker": "Assets\\Agents\\CarAgent1.cs",
-              "ToolTip": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\Agents\\CarAgent1.cs",
+              "ToolTip": "C:\\Users\\SetName490204634\\Desktop\\baka\\team-car-racing\\Team Racing\\Assets\\Agents\\CarAgent1.cs",
               "RelativeToolTip": "Assets\\Agents\\CarAgent1.cs",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAAAAIAAAAdAAAAAAAAAA==",
+              "ViewState": "AgIAACcAAAAAAAAAAAAAAFQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-09T08:47:34.796Z",
               "EditorCaption": ""
@@ -37,14 +41,23 @@
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "carController.cs",
-              "DocumentMoniker": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\carController.cs",
+              "DocumentMoniker": "C:\\Users\\SetName490204634\\Desktop\\baka\\team-car-racing\\Team Racing\\Assets\\cars\\carController.cs",
               "RelativeDocumentMoniker": "Assets\\cars\\carController.cs",
-              "ToolTip": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\carController.cs",
+              "ToolTip": "C:\\Users\\SetName490204634\\Desktop\\baka\\team-car-racing\\Team Racing\\Assets\\cars\\carController.cs",
               "RelativeToolTip": "Assets\\cars\\carController.cs",
               "ViewState": "AgIAACQAAAAAAAAAAAAtwEQAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-09T08:29:03.275Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-09T08:29:03.275Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 1337,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{e1b7d1f8-9b3c-49b1-8f4f-bfc63a88835d}"
             }
           ]
         }
