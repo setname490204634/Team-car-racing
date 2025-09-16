@@ -11,6 +11,13 @@ public class CarAgent : Agent
     private ICarObserver observer;
     private ICarInputProvider inputProvider;
 
+    [Header("Camera Sensors")]
+    public Camera leftCamera;
+    public Camera rightCamera;
+
+    public int cameraWidth = 64;
+    public int cameraHeight = 64;
+
     public override void Initialize()
     {
         // Get references
@@ -27,12 +34,28 @@ public class CarAgent : Agent
             inputField.SetValue(car, inputProvider);
         else
             Debug.LogError("CarController does not have an inputProvider field!");
+
+        // Add camera sensors
+        if (leftCamera != null)
+            AddCameraSensor(leftCamera, "CameraSensorLeft");
+
+        if (rightCamera != null)
+            AddCameraSensor(rightCamera, "CameraSensorRight");
+    }
+
+    private void AddCameraSensor(Camera cam, string name)
+    {
+        var sensor = gameObject.AddComponent<Unity.MLAgents.Sensors.CameraSensorComponent>();
+        sensor.Camera = cam;
+        sensor.Width = cameraWidth;
+        sensor.Height = cameraHeight;
+        sensor.Grayscale = false;
     }
 
     public override void OnEpisodeBegin()
     {
         // Reset car position and rotation
-        transform.localPosition = Vector3.zero + Vector3.up * 0.5f;
+        transform.localPosition = Vector3.up * 0.5f;
         transform.localRotation = Quaternion.identity;
 
         // Reset physics
@@ -51,20 +74,19 @@ public class CarAgent : Agent
         // Add steering angle (normalized)
         sensor.AddObservation(observer.GetSteeringAngle() / car.maxSteeringAngle);
 
-        // Visual observations handled via Camera Sensor Component in Inspector
-        // No manual RenderTexture processing needed
+        // Cameras are handled automatically; no need to manually add RenderTextures
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        // Convert continuous actions [-1,1] to steering/throttle
+        // Continuous actions: steering and throttle
         float steering = Mathf.Clamp(actions.ContinuousActions[0], -1f, 1f) * 100f;
         float throttle = Mathf.Clamp(actions.ContinuousActions[1], -1f, 1f) * 100f;
 
-        // Send inputs to the car via the interface
+        // Send inputs to car via input provider
         inputProvider.SetInputs(steering, throttle, false);
 
-        // Reward forward speed
+        // Reward for forward speed
         AddReward(observer.GetSpeed() * 0.001f);
 
         // Penalize excessive steering
@@ -76,7 +98,7 @@ public class CarAgent : Agent
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        // Allow manual control with keyboard
+        // Manual control via keyboard
         var continuous = actionsOut.ContinuousActions;
         continuous[0] = Input.GetAxis("Horizontal"); // steering
         continuous[1] = Input.GetAxis("Vertical");   // throttle

@@ -3,20 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|c:\\users\\jakub\\desktop\\team-car-racing\\team racing\\assets\\cars\\mirror.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|c:\\users\\jakub\\desktop\\team-car-racing\\team racing\\assets\\agents\\caragent1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|solutionrelative:assets\\agents\\caragent1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\carCameraSetup.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\cars\\carCameraSetup.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\assets\\cars\\carcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|solutionrelative:assets\\cars\\carcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\assets\\cars\\mirror.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|solutionrelative:assets\\cars\\mirror.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Library\\PackageCache\\com.unity.probuilder@9b6693f09f97\\Runtime\\Core\\ProBuilderMeshFunction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Library\\PackageCache\\com.unity.probuilder@9b6693f09f97\\Runtime\\Core\\ProBuilderMeshFunction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\assets\\agents\\caragent1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|solutionrelative:assets\\agents\\caragent1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\assets\\cars\\carcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{25537FBF-7136-459F-2326-AD558EE44C3A}|Assembly-CSharp.csproj|solutionrelative:assets\\cars\\carcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,11 +30,22 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
+              "Title": "carCameraSetup.cs",
+              "DocumentMoniker": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\carCameraSetup.cs",
+              "RelativeDocumentMoniker": "Assets\\cars\\carCameraSetup.cs",
+              "ToolTip": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\carCameraSetup.cs",
+              "RelativeToolTip": "Assets\\cars\\carCameraSetup.cs",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-16T10:08:31.173Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "mirror.cs",
               "DocumentMoniker": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\mirror.cs",
               "RelativeDocumentMoniker": "Assets\\cars\\mirror.cs",
@@ -38,12 +53,11 @@
               "RelativeToolTip": "Assets\\cars\\mirror.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-12T09:54:58.019Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-12T09:54:58.019Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "ProBuilderMeshFunction.cs",
               "DocumentMoniker": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Library\\PackageCache\\com.unity.probuilder@9b6693f09f97\\Runtime\\Core\\ProBuilderMeshFunction.cs",
               "RelativeDocumentMoniker": "Library\\PackageCache\\com.unity.probuilder@9b6693f09f97\\Runtime\\Core\\ProBuilderMeshFunction.cs",
@@ -56,25 +70,26 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "CarAgent1.cs",
               "DocumentMoniker": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\Agents\\CarAgent1.cs",
               "RelativeDocumentMoniker": "Assets\\Agents\\CarAgent1.cs",
               "ToolTip": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\Agents\\CarAgent1.cs",
               "RelativeToolTip": "Assets\\Agents\\CarAgent1.cs",
-              "ViewState": "AgIAAFMAAAAAAAAAAABBwFQAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABsAAAAAAAAAAAAAADcAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-09T08:47:34.796Z"
+              "WhenOpened": "2025-09-09T08:47:34.796Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "carController.cs",
               "DocumentMoniker": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\carController.cs",
               "RelativeDocumentMoniker": "Assets\\cars\\carController.cs",
-              "ToolTip": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\carController.cs",
-              "RelativeToolTip": "Assets\\cars\\carController.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAtwEQAAAAIAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\Jakub\\Desktop\\team-car-racing\\Team Racing\\Assets\\cars\\carController.cs*",
+              "RelativeToolTip": "Assets\\cars\\carController.cs*",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAkwCQAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-09T08:29:03.275Z"
             }

@@ -6,7 +6,7 @@ map/maps -DONE
 fine tune the car behaviour -DONE
 make car control interface -DONE
 driving on grass penalty, reduce tyre grip and car power -DONE
-add AI readable camera and mirrors to the car
-add checkpoints to tiles, make some kind of default checkpoint
-setup gym/python learning
+add AI readable camera and mirrors to the car DONE
+add checkpoints to tiles, make some kind of default checkpoint -NOT NEEDED SO FAR
+setup gym/python learning -IN PROGRESS
 ...

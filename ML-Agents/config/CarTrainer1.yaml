@@ -1,15 +1,18 @@
 behaviors:
-  CarAgent:
+  CarTrainer1:
     trainer_type: ppo
-    max_steps: 5000000
-    time_horizon: 128
+    max_steps: 500000
+    time_horizon: 64
     summary_freq: 10000
     network_settings:
-      normalize: true
-      hidden_units: 256
-      num_layers: 3
+      normalize: false
+      hidden_units: 128
+      num_layers: 2
       vis_encode_type: simple
     reward_signals:
       extrinsic:
         gamma: 0.99
         strength: 1.0
+    keep_checkpoints: 5
+    checkpoint_interval: 50000
+    threaded: true
