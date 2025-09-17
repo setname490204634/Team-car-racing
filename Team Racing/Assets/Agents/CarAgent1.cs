@@ -9,23 +9,37 @@ public class CarAgent : Agent
 {
     private CarController car;
     private ICarObserver observer;
-    private ICarInputProvider inputProvider;
 
-    [Header("Camera Sensors")]
+    [Header("settings")]
     public Camera leftCamera;
     public Camera rightCamera;
-
     public int cameraWidth = 64;
     public int cameraHeight = 64;
+
+    [Header("Input Providers")]
+    public PlayerCarInput manualInputProvider;
+    public AgentInputProvider agentInputProvider;
+
+
+    private ICarInputProvider inputProvider;
 
     public override void Initialize()
     {
         // Get references
         car = GetComponent<CarController>();
         observer = car; // CarController implements ICarObserver
-        inputProvider = GetComponent<ICarInputProvider>();
 
-        // Assign the input provider to the CarController
+        // Choose which one to use dynamically
+        if (manualInputProvider != null)
+        {
+            inputProvider = manualInputProvider;
+        }
+        else
+        {
+            inputProvider = agentInputProvider;
+        }
+
+        // Assign to CarController
         var inputField = car.GetType().GetField(
             "inputProvider",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
@@ -86,11 +100,15 @@ public class CarAgent : Agent
         // Send inputs to car via input provider
         inputProvider.SetInputs(steering, throttle, false);
 
-        // Reward for forward speed
-        AddReward(observer.GetSpeed() * 0.001f);
+        // Quadratic reward for forward speed
+        float speed = observer.GetSpeed() / 500f;  // normalize speed to 0-1
+        AddReward(speed * speed);  // reward ~ speed^2
 
-        // Penalize excessive steering
-        AddReward(-Mathf.Abs(steering) * 0.0005f);
+        // Optional: scale down if too large
+        // AddReward(speed * speed * 0.01f);
+
+        // Penalize excessive steering (keep linear)
+        //AddReward(-Mathf.Abs(steering) * 0.005f);
 
         // Optional: penalize going off-road or collisions
         // if (car.OffRoad) EndEpisode();
@@ -98,9 +116,11 @@ public class CarAgent : Agent
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        // Manual control via keyboard
+        // Swap the agent input provider to your manual one
         var continuous = actionsOut.ContinuousActions;
-        continuous[0] = Input.GetAxis("Horizontal"); // steering
-        continuous[1] = Input.GetAxis("Vertical");   // throttle
+
+        // Example: read from your manual input provider
+        continuous[0] = inputProvider.GetSteering();  // -1 to 1
+        continuous[1] = inputProvider.GetThrottle();  // -1 to 1
     }
 }

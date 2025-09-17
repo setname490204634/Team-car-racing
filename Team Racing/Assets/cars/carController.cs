@@ -96,8 +96,8 @@ public class CarController : MonoBehaviour, ICarObserver
 
         // Apply final grip scaling
         float gripMultiplierWithDownforce = currentGripMultiplier * (1f + currentDownforce / 50000f);
-        SetWheelFriction(LFWheel, gripMultiplierWithDownforce);
-        SetWheelFriction(RFWheel, gripMultiplierWithDownforce);
+        SetWheelFriction(LFWheel, gripMultiplierWithDownforce * 0.9f);
+        SetWheelFriction(RFWheel, gripMultiplierWithDownforce * 0.9f);
         SetWheelFriction(LRWheel, gripMultiplierWithDownforce);
         SetWheelFriction(RRWheel, gripMultiplierWithDownforce);
 
