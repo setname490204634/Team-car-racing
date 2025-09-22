@@ -2,15 +2,15 @@ using UnityEngine;
 
 public interface ICarInputProvider
 {
-    // -100 to 100, where -100 = full left, 100 = full right
-    float GetSteering();
+    public CarInput getInput();
 
-    // -100 to 100, where -100 = full brake/reverse, 100 = full throttle
-    float GetThrottle();
+    public void SetInput(CarInput input);
+}
 
-    // Should steering be speed-sensitive?
-    bool UseSpeedSteering();
-
-    void SetInputs(float steering, float throttle, bool useSpeedSteering);
+public struct CarInput
+{
+    public float Steering;
+    public float Throttle;
+    public bool UseSpeedSteering;
 }
 

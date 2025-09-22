@@ -2,18 +2,13 @@ using UnityEngine;
 
 public class AgentInputProvider : MonoBehaviour, ICarInputProvider
 {
-    private float steering;
-    private float throttle;
-    private bool useSpeedSteering;
+    private CarInput currentInput;
 
-    public void SetInputs(float s, float t, bool speedSteer)
+    // ICarInputProvider implementation
+    public CarInput getInput() => currentInput;
+
+    public void SetInput(CarInput input)
     {
-        steering = s;
-        throttle = t;
-        useSpeedSteering = speedSteer;
+        currentInput = input;
     }
-
-    public float GetSteering() => steering;
-    public float GetThrottle() => throttle;
-    public bool UseSpeedSteering() => useSpeedSteering;
 }

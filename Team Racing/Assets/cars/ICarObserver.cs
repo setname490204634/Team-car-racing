@@ -2,7 +2,13 @@ using UnityEngine;
 
 public interface ICarObserver
 {
-    RenderTexture GetCameraTexture();  
-    float GetSpeed();                  // km/h
-    float GetSteeringAngle();          // front wheel angle
+    public CarObservation getCarObservation();
+}
+    
+public struct CarObservation
+{
+    public RenderTexture leftCameraTexture;
+    public RenderTexture rightCameraTexture;
+    public float Speed;                  // m/s
+    public float SteeringAngle;          // front wheel angle
 }

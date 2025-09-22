@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public class CarController : MonoBehaviour, ICarObserver
+public class CarController : MonoBehaviour
 {
     [Header("Wheel Colliders")]
     public WheelCollider LFWheel;
@@ -67,9 +67,9 @@ public class CarController : MonoBehaviour, ICarObserver
     void FixedUpdate()
     {
         if (inputProvider == null) return;
-
-        ApplySteering(inputProvider);
-        float throttleInput = Mathf.Clamp(inputProvider.GetThrottle(), -100f, 100f) / 100f;
+        CarInput input = inputProvider.getInput();
+        ApplySteering(input);
+        float throttleInput = Mathf.Clamp(input.Throttle, -100f, 100f) / 100f;
 
         // Reset multipliers
         currentGripMultiplier = roadGripMultiplier;
@@ -104,13 +104,13 @@ public class CarController : MonoBehaviour, ICarObserver
         UpdateAllWheelVisuals();
     }
 
-    private void ApplySteering(ICarInputProvider provider)
+    private void ApplySteering(CarInput input)
     {
-        float steeringInput = Mathf.Clamp(inputProvider.GetSteering(), -100f, 100f) / 100f;
+        float steeringInput = Mathf.Clamp(input.Steering, -100f, 100f) / 100f;
 
         // Steering
         float steering = maxSteeringAngle * steeringInput;
-        if (inputProvider.UseSpeedSteering())
+        if (input.UseSpeedSteering)
         {
             float speedFactor = rb.linearVelocity.magnitude / 5.5f;
             steering = maxSteeringAngle / (1f + speedFactor) * steeringInput;
@@ -200,11 +200,7 @@ public class CarController : MonoBehaviour, ICarObserver
         UpdateWheelVisuals(RRWheel, RRWheelMesh);
     }
 
-    // ----------------- ICarObserver -----------------
-
-    public RenderTexture GetCameraTexture() => carTexture;
-
-    public float GetSpeed() => rb.linearVelocity.magnitude * 3.6f; // km/h
+    public float GetSpeed() => rb.linearVelocity.magnitude;
 
     public float GetSteeringAngle() => LFWheel.steerAngle;
 }
