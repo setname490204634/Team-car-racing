@@ -28,12 +28,6 @@ public class CarController : MonoBehaviour
     public float grassGripMultiplier = 0.4f;
     public float grassSpeedMultiplier = 0.6f;
 
-    [Header("Camera")]
-    public Camera carCamera;
-    public int renderTextureWidth = 128;
-    public int renderTextureHeight = 128;
-
-    private RenderTexture carTexture;
     private Rigidbody rb;
     private ICarInputProvider inputProvider;
 
@@ -45,14 +39,6 @@ public class CarController : MonoBehaviour
         Debug.Log("OnActionReceived called");
         rb = GetComponent<Rigidbody>();
         rb.centerOfMass = new Vector3(0f, -0.5f, 0f);
-
-        // Setup camera RenderTexture dynamically
-        if (carCamera != null)
-        {
-            carTexture = new RenderTexture(renderTextureWidth, renderTextureHeight, 24, RenderTextureFormat.ARGB32);
-            carTexture.name = $"{name}_RT";
-            carCamera.targetTexture = carTexture;
-        }
 
         // Default input provider
         inputProvider = GetComponent<ICarInputProvider>();
