@@ -9,8 +9,8 @@ public interface ICarInputProvider
 
 public struct CarInput
 {
-    public float Steering;
-    public float Throttle;
+    public byte Steering;
+    public byte Throttle;
     public bool UseSpeedSteering;
 }
 

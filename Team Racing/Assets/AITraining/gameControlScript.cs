@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using UnityEngine;
 
@@ -34,10 +33,12 @@ public class gameControlScript : MonoBehaviour
     private Thread controlThread;
     private Thread instructionsThread;
     private bool running = false;
+    private CarObservationTransmitter transmitter;
 
     [Header("Server Settings")]
     public int controlPort = 5005;
     public int carInstructionsPort = 5006;
+    public int observationTransmitterPort = 5007;
 
     void Start()
     {
@@ -71,6 +72,10 @@ public class gameControlScript : MonoBehaviour
         instructionsThread = new Thread(ListenForCarInstructions);
         instructionsThread.IsBackground = true;
         instructionsThread.Start();
+
+        // Start observation transmitter
+        transmitter = new CarObservationTransmitter("127.0.0.1", observationTransmitterPort, cars);
+        transmitter.Start();
     }
 
     void OnApplicationQuit()
@@ -143,16 +148,21 @@ public class gameControlScript : MonoBehaviour
                 using (TcpClient client = controlServer.AcceptTcpClient())
                 using (NetworkStream stream = client.GetStream())
                 {
-                    byte[] buffer = new byte[4096];
-                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    string command = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim().ToLower();
+                    int commandByte = stream.ReadByte();
+                    if (commandByte == -1) continue; // client disconnected
 
-                    Debug.Log("Received command: " + command);
-
-                    if (command == "reset")
-                        UnityMainThreadDispatcher.Instance().Enqueue(ResetCars);
-                    else if (command == "shuffle")
-                        UnityMainThreadDispatcher.Instance().Enqueue(ShuffleStartTransforms);
+                    switch (commandByte)
+                    {
+                        case 0: // reset
+                            UnityMainThreadDispatcher.Instance().Enqueue(ResetCars);
+                            break;
+                        case 1: // shuffle
+                            UnityMainThreadDispatcher.Instance().Enqueue(ShuffleStartTransforms);
+                            break;
+                        default:
+                            Debug.LogWarning("Unknown command byte: " + commandByte);
+                            break;
+                    }
                 }
             }
         }
@@ -175,29 +185,30 @@ public class gameControlScript : MonoBehaviour
                 using (TcpClient client = instructionsServer.AcceptTcpClient())
                 using (NetworkStream stream = client.GetStream())
                 {
-                    byte[] buffer = new byte[8192];
+                    byte[] buffer = new byte[3]; // 1 byte car ID + 2 bytes inputs
                     int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    string json = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
-                    try
+                    if (bytesRead < 3)
                     {
-                        var inputs = JsonSerializer.Deserialize<List<CarInputMessage>>(json);
-
-                        if (inputs != null)
-                        {
-                            List<(CarInput, int)> parsedInputs = new List<(CarInput, int)>();
-                            foreach (var msg in inputs)
-                            {
-                                parsedInputs.Add((msg.input, msg.carIndex));
-                            }
-
-                            UnityMainThreadDispatcher.Instance().Enqueue(() => ApplyCarInputs(parsedInputs));
-                        }
+                        Debug.LogWarning("Incomplete input packet received");
+                        continue;
                     }
-                    catch (System.Exception ex)
+
+                    int carIndex = buffer[0];
+                    byte steeringByte = buffer[1];
+                    byte throttleByte = buffer[2];
+
+                    CarInput input = new CarInput
                     {
-                        Debug.LogError("Failed to parse inputs: " + ex.Message);
-                    }
+                        Steering = steeringByte,
+                        Throttle = throttleByte,
+                        UseSpeedSteering = true // or send another byte if needed
+                    };
+
+                    UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                    {
+                        if (carIndex >= 0 && carIndex < cars.Count)
+                            cars[carIndex].inputProvider.SetInput(input);
+                    });
                 }
             }
         }
@@ -207,48 +218,11 @@ public class gameControlScript : MonoBehaviour
         }
     }
 
-    public CarObservationBatch GetObservations()
-    {
-        var batch = new CarObservationBatch();
-
-        for (int i = 0; i < cars.Count; i++)
-        {
-            var entry = cars[i];
-            if (entry.agent != null)
-            {
-                CarObservation obs = entry.agent.getCarObservation();
-                float reward = obs.Speed; // reward = speed for now
-
-                batch.observations.Add(new CarObservationMessage
-                {
-                    carIndex = i,
-                    reward = reward,
-                    observation = obs
-                });
-            }
-        }
-        return batch;
-    }
-
     // Helper class for JSON deserialization
     [System.Serializable]
     public class CarInputMessage
     {
         public int carIndex;
         public CarInput input;
-    }
-
-    [System.Serializable]
-    public class CarObservationMessage
-    {
-        public int carIndex;
-        public float reward;
-        public CarObservation observation;
-    }
-
-    [System.Serializable]
-    public class CarObservationBatch
-    {
-        public List<CarObservationMessage> observations = new List<CarObservationMessage>();
     }
 }

@@ -9,18 +9,20 @@ public class PlayerCarInput : MonoBehaviour, ICarInputProvider
 
     void Update()
     {
-        // Read player input every frame
-        currentInput.Steering = Input.GetAxis("Horizontal") * 100f;
-        currentInput.Throttle = Input.GetAxis("Vertical") * 100f;
+        float steer = Input.GetAxis("Horizontal");  // -1..1
+        float throttle = Input.GetAxis("Vertical"); // -1..1
+
+        currentInput.Steering = (byte)Mathf.Clamp(Mathf.RoundToInt((steer * 127f) + 128f), 0, 255);
+        currentInput.Throttle = (byte)Mathf.Clamp(Mathf.RoundToInt((throttle * 127f) + 128f), 0, 255);
         currentInput.UseSpeedSteering = useSpeedSensitiveSteering;
     }
 
-    // ICarInputProvider implementation
+
     public CarInput getInput() => currentInput;
 
     public void SetInput(CarInput input)
     {
-        // Not used here, because this provider is purely manual
+        // Not used here, purely manual input
         currentInput = input;
     }
 }

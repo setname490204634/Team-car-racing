@@ -64,6 +64,7 @@
     <Compile Include="Assets\cars\ICarInputProvider.cs" />
     <Compile Include="Assets\cars\CarFollowcamera.cs" />
     <Compile Include="Assets\AITraining\CarAgentHandler.cs" />
+    <Compile Include="Assets\AITraining\CarObservationTransmitter.cs" />
     <Compile Include="Assets\AITraining\UnityMainThreadDispatcher.cs" />
     <Compile Include="Assets\cars\AgentInputProvider.cs" />
     <Compile Include="Assets\cars\carAppearance.cs" />
@@ -74,6 +75,7 @@
     <Compile Include="Assets\cars\ICarRewardProvider.cs" />
     <Compile Include="Assets\cars\PlayerCarInput.cs" />
     <Compile Include="Assets\cars\ICarObserver.cs" />
+    <Compile Include="Assets\AITraining\CarObservationSerializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

@@ -55,7 +55,7 @@ public class CarController : MonoBehaviour
         if (inputProvider == null) return;
         CarInput input = inputProvider.getInput();
         ApplySteering(input);
-        float throttleInput = Mathf.Clamp(input.Throttle, -100f, 100f) / 100f;
+        float throttleInput = DecodeByteToNormalized(input.Throttle);
 
         // Reset multipliers
         currentGripMultiplier = roadGripMultiplier;
@@ -92,7 +92,7 @@ public class CarController : MonoBehaviour
 
     private void ApplySteering(CarInput input)
     {
-        float steeringInput = Mathf.Clamp(input.Steering, -100f, 100f) / 100f;
+        float steeringInput = DecodeByteToNormalized(input.Steering);
 
         // Steering
         float steering = maxSteeringAngle * steeringInput;
@@ -189,4 +189,9 @@ public class CarController : MonoBehaviour
     public float GetSpeed() => rb.linearVelocity.magnitude;
 
     public float GetSteeringAngle() => LFWheel.steerAngle;
+
+    private float DecodeByteToNormalized(byte value)
+    {
+        return (value - 128f) / 127f;  // 128 = neutral
+    }
 }
