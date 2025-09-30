@@ -76,6 +76,8 @@ public class gameControlScript : MonoBehaviour
         // Start observation transmitter
         transmitter = new CarObservationTransmitter("127.0.0.1", observationTransmitterPort, cars);
         transmitter.Start();
+
+        var _ = UnityMainThreadDispatcher.Instance();
     }
 
     void OnApplicationQuit()
@@ -97,15 +99,26 @@ public class gameControlScript : MonoBehaviour
             var entry = cars[i];
             var t = startTransforms[i];
 
-            entry.carObject.transform.position = t.position;
-            entry.carObject.transform.rotation = t.rotation;
-
-            // reset velocity if Rigidbody is attached
             Rigidbody rb = entry.carObject.GetComponent<Rigidbody>();
             if (rb != null)
             {
+                // reset physics-based position & rotation
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
+                rb.position = t.position;
+                rb.rotation = t.rotation;
+                rb.Sleep(); // ensures physics doesn’t move it on the next tick
+            }
+            else
+            {
+                // fallback if no Rigidbody
+                entry.carObject.transform.SetPositionAndRotation(t.position, t.rotation);
+            }
+
+            // clear inputs so car doesn't immediately move again
+            if (entry.inputProvider != null)
+            {
+                entry.inputProvider.SetInput(new CarInput());
             }
         }
         Debug.Log("Cars have been reset.");
