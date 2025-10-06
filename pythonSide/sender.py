@@ -1,6 +1,7 @@
 import socket
 import sys
 import time
+import reciever
 
 HOST = "127.0.0.1"        # Unity is running locally
 CONTROLPORT = 5005        # must match controlPort in Unity
@@ -35,6 +36,8 @@ def send_car_instruction(car_index: int, steering: int, throttle: int):
         print(f"Error: {e}")
 
 if __name__ == "__main__":
+    send_command(int(50))
+    reciever.receive_observations()
     while True:
         print("\nChoose command:")
         print("0 → Reset Cars")

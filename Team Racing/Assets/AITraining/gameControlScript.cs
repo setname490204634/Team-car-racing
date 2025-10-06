@@ -75,7 +75,6 @@ public class gameControlScript : MonoBehaviour
 
         // Start observation transmitter
         transmitter = new CarObservationTransmitter("127.0.0.1", observationTransmitterPort, cars);
-        transmitter.Start();
 
         var _ = UnityMainThreadDispatcher.Instance();
     }
@@ -171,6 +170,9 @@ public class gameControlScript : MonoBehaviour
                             break;
                         case 1: // shuffle
                             UnityMainThreadDispatcher.Instance().Enqueue(ShuffleStartTransforms);
+                            break;
+                        case 50:
+                            transmitter.Start();
                             break;
                         default:
                             Debug.LogWarning("Unknown command byte: " + commandByte);

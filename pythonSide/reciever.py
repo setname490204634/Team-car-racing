@@ -13,7 +13,7 @@ NUM_PIXELS = CAM_WIDTH * CAM_HEIGHT
 def receive_observations():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
-        print(f"✅ Connected to Unity observation transmitter on {HOST}:{PORT}")
+        print(f"Connected to Unity observation transmitter on {HOST}:{PORT}")
 
         buffer = b""
         while True:

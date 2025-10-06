@@ -39,11 +39,14 @@ public class StaticMirror : MonoBehaviour
 
     void OnDisable()
     {
-        // Clean up RenderTexture
         if (rt != null)
         {
-            rt.Release();
+            if (mirrorCamera != null && mirrorCamera.targetTexture == rt)
+            {
+                mirrorCamera.targetTexture = null;
+            }
             Destroy(rt);
+            rt = null;
         }
     }
 }
