@@ -2,6 +2,7 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
+/pythonSide/__pycache__
 /.vs
 /Team Racing/UserSettings
 /Team Racing/Logs

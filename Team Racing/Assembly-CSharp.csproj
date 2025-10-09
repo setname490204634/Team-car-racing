@@ -67,10 +67,10 @@
     <Compile Include="Assets\AITraining\CarObservationTransmitter.cs" />
     <Compile Include="Assets\AITraining\UnityMainThreadDispatcher.cs" />
     <Compile Include="Assets\cars\AgentInputProvider.cs" />
-    <Compile Include="Assets\cars\carAppearance.cs" />
+    <Compile Include="Assets\cars\CarAppearance.cs" />
     <Compile Include="Assets\cars\carController.cs" />
-    <Compile Include="Assets\FreeCameraController.cs" />
-    <Compile Include="Assets\cars\mirror.cs" />
+    <Compile Include="Assets\cars\Mirror.cs" />
+    <Compile Include="Assets\AITraining\FreeCameraController.cs" />
     <Compile Include="Assets\AITraining\gameControlScript.cs" />
     <Compile Include="Assets\cars\ICarRewardProvider.cs" />
     <Compile Include="Assets\cars\PlayerCarInput.cs" />
