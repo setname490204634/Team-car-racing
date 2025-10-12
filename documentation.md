@@ -23,6 +23,7 @@
 - contains car prefabs
 - contains car tyre texture
 - contains car colours as materials
+- contains mirror prefabs
 - ICarInputProvider.cs, interface that is used by a car to request input
 - ICarObserver.cs, used to request output from car sensors, cameras speed, steering
 - ICarRewardProvider.cs, not used now
@@ -90,3 +91,62 @@
 4. Saving the Map as a Prefab  
    - After completing and scaling your map, make it into a prefab.  
    - Save it in the `/Assets/Maps` directory.
+
+### Car Creation and Editing Guide
+
+#### Creating a New Car
+
+1. Add a new car GameObject
+   - In Unity’s Hierarchy, create a new empty GameObject.
+   - Name it appropriately
+
+2. Add Wheel Colliders
+   - Each car requires four Wheel Colliders.
+   - Create 4 empty child objects named:
+     - `WheelCollider_FL` (Front Left)
+     - `WheelCollider_FR` (Front Right)
+     - `WheelCollider_RL` (Rear Left)
+     - `WheelCollider_RR` (Rear Right)
+   - Add the Wheel Collider component to each of them.
+   - Position them exactly where the wheels should be located.
+
+3. **Attach Car Controller Script**
+   - Add the `CarController` script to the car’s main object.
+   - Set parameters such as:
+     - `Drive Speed`
+     - `Brake Force`
+     - `Downforce`
+   - Assign the four Wheel Colliders to their respective fields in the script.
+
+4. Add Colliders
+   - To handle physical collisions, add a Box Collider to the main car object.
+   - Adjust its size to cover the body of the car properly.
+
+5. Car Appearance
+   - Add the `CarAppearance` script to the main object.
+   - In the script fields:
+     - Assign the Body Material (used for coloring).
+     - Assign Ignored Renderers, such as wheels or mirrors, that should not change color.
+
+#### Optional Add-ons
+
+1. **Mirrors**
+   - You can either:
+     - Use a Mirror Prefab from the project, or  
+     - Add the `Mirror.cs` script manually.
+   - If adding manually:
+     - Create a plane for the mirror surface.
+     - Assign a Camera in the `Mirror.cs` script.
+     - Adjust reflection angle and field of view as needed.
+
+2. Manual (WSAD) Control
+   - Add the `PlayerCarInput.cs` script.
+   - This allows you to drive the car using keyboard.
+   - Optionally, enable speed sensitive steering in the inspector.
+
+3. AI Agent Integration
+   - To make the car controllable by the AI system:
+     - Add `AgentInputProvider.cs`.
+     - Add `CarAgentHandler.cs`.
+   - Assign cameras in the CarAgentHandler.
+   - Configure any additional parameters such as camera resolution.
