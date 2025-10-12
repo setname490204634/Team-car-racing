@@ -3,7 +3,7 @@
 
 ## files and folders
 
-## Team Racing/Assets
+## TeamRacing/Assets
 ### /Scenes
 - Cars.unity, includes car prefabs
 - Freeplay.unity, used to test car driving and maps, it has 1 car connected to user input in the unity.
@@ -46,8 +46,13 @@
 - GameControlScript.cs, manages envirometn input/output, handles restarting and the game
 - UnityMainThreadDispatcher.cs, used to execute tasks on main thread.
 
+## pythonSide
 
-# Editing and Adding Roads
+- main.py, runs comumnication
+- sender.py, sends car driving instructions to unity
+- reciever.py, recievs and unpacks observation from unity
+
+## Editing and Adding Roads
 
 ### Edit and Add Roads
 
@@ -73,7 +78,7 @@
    - If you create a new road or modify an existing one, make sure to save it as a prefab.  
    - Add new or updated road prefabs to the `/Assets/Roads` directory.
 
-# Creating Maps
+## Creating Maps
 
 ### Add or Edit Maps
 
@@ -150,3 +155,65 @@
      - Add `CarAgentHandler.cs`.
    - Assign cameras in the CarAgentHandler.
    - Configure any additional parameters such as camera resolution.
+
+
+## Networking and python integration
+
+Unity side is used as simulation for cars, it can take driving input from network connection as well as send output including visual.
+
+### Python Side
+
+* **sender.py**: Sends driving instructions and control commands to Unity:
+
+  * `send_car_instruction(car_id: int, steering: int, throttle: int)` — sends 32-bit car ID + 1-byte steering + 1-byte throttle.
+  * `send_command(command_byte: int)` — sends single-byte commands for control like reset or shuffle.
+* **reciever.py**: Receives merged RGB24 camera observations from Unity and extracts header information (speed, steering, car ID, reward). Returns a NumPy array representing the merged image.
+
+### Communication Protocol
+
+- Observation Packet (Unity -> Python)
+
+  * 10 bytes Header: 
+    * 1 byte speed
+    * 1 byte steering
+    * 4 bytes car ID (int32, little-endian)
+    * 4 bytes reward (int32, little-endian)
+  * RGB24 camera image
+
+- Driving Instruction Packet (Python -> Unity)
+
+  * 4 bytes car ID (int32, little-endian)
+  * 1 byte steering
+  * 1 byte throttle
+
+- Game Control Packet (Python -> Unity)
+
+   * 1 byte command number
+   * 1 byte extra value (if command does not have options number is ignored)
+
+
+
+### Example Usage
+
+#### Python Side
+
+```python
+import sender
+import reciever
+
+# Send command to Unity
+sender.send_command(0)  # Reset Cars
+
+# Send driving instructions
+sender.send_car_instruction(car_id=3, steering=120, throttle=200)
+
+# Receive observation
+header, image = reciever.receive_observations()
+```
+
+### Notes
+
+* Merged image simplifies Python side by combining left/right cameras.
+* RGB24 format ensures 8 bits per channel with no transparency.
+* Unity and Python ports must match for successful communication.
+* Use threading or async to receive observations while sending commands for real-time control.

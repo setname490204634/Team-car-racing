@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -7,15 +8,12 @@ using UnityEngine;
 
 public class gameControlScript : MonoBehaviour
 {
-    [System.Serializable]
     public class CarEntry
     {
         public GameObject carObject;
-        public CarAgent agent;                // optional
+        public CarAgent agent; //can be null
         public ICarInputProvider inputProvider;
     }
-
-    [System.Serializable]
     public struct TransformEntry
     {
         public Vector3 position;
@@ -73,7 +71,8 @@ public class gameControlScript : MonoBehaviour
         instructionsThread.IsBackground = true;
         instructionsThread.Start();
 
-        // Start observation transmitter
+        // observation transmitter
+        //it has to be started with the python side listening
         transmitter = new CarObservationTransmitter("127.0.0.1", observationTransmitterPort, cars);
 
         var _ = UnityMainThreadDispatcher.Instance();
@@ -160,18 +159,26 @@ public class gameControlScript : MonoBehaviour
                 using (TcpClient client = controlServer.AcceptTcpClient())
                 using (NetworkStream stream = client.GetStream())
                 {
-                    int commandByte = stream.ReadByte();
-                    if (commandByte == -1) continue; // client disconnected
+                    byte[] buffer = new byte[2]; // command byte + value byte
+                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                    if (bytesRead < 2)
+                    {
+                        Debug.LogWarning("Incomplete command packet received");
+                        continue;
+                    }
+
+                    byte commandByte = buffer[0];
+                    byte valueByte = buffer[1];
 
                     switch (commandByte)
                     {
                         case 0: // reset
-                            UnityMainThreadDispatcher.Instance().Enqueue(ResetCars);
+                            UnityMainThreadDispatcher.Instance().Enqueue(() => ResetCars());
                             break;
                         case 1: // shuffle
-                            UnityMainThreadDispatcher.Instance().Enqueue(ShuffleStartTransforms);
+                            UnityMainThreadDispatcher.Instance().Enqueue(() => ShuffleStartTransforms());
                             break;
-                        case 50:
+                        case 50: // start transmitter
                             transmitter.Start();
                             break;
                         default:
@@ -200,23 +207,26 @@ public class gameControlScript : MonoBehaviour
                 using (TcpClient client = instructionsServer.AcceptTcpClient())
                 using (NetworkStream stream = client.GetStream())
                 {
-                    byte[] buffer = new byte[3]; // 1 byte car ID + 2 bytes inputs
+                    byte[] buffer = new byte[6]; // 4 bytes car ID + 1 byte steering + 1 byte throttle
                     int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead < 3)
+                    if (bytesRead < 6)
                     {
                         Debug.LogWarning("Incomplete input packet received");
                         continue;
                     }
 
-                    int carIndex = buffer[0];
-                    byte steeringByte = buffer[1];
-                    byte throttleByte = buffer[2];
+                    // --- Extract car ID (32-bit integer, little-endian) ---
+                    int carIndex = BitConverter.ToInt32(buffer, 0);
+
+                    // --- Steering and throttle ---
+                    byte steeringByte = buffer[4];
+                    byte throttleByte = buffer[5];
 
                     CarInput input = new CarInput
                     {
                         Steering = steeringByte,
                         Throttle = throttleByte,
-                        UseSpeedSteering = true // or send another byte if needed
+                        UseSpeedSteering = true
                     };
 
                     UnityMainThreadDispatcher.Instance().Enqueue(() =>
@@ -231,13 +241,5 @@ public class gameControlScript : MonoBehaviour
         {
             Debug.Log("Socket exception (instructions): " + e);
         }
-    }
-
-    // Helper class for JSON deserialization
-    [System.Serializable]
-    public class CarInputMessage
-    {
-        public int carIndex;
-        public CarInput input;
     }
 }

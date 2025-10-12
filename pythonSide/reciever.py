@@ -2,48 +2,67 @@ import socket
 import struct
 import numpy as np
 
-HOST = "127.0.0.1"
-PORT = 5007
+# Configuration
+HOST = "0.0.0.0"         # Listen on all interfaces
+PORT = 5007              # Must match Unity transmitter port
 
-# Example: left/right camera resolution
-CAM_WIDTH = 64
-CAM_HEIGHT = 64
-NUM_PIXELS = CAM_WIDTH * CAM_HEIGHT
+CAM_WIDTH = 64            # Single camera width
+CAM_HEIGHT = 64           # Single camera height
+
+MERGED_WIDTH = CAM_WIDTH * 2
+MERGED_HEIGHT = CAM_HEIGHT
+BYTES_PER_PIXEL = 3       # RGB24
+HEADER_SIZE = 10          # 1 speed + 1 steering + 4 carID + 4 reward
 
 def receive_observations():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
-        print(f"Connected to Unity observation transmitter on {HOST}:{PORT}")
+    """
+    Runs a TCP server that listens for Unity observation packets.
+    Each packet contains a 10-byte header followed by a merged RGB image.
+    """
+    expected_packet_size = HEADER_SIZE + MERGED_WIDTH * MERGED_HEIGHT * BYTES_PER_PIXEL
 
-        buffer = b""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+        server.bind((HOST, PORT))
+        server.listen()
+        print(f"Receiver listening on {HOST}:{PORT}...")
+
         while True:
-            data = s.recv(4096)
-            if not data:
-                break
-            buffer += data
+            print("Waiting for Unity to connect...")
+            conn, addr = server.accept()
+            print(f"Unity connected from {addr}")
 
-            # Process packets in buffer
-            while len(buffer) >= 10 + NUM_PIXELS * 2 * 2:
-                # Header
-                header = buffer[:10]
-                speed, steer, car_id, reward = struct.unpack('<BBii', header)
+            with conn:
+                buffer = b""
+                while True:
+                    try:
+                        data = conn.recv(4096)
+                        if not data:
+                            print("Unity disconnected.")
+                            break
+                        buffer += data
 
-                # Camera data
-                cam_data_len = NUM_PIXELS * 2  # RGB565 = 2 bytes per pixel
-                left_cam_start = 10
-                left_cam_end = left_cam_start + cam_data_len
-                right_cam_start = left_cam_end
-                right_cam_end = right_cam_start + cam_data_len
+                        # Process all complete packets in buffer
+                        while len(buffer) >= expected_packet_size:
+                            packet = buffer[:expected_packet_size]
 
-                left_cam_bytes = buffer[left_cam_start:left_cam_end]
-                right_cam_bytes = buffer[right_cam_start:right_cam_end]
+                            # Parse header
+                            header = packet[:HEADER_SIZE]
+                            speed, steer, car_id, reward = struct.unpack('<BBii', header)
 
-                # Convert RGB565 to numpy array (optional)
-                left_cam = np.frombuffer(left_cam_bytes, dtype=np.uint16).reshape((CAM_HEIGHT, CAM_WIDTH))
-                right_cam = np.frombuffer(right_cam_bytes, dtype=np.uint16).reshape((CAM_HEIGHT, CAM_WIDTH))
+                            # Parse image
+                            img_bytes = packet[HEADER_SIZE:]
+                            img = np.frombuffer(img_bytes, dtype=np.uint8)
+                            img = img.reshape((MERGED_HEIGHT, MERGED_WIDTH, 3))
 
-                print(f"Car {car_id} | Speed {speed} | Steer {steer} | Reward {reward}")
-                # print(left_cam)  # uncomment to see raw camera data
+                            print(f"Car {car_id} | Speed {speed} | Steer {steer} | Reward {reward}")
+                            print(f"Image shape: {img.shape}")
 
-                # Remove processed packet from buffer
-                buffer = buffer[10 + cam_data_len * 2:]
+                            # Remove processed packet from buffer
+                            buffer = buffer[expected_packet_size:]
+
+                    except ConnectionResetError:
+                        print("Connection reset by Unity.")
+                        break
+                    except Exception as e:
+                        print(f"Error receiving data: {e}")
+                        break

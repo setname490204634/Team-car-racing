@@ -3,6 +3,7 @@ using System.Net;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
+using System.Runtime.Remoting;
 
 public class CarObservationTransmitter
 {
@@ -22,6 +23,11 @@ public class CarObservationTransmitter
         this.port = port;
         this.cars = cars;
         this.delay = delay;
+    }
+
+    class ObsRef
+    {
+        public CarObservation Value;
     }
 
     public void Start()
@@ -59,7 +65,20 @@ public class CarObservationTransmitter
                     var entry = cars[i];
                     if (entry.agent != null)
                     {
-                        var obs = entry.agent.GetCarObservation();
+                        ObsRef obsRef = new ObsRef();
+
+                        UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                        {
+                            obsRef.Value = entry.agent.GetCarObservation(); // main thread safe
+                        });
+
+                        // Wait until obsRef.Value is assigned
+                        while (obsRef.Value.Speed == 0) // or some sentinel check
+                        {
+                            Thread.Sleep(0);
+                        }
+
+                        CarObservation obs = obsRef.Value;
                         int reward = obs.Speed; // simple reward = speed
                         byte[] packet = CarObservationSerializer.PackCarObservation(obs, i, reward);
                         if (packet != null)

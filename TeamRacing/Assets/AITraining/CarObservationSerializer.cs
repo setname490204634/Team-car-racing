@@ -3,59 +3,75 @@ using System;
 
 public static class CarObservationSerializer
 {
-    // Packs 2 cameras + speed + steering + carID + reward into a single byte array
+    // Packs merged (RGB24) image + speed + steering + carID + reward
     public static byte[] PackCarObservation(CarObservation observation, int carID, int reward)
     {
-        // Get RenderTextures
         RenderTexture leftRT = observation.leftCameraTexture;
         RenderTexture rightRT = observation.rightCameraTexture;
 
         int width = leftRT.width;
         int height = leftRT.height;
-        int numPixels = width * height;
+        int mergedWidth = width * 2;
+        int mergedHeight = height;
 
-        // Use bytes for speed and steering (0–255)
+        // Merge both camera views
+        RenderTexture mergedRT = MergeRenderTextures(leftRT, rightRT);
+
+        // Read merged RenderTexture to Texture2D (RGB24)
+        RenderTexture prev = RenderTexture.active;
+        RenderTexture.active = mergedRT;
+
+        Texture2D tex = new Texture2D(mergedWidth, mergedHeight, TextureFormat.RGB24, false);
+        tex.ReadPixels(new Rect(0, 0, mergedWidth, mergedHeight), 0, 0);
+        tex.Apply();
+
+        RenderTexture.active = prev;
+
+        // Extract raw bytes (3 bytes per pixel)
+        byte[] imageBytes = tex.GetRawTextureData();
+
+        UnityEngine.Object.Destroy(tex);
+        UnityEngine.Object.Destroy(mergedRT);
+
+        // Prepare header (10 bytes)
         byte speedByte = observation.Speed;
         byte steerByte = observation.SteeringAngle;
-
-        // Convert carID and reward to int (4 bytes each)
         byte[] idBytes = BitConverter.GetBytes(carID);
         byte[] rewardBytes = BitConverter.GetBytes(reward);
 
-        // Header: 1 byte speed, 1 byte steering, 4 bytes carID, 4 bytes reward
         byte[] header = new byte[10];
         header[0] = speedByte;
         header[1] = steerByte;
         Array.Copy(idBytes, 0, header, 2, 4);
         Array.Copy(rewardBytes, 0, header, 6, 4);
 
-        // Allocate full payload: header + 2 cameras * 2 bytes per pixel
-        byte[] payload = new byte[header.Length + numPixels * 2 * 2];
-
-        // Copy header
-        Array.Copy(header, 0, payload, 0, header.Length);
-
-        // Copy camera data
-        CopyRenderTextureRGB565(leftRT, payload, header.Length);                  // left camera
-        CopyRenderTextureRGB565(rightRT, payload, header.Length + numPixels * 2); // right camera
+        // Combine header + image
+        byte[] payload = new byte[header.Length + imageBytes.Length];
+        Buffer.BlockCopy(header, 0, payload, 0, header.Length);
+        Buffer.BlockCopy(imageBytes, 0, payload, header.Length, imageBytes.Length);
 
         return payload;
     }
 
-    // Reads RenderTexture as RGB565 and writes into byte array starting at offset
-    private static void CopyRenderTextureRGB565(RenderTexture rt, byte[] target, int offset)
+    // Merge two RenderTextures side by side (left | right)
+    private static RenderTexture MergeRenderTextures(RenderTexture left, RenderTexture right)
     {
+        int width = left.width;
+        int height = left.height;
+
+        RenderTexture merged = new RenderTexture(width * 2, height, 0, RenderTextureFormat.ARGB32);
         RenderTexture prev = RenderTexture.active;
-        RenderTexture.active = rt;
+        RenderTexture.active = merged;
 
-        Texture2D tex = new Texture2D(rt.width, rt.height, TextureFormat.RGB565, false);
-        tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
-        tex.Apply();
+        GL.PushMatrix();
+        GL.LoadPixelMatrix(0, merged.width, merged.height, 0);
 
-        byte[] rawBytes = tex.GetRawTextureData(); // 2 bytes per pixel
-        Array.Copy(rawBytes, 0, target, offset, rawBytes.Length);
+        Graphics.DrawTexture(new Rect(0, 0, width, height), left);
+        Graphics.DrawTexture(new Rect(width, 0, width, height), right);
 
-        UnityEngine.Object.Destroy(tex);
+        GL.PopMatrix();
         RenderTexture.active = prev;
+
+        return merged;
     }
 }
