@@ -13,6 +13,7 @@ public class gameControlScript : MonoBehaviour
         public GameObject carObject;
         public CarAgent agent; //can be null
         public ICarInputProvider inputProvider;
+        public Rewards rewards;
     }
     public struct TransformEntry
     {
@@ -40,6 +41,7 @@ public class gameControlScript : MonoBehaviour
 
     void Start()
     {
+        int index = 0;
         // Fill lists from inspector
         foreach (var obj in assignedCarObjects)
         {
@@ -49,6 +51,10 @@ public class gameControlScript : MonoBehaviour
             entry.carObject = obj;
             entry.agent = obj.GetComponent<CarAgent>();
             entry.inputProvider = obj.GetComponent<ICarInputProvider>();
+
+            int teammateID = index + 1;
+            if (teammateID % 2 == 1) teammateID -= 2;
+            entry.rewards = new Rewards(entry.agent, this, obj, Rewards.Default, teammateID);
             cars.Add(entry);
 
             // Save start transform
@@ -58,6 +64,7 @@ public class gameControlScript : MonoBehaviour
                 rotation = obj.transform.rotation
             };
             startTransforms.Add(t);
+            index++;
         }
 
         // Start TCP servers
@@ -87,6 +94,11 @@ public class gameControlScript : MonoBehaviour
 
         if (controlThread?.IsAlive ?? false) controlThread.Abort();
         if (instructionsThread?.IsAlive ?? false) instructionsThread.Abort();
+    }
+
+    public GameObject GetCarByID(int id)
+    {
+        return cars[id].carObject;
     }
 
     // Reset all cars to their start transforms

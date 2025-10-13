@@ -4,7 +4,7 @@ using System;
 public static class CarObservationSerializer
 {
     // Packs merged (RGB24) image + speed + steering + carID + reward
-    public static byte[] PackCarObservation(CarObservation observation, int carID, int reward)
+    public static byte[] PackCarObservation(CarObservation observation, int carID, float reward)
     {
         RenderTexture leftRT = observation.leftCameraTexture;
         RenderTexture rightRT = observation.rightCameraTexture;

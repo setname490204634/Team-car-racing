@@ -47,7 +47,7 @@ def receive_observations():
 
                             # Parse header
                             header = packet[:HEADER_SIZE]
-                            speed, steer, car_id, reward = struct.unpack('<BBii', header)
+                            speed, steer, car_id, reward = struct.unpack('<BBif', header)
 
                             # Parse image
                             img_bytes = packet[HEADER_SIZE:]

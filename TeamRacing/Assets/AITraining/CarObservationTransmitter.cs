@@ -80,6 +80,7 @@ public class CarObservationTransmitter
 
                         CarObservation obs = obsRef.Value;
                         int reward = obs.Speed; // simple reward = speed
+
                         byte[] packet = CarObservationSerializer.PackCarObservation(obs, i, reward);
                         if (packet != null)
                             observationPackets.Add(packet);
