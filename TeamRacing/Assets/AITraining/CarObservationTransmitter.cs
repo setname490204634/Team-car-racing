@@ -1,9 +1,8 @@
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Net;
-using System.Collections.Generic;
-using UnityEngine;
 using System.Threading;
-using System.Runtime.Remoting;
+using UnityEngine;
 
 public class CarObservationTransmitter
 {
@@ -11,95 +10,79 @@ public class CarObservationTransmitter
     private NetworkStream stream;
     private string ip;
     private int port;
-    private Thread sendThread;
-    private bool running = false;
-    private int delay;
+    private bool connected = false;
 
     private List<gameControlScript.CarEntry> cars;
 
-    public CarObservationTransmitter(string ip, int port, List<gameControlScript.CarEntry> cars, int delay = 33)
+    // Internal buffer for latest observations
+    private List<byte[]> observationPackets = new List<byte[]>();
+    private readonly object lockObj = new object();
+
+    public CarObservationTransmitter(string ip, int port, List<gameControlScript.CarEntry> cars)
     {
         this.ip = ip;
         this.port = port;
         this.cars = cars;
-        this.delay = delay;
     }
 
-    class ObsRef
+    public void Connect()
     {
-        public CarObservation Value;
+        client = new TcpClient();
+        client.Connect(IPAddress.Parse(ip), port);
+        stream = client.GetStream();
+        connected = true;
+        Debug.Log("Connected to " + ip + ":" + port);
     }
 
-    public void Start()
+    public void Disconnect()
     {
-        running = true;
-        sendThread = new Thread(SendLoop);
-        sendThread.IsBackground = true;
-        sendThread.Start();
-    }
-
-    public void Stop()
-    {
-        running = false;
+        connected = false;
         stream?.Close();
         client?.Close();
-        if (sendThread?.IsAlive ?? false) sendThread.Abort();
     }
 
-    private void SendLoop()
+    /// <summary>
+    /// Collect observations from all cars on the main Unity thread.
+    /// </summary>
+    public void CollectObservations()
     {
-        try
+        lock (lockObj)
         {
-            client = new TcpClient();
-            client.Connect(IPAddress.Parse(ip), port);
-            stream = client.GetStream();
-            Debug.Log("Observation transmitter connected to " + ip + ":" + port);
+            observationPackets.Clear();
 
-            while (running)
+            for (int i = 0; i < cars.Count; i++)
             {
-                // Collect observations
-                List<byte[]> observationPackets = new List<byte[]>();
+                var entry = cars[i];
+                if (entry.agent == null) continue;
 
-                for (int i = 0; i < cars.Count; i++)
-                {
-                    var entry = cars[i];
-                    if (entry.agent != null)
-                    {
-                        ObsRef obsRef = new ObsRef();
 
-                        UnityMainThreadDispatcher.Instance().Enqueue(() =>
-                        {
-                            obsRef.Value = entry.agent.GetCarObservation(); // main thread safe
-                        });
+                // safe on main thread
+                CarObservation obs = entry.agent.GetCarObservation(); 
+                float reward = entry.rewards.CalculateReward();
+                // safe on main thread
 
-                        // Wait until obsRef.Value is assigned
-                        while (obsRef.Value.Speed == 0) // or some sentinel check
-                        {
-                            Thread.Sleep(0);
-                        }
 
-                        CarObservation obs = obsRef.Value;
-                        float reward = entry.rewards.CalculateReward();
-
-                        byte[] packet = CarObservationSerializer.PackCarObservation(obs, i, reward);
-                        if (packet != null)
-                            observationPackets.Add(packet);
-                    }
-                }
-
-                // Send all packets sequentially
-                foreach (var packet in observationPackets)
-                {
-                    stream.Write(packet, 0, packet.Length);
-                }
-
-                // Optional: control the framerate of sending
-                Thread.Sleep(delay); // ~30 Hz
+                byte[] packet = CarObservationSerializer.PackCarObservation(obs, i, reward);
+                if (packet != null)
+                    observationPackets.Add(packet);
             }
         }
-        catch (System.Exception ex)
+    }
+
+    /// <summary>
+    /// Send last collected observations.
+    /// </summary>
+    public void SendObservations()
+    {
+        if (!connected || stream == null)
+            return;
+
+        lock (lockObj)
         {
-            Debug.LogError("Observation transmitter error: " + ex.Message);
+            foreach (var packet in observationPackets)
+            {
+                stream.Write(packet, 0, packet.Length);
+            }
         }
     }
 }

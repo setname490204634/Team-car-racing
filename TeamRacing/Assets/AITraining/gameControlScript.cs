@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class gameControlScript : MonoBehaviour
 {
@@ -32,6 +34,11 @@ public class gameControlScript : MonoBehaviour
     private Thread controlThread;
     private Thread instructionsThread;
     private bool running = false;
+
+    // Buffers
+    private InstructionBuffer instructionBuffer;
+    private GameCommandBuffer commandBuffer;
+
     private CarObservationTransmitter transmitter;
 
     [Header("Server Settings")]
@@ -39,50 +46,46 @@ public class gameControlScript : MonoBehaviour
     public int carInstructionsPort = 5006;
     public int observationTransmitterPort = 5007;
 
+    [Header("Simulation Settings (can be changed with commands)")]
+    public int fixedHz = 48;           // physics frequency
+    public int framesPerObservation = 8;  // send obs every N frames
+    private float fixedDt;
+
+    private enum State { Idle, WaitingToStart, Running, Stopped }
+    private State state = State.Idle;
+
     void Start()
     {
-        int index = 0;
-        // Fill lists from inspector
-        foreach (var obj in assignedCarObjects)
+        InitializeCars();
+
+        InitializeNetworking();
+
+        Physics.simulationMode = SimulationMode.Script;
+        updateSimulationFramerate();
+    }
+    void Update()
+    {
+        // Handle commands queued by the control thread
+        var commands = commandBuffer.ConsumeAll();
+        foreach ((byte command, byte value) in commands)
+            ProcessCommand(command, value);
+
+        if (state == State.Running)
         {
-            if (obj == null) continue;
+            // Wait until we have full instruction set
+            var instructions = instructionBuffer.ConsumeAll();
+            ApplyCarInputs(instructions);
 
-            CarEntry entry = new CarEntry();
-            entry.carObject = obj;
-            entry.agent = obj.GetComponent<CarAgent>();
-            entry.inputProvider = obj.GetComponent<ICarInputProvider>();
-
-            int teammateID = index + 1;
-            if (teammateID % 2 == 1) teammateID -= 2;
-            entry.rewards = new Rewards(entry.agent, this, obj, Rewards.Default, teammateID);
-            cars.Add(entry);
-
-            // Save start transform
-            TransformEntry t = new TransformEntry
+            // Simulate N frames
+            for (int i = 0; i < framesPerObservation; i++)
             {
-                position = obj.transform.position,
-                rotation = obj.transform.rotation
-            };
-            startTransforms.Add(t);
-            index++;
+                Physics.Simulate(fixedDt);
+            }
+
+            // After simulating N frames, collect + send observations
+            transmitter.CollectObservations();
+            transmitter.SendObservations();
         }
-
-        // Start TCP servers
-        running = true;
-
-        controlThread = new Thread(ListenForControlCommands);
-        controlThread.IsBackground = true;
-        controlThread.Start();
-
-        instructionsThread = new Thread(ListenForCarInstructions);
-        instructionsThread.IsBackground = true;
-        instructionsThread.Start();
-
-        // observation transmitter
-        //it has to be started with the python side listening
-        transmitter = new CarObservationTransmitter("127.0.0.1", observationTransmitterPort, cars);
-
-        var _ = UnityMainThreadDispatcher.Instance();
     }
 
     void OnApplicationQuit()
@@ -101,6 +104,60 @@ public class gameControlScript : MonoBehaviour
         return cars[id].carObject;
     }
 
+    private void InitializeNetworking()
+    {
+        running = true;
+
+        controlThread = new Thread(ListenForControlCommands) { IsBackground = true };
+        controlThread.Start();
+
+        instructionsThread = new Thread(ListenForCarInstructions) { IsBackground = true };
+        instructionsThread.Start();
+
+        // Prepare dispatcher if used elsewhere
+        var _ = UnityMainThreadDispatcher.Instance();
+    }
+
+    private void updateSimulationFramerate()
+    {
+        fixedDt = 1f / fixedHz;
+        Time.fixedDeltaTime = fixedDt;
+    }
+
+    private void InitializeCars()
+    {
+        int index = 0;
+        foreach (var obj in assignedCarObjects)
+        {
+            if (obj == null) continue;
+
+            CarEntry entry = new CarEntry
+            {
+                carObject = obj,
+                agent = obj.GetComponent<CarAgent>(),
+                inputProvider = obj.GetComponent<ICarInputProvider>()
+            };
+
+            int teammateID = index + 1;
+            if (teammateID % 2 == 1) teammateID -= 2;
+            entry.rewards = new Rewards(entry.agent, this, obj, Rewards.Default, teammateID);
+
+            cars.Add(entry);
+
+            startTransforms.Add(new TransformEntry
+            {
+                position = obj.transform.position,
+                rotation = obj.transform.rotation
+            });
+
+            index++;
+        }
+
+        instructionBuffer = new InstructionBuffer(cars.Count);
+        commandBuffer = new GameCommandBuffer();
+        transmitter = new CarObservationTransmitter("127.0.0.1", observationTransmitterPort, cars);
+    }
+
     // Reset all cars to their start transforms
     public void ResetCars()
     {
@@ -117,7 +174,7 @@ public class gameControlScript : MonoBehaviour
                 rb.angularVelocity = Vector3.zero;
                 rb.position = t.position;
                 rb.rotation = t.rotation;
-                rb.Sleep(); // ensures physics doesn’t move it on the next tick
+                rb.Sleep(); // ensures physics doesnï¿½t move it on the next tick
             }
             else
             {
@@ -158,6 +215,51 @@ public class gameControlScript : MonoBehaviour
         }
     }
 
+    private void StartGame()
+    {
+        ResetCars();
+        state = State.Running;
+        Debug.Log("Game started.");
+    }
+
+    private void StopGame()
+    {
+        state = State.Stopped;
+        Debug.Log("Game stopped.");
+    }
+
+    private void ProcessCommand(byte command, byte value)
+    {
+        switch (command)
+        {
+            case 0: // reset
+                UnityMainThreadDispatcher.Instance().Enqueue(() => ResetCars());
+                break;
+            case 1: // shuffle
+                UnityMainThreadDispatcher.Instance().Enqueue(() => ShuffleStartTransforms());
+                break;
+            case 10:
+                StartGame();
+                break;
+            case 11:
+                StopGame();
+                break;
+            case 20:
+                this.fixedHz = value;
+                updateSimulationFramerate();
+                break;
+            case 21:
+                this.framesPerObservation = value;
+                break;
+            case 50:
+                
+                break;
+            default:
+                Debug.LogWarning("Unknown command byte: " + command);
+                break;
+        }
+    }
+
     private void ListenForControlCommands()
     {
         try
@@ -178,25 +280,7 @@ public class gameControlScript : MonoBehaviour
                         Debug.LogWarning("Incomplete command packet received");
                         continue;
                     }
-
-                    byte commandByte = buffer[0];
-                    byte valueByte = buffer[1];
-
-                    switch (commandByte)
-                    {
-                        case 0: // reset
-                            UnityMainThreadDispatcher.Instance().Enqueue(() => ResetCars());
-                            break;
-                        case 1: // shuffle
-                            UnityMainThreadDispatcher.Instance().Enqueue(() => ShuffleStartTransforms());
-                            break;
-                        case 50: // start transmitter
-                            transmitter.Start();
-                            break;
-                        default:
-                            Debug.LogWarning("Unknown command byte: " + commandByte);
-                            break;
-                    }
+                    commandBuffer.EnqueueCommand(buffer[0], buffer[1]);
                 }
             }
         }
@@ -241,11 +325,7 @@ public class gameControlScript : MonoBehaviour
                         UseSpeedSteering = true
                     };
 
-                    UnityMainThreadDispatcher.Instance().Enqueue(() =>
-                    {
-                        if (carIndex >= 0 && carIndex < cars.Count)
-                            cars[carIndex].inputProvider.SetInput(input);
-                    });
+                    instructionBuffer.SetInstruction(carIndex, input);
                 }
             }
         }

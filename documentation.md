@@ -211,9 +211,22 @@ sender.send_car_instruction(car_id=3, steering=120, throttle=200)
 header, image = reciever.receive_observations()
 ```
 
+### Unity Game Commands
+
+- "first byte" "second byte" ("-" means it doesnt matter on the value), description
+- "0" "-", reset the cars to the start block
+- "10" "-", start the game
+- "11" "-", stop the game
+- "1" "-", randomly shuffle the cars starting positions
+- "20" "x", set the frame rate to x per second
+- "20" "x", set sending of observation to every x frames
+- "50" "-", nothing for now
+
+
 ### Notes
 
 * Merged image simplifies Python side by combining left/right cameras.
 * RGB24 format ensures 8 bits per channel with no transparency.
 * Unity and Python ports must match for successful communication.
 * Use threading or async to receive observations while sending commands for real-time control.
+
