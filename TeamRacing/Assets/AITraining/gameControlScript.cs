@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -10,12 +11,26 @@ using UnityEngine.Rendering;
 
 public class gameControlScript : MonoBehaviour
 {
+    public class CarRaceState
+    {
+        public int lapCount = 0;
+        public float currentLapTime = 0f;
+        public float lastLapTotalTime = 0f;
+        public float bestLapTime = float.MaxValue;
+
+        public bool passedHalfway = false;
+        public bool crossedFinish = true;
+
+        public bool finished = false;
+    }
     public class CarEntry
     {
         public GameObject carObject;
         public CarAgent agent; //can be null
         public ICarInputProvider inputProvider;
         public Rewards rewards;
+        public CarRaceState raceState;
+        public CarController controller;
     }
     public struct TransformEntry
     {
@@ -28,6 +43,8 @@ public class gameControlScript : MonoBehaviour
 
     private List<CarEntry> cars = new List<CarEntry>();
     private List<TransformEntry> startTransforms = new List<TransformEntry>();
+    private int lapCount = 5;
+    public List<int> winners = new List<int>();
 
     private TcpListener controlServer;
     private TcpListener instructionsServer;
@@ -50,6 +67,7 @@ public class gameControlScript : MonoBehaviour
     public int fixedHz = 48;           // physics frequency
     public int framesPerObservation = 8;  // send obs every N frames
     private float fixedDt;
+    private long tickCount = 0;
 
     private enum State { Idle, WaitingToStart, Running, Stopped }
     private State state = State.Idle;
@@ -73,18 +91,68 @@ public class gameControlScript : MonoBehaviour
         if (state == State.Running)
         {
             // Wait until we have full instruction set
+            while (instructionBuffer.HasAll() != true)
+            {
+                Thread.Sleep(0);//wait for thread to be activated
+            }
             var instructions = instructionBuffer.ConsumeAll();
             ApplyCarInputs(instructions);
 
             // Simulate N frames
             for (int i = 0; i < framesPerObservation; i++)
             {
+                tickCount++;
+                HandleCarCollisions();
                 Physics.Simulate(fixedDt);
             }
 
             // After simulating N frames, collect + send observations
             transmitter.CollectObservations();
             transmitter.SendObservations();
+        }
+    }
+
+    //checks car collisions with objects and lap track finish and halfway point
+    private void HandleCarCollisions()
+    {
+        for (int i = 0; i < cars.Count; i++)
+        {
+            CarEntry car = cars[i];
+            (bool collided, bool finish, bool halfway) = car.controller.ConsumeCollisionFlags();
+            if (collided)
+            {
+                car.rewards.RegisterCollision();
+            }
+
+            //halfway to stop incomplete loops
+            if (halfway && car.raceState.crossedFinish)
+            {
+                car.raceState.passedHalfway = true;
+                car.raceState.crossedFinish = false;
+            }
+            //finished lap
+            if (finish && car.raceState.passedHalfway)
+            {
+                car.raceState.passedHalfway = false;
+                car.raceState.crossedFinish = true;
+
+                car.raceState.lapCount++;
+                float lapTime = this.tickCount*fixedDt - car.raceState.lastLapTotalTime;
+                car.raceState.bestLapTime = Math.Max(car.raceState.bestLapTime, lapTime);
+                car.raceState.lastLapTotalTime = this.tickCount * fixedDt;
+                car.raceState.currentLapTime = lapTime;
+
+                if (this.lapCount == car.raceState.lapCount)
+                {
+                    this.winners.Add(i);
+                    car.rewards.RegisterFinalPlacement(winners.Count);
+                    if (car.rewards.GetTeammateId() != null)
+                    {
+                        cars[car.rewards.GetTeammateId().Value].rewards.RegisterFinalTeammatePlacement(winners.Count);
+                    }
+                }
+                car.rewards.RegisterLapTime(lapTime);
+            }
         }
     }
 
@@ -135,7 +203,9 @@ public class gameControlScript : MonoBehaviour
             {
                 carObject = obj,
                 agent = obj.GetComponent<CarAgent>(),
-                inputProvider = obj.GetComponent<ICarInputProvider>()
+                inputProvider = obj.GetComponent<ICarInputProvider>(),
+                controller = obj.GetComponent<CarController>(),
+                raceState = new CarRaceState()
             };
 
             int teammateID = index + 1;
@@ -220,6 +290,7 @@ public class gameControlScript : MonoBehaviour
         ResetCars();
         state = State.Running;
         Debug.Log("Game started.");
+        tickCount = 0;
     }
 
     private void StopGame()
@@ -252,7 +323,7 @@ public class gameControlScript : MonoBehaviour
                 this.framesPerObservation = value;
                 break;
             case 50:
-                
+
                 break;
             default:
                 Debug.LogWarning("Unknown command byte: " + command);

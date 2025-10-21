@@ -34,6 +34,11 @@ public class CarController : MonoBehaviour
     private float currentGripMultiplier = 1f;
     private float currentSpeedMultiplier = 1f;
 
+    // Collision tracking
+    private bool collided = false; //crash
+    private bool crossedFinish = false;
+    private bool crossedHalfway = false;
+
     void Awake()
     {
         Debug.Log("OnActionReceived called");
@@ -193,5 +198,40 @@ public class CarController : MonoBehaviour
     private float DecodeByteToNormalized(byte value)
     {
         return (value - 128f) / 127f;  // 128 = neutral
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // Detect collision with anything that isn’t the ground or triggers
+        if (collision.collider != null && !collision.collider.isTrigger)
+        {
+            if (collision.collider.GetComponent<WheelCollider>() != null)
+                return; //ignore wheel colider just in case the wheel toutches it
+            collided = true;
+            // Debug.Log($"{name} collided with {collision.collider.name}");
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("FinishLine"))
+        {
+            crossedFinish = true;
+            // Debug.Log($"{name} crossed the finish line");
+        }
+        else if (other.CompareTag("Halfway"))
+        {
+            crossedHalfway = true;
+            // Debug.Log($"{name} crossed the halfway point");
+        }
+    }
+
+    public (bool collided, bool finish, bool halfway) ConsumeCollisionFlags()
+    {
+        var result = (collided, crossedFinish, crossedHalfway);
+        collided = false;
+        crossedFinish = false;
+        crossedHalfway = false;
+        return result;
     }
 }

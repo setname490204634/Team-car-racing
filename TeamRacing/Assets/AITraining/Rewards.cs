@@ -29,8 +29,16 @@ public class Rewards
 
     private bool collided = false;
     private float lastLapTime = 0f;
+    private int finalPlacement = -1; // -1 means not registered
+    private int finalTeammatePlacement = -1;
 
     const float idealDistance = 10f; //for closeness reward
+
+    //placement reward scaling starts from 1!!
+    private static readonly int[] placementPoints = new int[]
+    {
+        0, 25, 18, 14, 12, 10, 8, 6, 4, 2, 0
+    };
 
     public Rewards(CarAgent agent, gameControlScript gameControl, GameObject carObject, RewardConfig cfg, int? teammateID = null)
     {
@@ -88,7 +96,9 @@ public class Rewards
     // Collision penalty
     private float CollisionPenalty()
     {
-        return collided ? -1f : 0f;
+        float output = collided ? -1f : 0f;
+        collided = false;
+        return output;
     }
 
     // Called from CarAgents OnCollisionEnter
@@ -111,22 +121,45 @@ public class Rewards
         return Mathf.Clamp01((distance - idealDistance) / 50f); // normalize over 50m max
     }
 
-    // Lap time reward (requires LapManager)
+    // Lap time reward
     private float LapTimeReward()
     {
-        return 0f;
+        float output = lastLapTime;
+        lastLapTime = 0;
+        return output;
+    }
+
+    public void RegisterLapTime(float lapTime)
+    {
+        this.lastLapTime = lapTime;
     }
 
     // Placement reward (final)
     private float PlacementReward()
     {
-        return 0f;
+        if (finalPlacement == -1 || finalPlacement >= placementPoints.Length) return 0f;
+        float output = (float)placementPoints[finalPlacement];
+        finalPlacement = -1;
+        return output;
+    }
+
+    public void RegisterFinalPlacement(int place)
+    {
+        this.finalPlacement = place;
     }
 
     // Team placement reward
     private float TeamPlacementReward()
     {
-        return 0f;
+        if (finalTeammatePlacement == -1 || finalTeammatePlacement >= placementPoints.Length) return 0f;
+        float output = (float)placementPoints[finalTeammatePlacement];
+        finalTeammatePlacement = -1;
+        return output;
+    }
+
+    public void RegisterFinalTeammatePlacement(int place)
+    {
+        this.finalTeammatePlacement = place;
     }
 
     public static readonly RewardConfig Default = new RewardConfig
@@ -140,4 +173,9 @@ public class Rewards
         placementWeight = 1.0f,
         teamPlacementWeight = 1.0f,
     };
+
+    public int? GetTeammateId()
+    {
+        return this.teammateID;
+    }
 }
