@@ -43,8 +43,9 @@
 - CarObservationSerializer.cs, packs observation into byte array
 - CarObservationTransmitter.cs, sends packed observation via network
 - FreeCameraController.cs, used to move camera with wsad and mouse to observe how the cars behave from 3rd person
-- GameControlScript.cs, manages envirometn input/output, handles restarting and the game
+- GameControlScript.cs, manages enviroment input/output, handles restarting and the game, game loop, rewards
 - UnityMainThreadDispatcher.cs, used to execute tasks on main thread.
+- Buffers.cs, used to buffer packets from communication
 
 ## pythonSide
 
@@ -53,6 +54,14 @@
 - reciever.py, recievs and unpacks observation from unity
 
 ## Editing and Adding Roads
+
+## Important files in depth
+
+### TeamRacing/Assets/AITraining/GameControlScript.cs
+- game loop and how the enviroment works
+
+### TeamRacing/Assets/cars/carController.cs
+- how the car behaves
 
 ### Edit and Add Roads
 
@@ -86,8 +95,10 @@
    - Navigate to `Assets/Scenes/Maps.unity` and open it in Unity.
 
 2. Building the Map  
-   - Build the layout by tiling road prefabs from the `/Assets/Roads` folder.  
+   - Build the layout by tiling road prefabs from the `/Assets/Roads` folder. 
+   - Place the start tile on (0, 0, 0) with 0 rotation as well so the maps could be swapped. 
    - Adjust and align them according to your map design.
+   - Add halfway bitbox somewhere on the map to make the lap counter work
 
 3. Scaling the Map  
    - Once the map is complete, select the parent map object.  
@@ -213,15 +224,15 @@ header, image = reciever.receive_observations()
 
 ### Unity Game Commands
 
-- "first byte" "second byte" ("-" means it doesnt matter on the value), description
-- "0" "-", reset the cars to the start block
-- "10" "-", start the game
-- "11" "-", stop the game
-- "1" "-", randomly shuffle the cars starting positions
-- "20" "x", set the frame rate to x per second
-- "20" "x", set sending of observation to every x frames
-- "50" "-", nothing for now
-
+| **First Byte** | **Second Byte** | **Description** |
+|-----------------|------------------|-----------------|
+| `0` | `-` | Reset all cars to the start block |
+| `1` | `-` | Randomly shuffle car starting positions |
+| `10` | `-` | Start the game |
+| `11` | `-` | Stop the game |
+| `20` | `x` | Set the simulation frame rate to x frames per second |
+| `21` | `x` | Send car observations every x frames |
+| `30` | `x` | Swap map to maps[x] |
 
 ### Notes
 
