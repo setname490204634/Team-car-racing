@@ -228,11 +228,13 @@ header, image = reciever.receive_observations()
 |-----------------|------------------|-----------------|
 | `0` | `-` | Reset all cars to the start block |
 | `1` | `-` | Randomly shuffle car starting positions |
+| `2` | `x` | Swap map to maps[x] |
 | `10` | `-` | Start the game |
 | `11` | `-` | Stop the game |
-| `20` | `x` | Set the simulation frame rate to x frames per second |
+| `20` | `x` | Set the simulation refresh rate (that translates to delta time) |
 | `21` | `x` | Send car observations every x frames |
-| `30` | `x` | Swap map to maps[x] |
+| `30` | `-` | Set the simulation speed to normal speed|
+| `31` | `-` | Speed up the simulation to maximum |
 
 ### Notes
 

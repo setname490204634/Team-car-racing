@@ -197,7 +197,7 @@ public class CarController : MonoBehaviour
 
     private float DecodeByteToNormalized(byte value)
     {
-        return (value - 128f) / 127f;  // 128 = neutral
+        return (value - 128f) / 128f;  // 128 = neutral
     }
 
     private void OnCollisionEnter(Collision collision)

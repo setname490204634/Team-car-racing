@@ -37,7 +37,7 @@ public class Rewards
     //placement reward scaling starts from 1!!
     private static readonly int[] placementPoints = new int[]
     {
-        0, 25, 18, 14, 12, 10, 8, 6, 4, 2, 0
+        0, 25, 18, 15, 12, 10, 8, 6, 4, 2, 0
     };
 
     public Rewards(CarAgent agent, gameControlScript gameControl, GameObject carObject, RewardConfig cfg, int? teammateID = null)

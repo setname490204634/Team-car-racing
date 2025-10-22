@@ -74,12 +74,13 @@ public class gameControlScript : MonoBehaviour
 
     void Start()
     {
+        SetRealtimeMode();
         InitializeCars();
 
         InitializeNetworking();
 
         Physics.simulationMode = SimulationMode.Script;
-        updateSimulationFramerate();
+        UpdateSimulationDeltaTime();
     }
     void Update()
     {
@@ -90,25 +91,24 @@ public class gameControlScript : MonoBehaviour
 
         if (state == State.Running)
         {
-            // Wait until we have full instruction set
-            while (instructionBuffer.HasAll() != true)
-            {
-                Thread.Sleep(0);//wait for thread to be activated
-            }
-            var instructions = instructionBuffer.ConsumeAll();
-            ApplyCarInputs(instructions);
+            tickCount++;
+            Physics.Simulate(fixedDt);
+            HandleCarCollisions();
 
-            // Simulate N frames
-            for (int i = 0; i < framesPerObservation; i++)
+            if (tickCount % framesPerObservation == 0)
             {
-                tickCount++;
-                HandleCarCollisions();
-                Physics.Simulate(fixedDt);
-            }
+                // Wait until we have full instruction set
+                while (instructionBuffer.HasAll() != true)
+                {
+                    Thread.Sleep(0);//wait for thread to be activated
+                }
+                var instructions = instructionBuffer.ConsumeAll();
+                ApplyCarInputs(instructions);
 
-            // After simulating N frames, collect + send observations
-            transmitter.CollectObservations();
-            transmitter.SendObservations();
+                // After simulating N frames, collect + send observations
+                transmitter.CollectObservations();
+                transmitter.SendObservations();
+            }
         }
     }
 
@@ -137,7 +137,7 @@ public class gameControlScript : MonoBehaviour
                 car.raceState.crossedFinish = true;
 
                 car.raceState.lapCount++;
-                float lapTime = this.tickCount*fixedDt - car.raceState.lastLapTotalTime;
+                float lapTime = this.tickCount * fixedDt - car.raceState.lastLapTotalTime;
                 car.raceState.bestLapTime = Math.Max(car.raceState.bestLapTime, lapTime);
                 car.raceState.lastLapTotalTime = this.tickCount * fixedDt;
                 car.raceState.currentLapTime = lapTime;
@@ -186,7 +186,7 @@ public class gameControlScript : MonoBehaviour
         var _ = UnityMainThreadDispatcher.Instance();
     }
 
-    private void updateSimulationFramerate()
+    private void UpdateSimulationDeltaTime()
     {
         fixedDt = 1f / fixedHz;
         Time.fixedDeltaTime = fixedDt;
@@ -208,8 +208,12 @@ public class gameControlScript : MonoBehaviour
                 raceState = new CarRaceState()
             };
 
-            int teammateID = index + 1;
-            if (teammateID % 2 == 1) teammateID -= 2;
+            int? teammateID = null;
+            if (assignedCarObjects.Count >= index + 1)
+            {
+                teammateID = index + 1;
+                if (teammateID % 2 == 0) teammateID -= 2;
+            }
             entry.rewards = new Rewards(entry.agent, this, obj, Rewards.Default, teammateID);
 
             cars.Add(entry);
@@ -299,6 +303,18 @@ public class gameControlScript : MonoBehaviour
         Debug.Log("Game stopped.");
     }
 
+    void SetRealtimeMode()
+    {
+        QualitySettings.vSyncCount = 1;
+        Application.targetFrameRate = 60;
+    }
+
+    void SetUnlimitedSimulationSpeed()
+    {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = -1;
+    }
+
     private void ProcessCommand(byte command, byte value)
     {
         switch (command)
@@ -309,21 +325,24 @@ public class gameControlScript : MonoBehaviour
             case 1: // shuffle
                 UnityMainThreadDispatcher.Instance().Enqueue(() => ShuffleStartTransforms());
                 break;
-            case 10:
+            case 10: //start the simulation
                 StartGame();
                 break;
-            case 11:
+            case 11: //stop the simulation
                 StopGame();
                 break;
-            case 20:
+            case 20: //update delta time for simulation
                 this.fixedHz = value;
-                updateSimulationFramerate();
+                UpdateSimulationDeltaTime();
                 break;
-            case 21:
+            case 21: //set how often to send observations
                 this.framesPerObservation = value;
                 break;
-            case 50:
-
+            case 30: //normal speed of the simulation
+                SetRealtimeMode();
+                break;
+            case 31: //speed it up as fast as it goes
+                SetUnlimitedSimulationSpeed();
                 break;
             default:
                 Debug.LogWarning("Unknown command byte: " + command);
