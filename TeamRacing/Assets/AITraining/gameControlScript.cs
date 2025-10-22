@@ -81,6 +81,7 @@ public class gameControlScript : MonoBehaviour
 
         Physics.simulationMode = SimulationMode.Script;
         UpdateSimulationDeltaTime();
+        return;
     }
     void Update()
     {
@@ -91,16 +92,13 @@ public class gameControlScript : MonoBehaviour
 
         if (state == State.Running)
         {
-            tickCount++;
-            Physics.Simulate(fixedDt);
-            HandleCarCollisions();
 
             if (tickCount % framesPerObservation == 0)
             {
                 // Wait until we have full instruction set
                 while (instructionBuffer.HasAll() != true)
                 {
-                    Thread.Sleep(0);//wait for thread to be activated
+                    return; //wait
                 }
                 var instructions = instructionBuffer.ConsumeAll();
                 ApplyCarInputs(instructions);
@@ -109,6 +107,10 @@ public class gameControlScript : MonoBehaviour
                 transmitter.CollectObservations();
                 transmitter.SendObservations();
             }
+
+            tickCount++;
+            Physics.Simulate(fixedDt);
+            HandleCarCollisions();
         }
     }
 
@@ -295,6 +297,10 @@ public class gameControlScript : MonoBehaviour
         state = State.Running;
         Debug.Log("Game started.");
         tickCount = 0;
+        //send observations to so the AI knows it started and will not waste first move
+        transmitter.Connect();
+        transmitter.CollectObservations();
+        transmitter.SendObservations();
     }
 
     private void StopGame()

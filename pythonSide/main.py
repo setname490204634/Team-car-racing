@@ -1,41 +1,50 @@
 import sys
 import time
 import sender
-import reciever
+from reciever import ObservationReceiver
 import threading
+
+# --- Configuration ---
+NUM_CARS = 2  # change this to the number of cars in Unity
+STEERING_NEUTRAL = 128
+THROTTLE_NEUTRAL = 128
 
 if __name__ == "__main__":
     # Start observation receiver in background thread
-    receiver_thread = threading.Thread(target=reciever.receive_observations, daemon=True)
-    receiver_thread.start()
-    
-    # Start Unity transmitter
-    # sender.send_command(50, 0)
+    obs_receiver = ObservationReceiver()
+    obs_receiver.start()
 
+    # Optionally connect transmitter (if you have a command for that)
+    sender.send_command(10, 0)
 
-    while True:
-        print("\nChoose command:")
-        print("0 → Reset Cars")
-        print("1 → Shuffle Cars")
-        print("q → Quit")
-        print("Or enter command and value separated by space, e.g. '1 5'")
+    # Initialize a dummy control state for each car
+    car_controls = [{"steer": 255, "throttle": 255} for _ in range(NUM_CARS)]
 
-        choice = input("Enter: ").strip()
-        if choice.lower() == "q":
-            sys.exit(0)
+    try:
+        while True:
+            # --- Wait until we have at least one observation per car ---
+            observations = []
+            while not observations:
+                observations = obs_receiver.collect_observations()  # collect and empty buffer
+                if not observations:
+                    time.sleep(0.001)  # very short sleep to yield CPU
 
-        parts = choice.split()
-        if len(parts) == 0:
-            print("Invalid input. Try again.")
-            continue
+            # --- Process observations ---
+            for obs in observations:
+                # Currently do nothing; could add AI or logging here
+                pass
 
-        try:
-            command_byte = int(parts[0])
-            value_byte = int(parts[1]) if len(parts) > 1 else 0
-            sender.send_command(command_byte, value_byte)
-        except ValueError:
-            print("Invalid input. Enter integers only.")
-        except Exception as e:
-            print(f"Error sending command: {e}")
+            # --- Send instructions back to Unity ---
+            for i, ctrl in enumerate(car_controls):
+                sender.send_car_instruction(
+                    car_index=i,
+                    steering=ctrl["steer"],
+                    throttle=ctrl["throttle"]
+                )
 
-        time.sleep(0.2)
+            # Optional: throttle loop slightly to avoid CPU burn
+            time.sleep(0.0001)  # minimal sleep
+
+    except KeyboardInterrupt:
+        print("Exiting...")
+        sys.exit(0)
