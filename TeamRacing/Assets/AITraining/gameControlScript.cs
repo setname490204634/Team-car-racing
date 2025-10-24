@@ -41,8 +41,8 @@ public class gameControlScript : MonoBehaviour
     [Header("Assign cars in Inspector")]
     public List<GameObject> assignedCarObjects;  // inspector list only
 
-    private List<CarEntry> cars = new List<CarEntry>();
-    private List<TransformEntry> startTransforms = new List<TransformEntry>();
+    private List<CarEntry> cars = new List<CarEntry>(); //never change order of cars! (it is used as index)
+    private List<TransformEntry> startTransforms = new List<TransformEntry>(); //starting locations, this can be permutated
     private int lapCount = 5;
     public List<int> winners = new List<int>();
 
@@ -71,16 +71,19 @@ public class gameControlScript : MonoBehaviour
 
     private enum State { Idle, WaitingToStart, Running, Stopped }
     private State state = State.Idle;
+    private bool observationsSent = false;
 
     void Start()
     {
+        //The simulation will run in real time
         SetRealtimeMode();
+        Physics.simulationMode = SimulationMode.Script;
+        UpdateSimulationDeltaTime();
+
         InitializeCars();
 
         InitializeNetworking();
 
-        Physics.simulationMode = SimulationMode.Script;
-        UpdateSimulationDeltaTime();
         return;
     }
     void Update()
@@ -92,24 +95,27 @@ public class gameControlScript : MonoBehaviour
 
         if (state == State.Running)
         {
-
+            //every framesPerObservation frame get instructions and send observations
             if (tickCount % framesPerObservation == 0)
             {
+                if (observationsSent == false)
+                {
+                    // After simulating N frames, collect + send observations
+                    transmitter.CollectObservations();
+                    transmitter.SendObservations();
+                    observationsSent = true;
+                }
                 // Wait until we have full instruction set
                 while (instructionBuffer.HasAll() != true)
                 {
                     return; //wait
                 }
+                observationsSent = false;
                 var instructions = instructionBuffer.ConsumeAll();
                 ApplyCarInputs(instructions);
-
-                // After simulating N frames, collect + send observations
-                transmitter.CollectObservations();
-                transmitter.SendObservations();
             }
-
-            tickCount++;
             Physics.Simulate(fixedDt);
+            tickCount++;
             HandleCarCollisions();
         }
     }
@@ -174,6 +180,7 @@ public class gameControlScript : MonoBehaviour
         return cars[id].carObject;
     }
 
+    //start both recievers
     private void InitializeNetworking()
     {
         running = true;
@@ -194,6 +201,7 @@ public class gameControlScript : MonoBehaviour
         Time.fixedDeltaTime = fixedDt;
     }
 
+    //will fill the carEntry list "cars"
     private void InitializeCars()
     {
         int index = 0;
@@ -229,6 +237,8 @@ public class gameControlScript : MonoBehaviour
             index++;
         }
 
+        // since i wanted to avoid creating buffer for car instructions before the list is filled buffers are created here
+        // even when its not a logically good place is better than having inicialization order
         instructionBuffer = new InstructionBuffer(cars.Count);
         commandBuffer = new GameCommandBuffer();
         transmitter = new CarObservationTransmitter("127.0.0.1", observationTransmitterPort, cars);
@@ -261,12 +271,13 @@ public class gameControlScript : MonoBehaviour
             // clear inputs so car doesn't immediately move again
             if (entry.inputProvider != null)
             {
-                entry.inputProvider.SetInput(new CarInput());
+                entry.inputProvider.SetInput(CarInput.Default);
             }
         }
         Debug.Log("Cars have been reset.");
     }
 
+    // will permutate starting locations randomly
     public void ShuffleStartTransforms()
     {
         System.Random rng = new System.Random();
@@ -282,7 +293,7 @@ public class gameControlScript : MonoBehaviour
         Debug.Log("Start positions have been randomized.");
     }
 
-    // Apply inputs directly to cars by index
+    // Apply inputs directly to car inputProviders by car index
     public void ApplyCarInputs(List<(CarInput input, int carIndex)> inputs)
     {
         foreach (var (input, carIndex) in inputs)
@@ -299,8 +310,7 @@ public class gameControlScript : MonoBehaviour
         tickCount = 0;
         //send observations to so the AI knows it started and will not waste first move
         transmitter.Connect();
-        transmitter.CollectObservations();
-        transmitter.SendObservations();
+        observationsSent = false;
     }
 
     private void StopGame()
@@ -331,23 +341,29 @@ public class gameControlScript : MonoBehaviour
             case 1: // shuffle
                 UnityMainThreadDispatcher.Instance().Enqueue(() => ShuffleStartTransforms());
                 break;
-            case 10: //start the simulation
+            case 2: // set lap count
+                this.lapCount = value;
+                break;
+            case 3: // change map
+                // unfinished
+                break;
+            case 10: // start the simulation
                 StartGame();
                 break;
-            case 11: //stop the simulation
+            case 11: // stop the simulation
                 StopGame();
                 break;
-            case 20: //update delta time for simulation
+            case 20: // update delta time for simulation
                 this.fixedHz = value;
                 UpdateSimulationDeltaTime();
                 break;
-            case 21: //set how often to send observations
+            case 21: // set how often to send observations
                 this.framesPerObservation = value;
                 break;
-            case 30: //normal speed of the simulation
+            case 30: // normal speed of the simulation
                 SetRealtimeMode();
                 break;
-            case 31: //speed it up as fast as it goes
+            case 31: // speed it up as fast as it goes
                 SetUnlimitedSimulationSpeed();
                 break;
             default:

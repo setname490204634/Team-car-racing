@@ -228,7 +228,8 @@ header, image = reciever.receive_observations()
 |-----------------|------------------|-----------------|
 | `0` | `-` | Reset all cars to the start block |
 | `1` | `-` | Randomly shuffle car starting positions |
-| `2` | `x` | Swap map to maps[x] |
+| `2` | `x` | set lap count to x |
+| `3` | `x` | Swap map to maps[x] |
 | `10` | `-` | Start the game |
 | `11` | `-` | Stop the game |
 | `20` | `x` | Set the simulation refresh rate (that translates to delta time) |

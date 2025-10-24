@@ -22,14 +22,14 @@ public class FreeCameraController : MonoBehaviour
 
     void Update()
     {
-        // --- Mouse Look ---
+        // Mouse Look
         yaw += Input.GetAxis("Mouse X") * lookSpeed;
         pitch -= Input.GetAxis("Mouse Y") * lookSpeed;
         pitch = Mathf.Clamp(pitch, -89f, 89f);
 
         transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
 
-        // --- Movement ---
+        // Movement
         float speed = moveSpeed;
         if (Input.GetKey(KeyCode.LeftShift)) speed *= fastMultiplier;
         if (Input.GetKey(KeyCode.LeftControl)) speed *= slowMultiplier;

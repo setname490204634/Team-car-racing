@@ -4,6 +4,7 @@ using System.Threading;
 
 public class InstructionBuffer
 {
+    // Since the buffer is accessed from game loop and reciever it has to be locked to avoid race conditions
     private readonly object lockObj = new object();
     private readonly Dictionary<int, CarInput> latest = new Dictionary<int, CarInput>();
 
@@ -24,8 +25,7 @@ public class InstructionBuffer
         }
     }
 
-    // Read and clear the buffer atomically on the main thread
-    // Returns a list of (CarInput, index) tuples to apply
+    // Returns and clears the buffer
     public List<(CarInput input, int carIndex)> ConsumeAll()
     {
         lock (lockObj)
@@ -50,6 +50,7 @@ public class InstructionBuffer
 
 public class GameCommandBuffer
 {
+    // Since the buffer is accessed from game loop and reciever it has to be locked to avoid race conditions
     private readonly object lockObj = new object();
     private readonly Queue<(byte, byte)> commands = new Queue<(byte, byte)>();
 
@@ -63,6 +64,7 @@ public class GameCommandBuffer
     }
 
     // Called by main thread
+    // Returns and clears the buffer
     public List<(byte, byte)> ConsumeAll()
     {
         lock (lockObj)

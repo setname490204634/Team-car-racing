@@ -16,7 +16,7 @@ public struct RewardConfig
     public float teamPlacementWeight;
 }
 
-public class Rewards
+public class Rewards : ICarRewardProvider
 {
     private RewardConfig config;
     private Rigidbody rb;
@@ -34,7 +34,7 @@ public class Rewards
 
     const float idealDistance = 10f; //for closeness reward
 
-    //placement reward scaling starts from 1!!
+    //placement reward scaling starts from index 1 and not 0!
     private static readonly int[] placementPoints = new int[]
     {
         0, 25, 18, 15, 12, 10, 8, 6, 4, 2, 0
@@ -54,18 +54,19 @@ public class Rewards
 
     public float CalculateReward()
     {
+        // sum of rewards the weights are calculated in methods
         float total = 0f;
 
-        total += config.speedWeight * SpeedReward();
-        total += config.steeringSmoothnessWeight * SteeringSmoothnessReward();
-        total += config.throttleSmoothnessWeight * ThrottleSmoothnessReward();
-        total += config.collisionPenaltyWeight * CollisionPenalty();
-        total += config.teamDistanceWeight * TeamDistanceReward();
-        total += config.lapTimeWeight * LapTimeReward();
-        total += config.placementWeight * PlacementReward();
-        total += config.teamPlacementWeight * TeamPlacementReward();
+        total += SpeedReward();
+        total += SteeringSmoothnessReward();
+        total += ThrottleSmoothnessReward();
+        total += CollisionPenalty();
+        total += TeamDistanceReward();
+        total += LapTimeReward();
+        total += PlacementReward();
+        total += TeamPlacementReward();
 
-        collided = false; // reset for next frame
+        // reset it here since its used at 2 places
         lastInput = carAgent.agentInputProvider.getInput();
 
         return total;
@@ -74,87 +75,95 @@ public class Rewards
     // Speed along local X
     private float SpeedReward()
     {
+        if (config.speedWeight == 0f) return 0f;
+
         Vector3 velocity = rb.linearVelocity;
         Vector3 localVelocity = carObject.transform.InverseTransformDirection(velocity);
 
         // Reward forward (local X axis) speed
-        return localVelocity.x;
+        return config.speedWeight * localVelocity.x;
     }
 
     // Steering change penalty
     private float SteeringSmoothnessReward()
     {
-        return -Mathf.Abs(carAgent.agentInputProvider.getInput().Steering - lastInput.Steering);
+        if (config.steeringSmoothnessWeight == 0f) return 0f;
+
+        float delta = Mathf.Abs(carAgent.agentInputProvider.getInput().Steering - lastInput.Steering);
+        return config.steeringSmoothnessWeight * -delta;
     }
 
     // Throttle change penalty
     private float ThrottleSmoothnessReward()
     {
-        return -Mathf.Abs(carAgent.agentInputProvider.getInput().Throttle - lastInput.Throttle);
+        if (config.throttleSmoothnessWeight == 0f) return 0f;
+
+        float delta = Mathf.Abs(carAgent.agentInputProvider.getInput().Throttle - lastInput.Throttle);
+        return config.throttleSmoothnessWeight * -delta;
     }
 
     // Collision penalty
     private float CollisionPenalty()
     {
+        if (config.collisionPenaltyWeight == 0f) return 0f;
+
         float output = collided ? -1f : 0f;
         collided = false;
-        return output;
+        return config.collisionPenaltyWeight * output;
     }
 
-    // Called from CarAgents OnCollisionEnter
-    public void RegisterCollision()
-    {
-        collided = true;
-    }
+    //Called from CarAgents OnCollisionEnter
+    public void RegisterCollision() { collided = true; }
 
     // Distance from teammate
     private float TeamDistanceReward()
     {
+        if (config.teamDistanceWeight == 0f) return 0f;
         if (teammateID == null) return 0f;
 
         GameObject teammate = gameControl.GetCarByID(teammateID.Value);
+        if (teammate == null) return 0f;
 
-        Vector3 myPos = carObject.transform.position;
-        Vector3 matePos = teammate.transform.position;
-
-        float distance = Vector3.Distance(myPos, matePos);
-        return Mathf.Clamp01((distance - idealDistance) / 50f); // normalize over 50m max
+        float distance = Vector3.Distance(carObject.transform.position, teammate.transform.position);
+        float normalized = Mathf.Clamp01((distance - idealDistance) / 50f);
+        return config.teamDistanceWeight * normalized;
     }
 
     // Lap time reward
     private float LapTimeReward()
     {
+        if (config.lapTimeWeight == 0f) return 0f;
+
         float output = lastLapTime;
         lastLapTime = 0;
-        return output;
+        return config.lapTimeWeight * output;
     }
 
-    public void RegisterLapTime(float lapTime)
-    {
-        this.lastLapTime = lapTime;
-    }
+    public void RegisterLapTime(float lapTime) { this.lastLapTime = lapTime; }
 
-    // Placement reward (final)
+    // Placement reward
     private float PlacementReward()
     {
+        if (config.placementWeight == 0f) return 0f;
         if (finalPlacement == -1 || finalPlacement >= placementPoints.Length) return 0f;
-        float output = (float)placementPoints[finalPlacement];
+
+        float output = placementPoints[finalPlacement];
         finalPlacement = -1;
-        return output;
+        return config.placementWeight * output;
     }
 
-    public void RegisterFinalPlacement(int place)
-    {
-        this.finalPlacement = place;
-    }
+    public void RegisterFinalPlacement(int place) { this.finalPlacement = place; }
 
     // Team placement reward
+    // rewards car for teammate placement
     private float TeamPlacementReward()
     {
+        if (config.teamPlacementWeight == 0f) return 0f;
         if (finalTeammatePlacement == -1 || finalTeammatePlacement >= placementPoints.Length) return 0f;
-        float output = (float)placementPoints[finalTeammatePlacement];
+
+        float output = placementPoints[finalTeammatePlacement];
         finalTeammatePlacement = -1;
-        return output;
+        return config.teamPlacementWeight * output;
     }
 
     public void RegisterFinalTeammatePlacement(int place)

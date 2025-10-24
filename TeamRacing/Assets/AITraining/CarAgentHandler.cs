@@ -5,6 +5,7 @@ using System;
 [RequireComponent(typeof(ICarInputProvider))]
 public class CarAgent : MonoBehaviour, ICarObserver
 {
+    // Build on carController working as agent
     private CarController car;
 
     [Header("Settings")]
@@ -59,9 +60,9 @@ public class CarAgent : MonoBehaviour, ICarObserver
 
     public CarObservation GetCarObservation()
     {
-        // Example max values; adjust based on your car
-        const float maxSpeed = 100f;      // m/s or km/h depending on your unit
-        const float maxSteering = 180f;   // degrees, max wheel rotation
+        // Example max values
+        const float maxSpeed = 100f;
+        const float maxSteering = 180f;
 
         // Convert float -> byte
         byte speedByte = (byte)Mathf.Clamp(Mathf.RoundToInt(car.GetSpeed() / maxSpeed * 255f), 0, 255);

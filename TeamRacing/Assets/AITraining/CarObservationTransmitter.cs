@@ -41,9 +41,7 @@ public class CarObservationTransmitter
         client?.Close();
     }
 
-    /// <summary>
-    /// Collect observations from all cars on the main Unity thread.
-    /// </summary>
+    // Collect observations from all cars on the main Unity thread.
     public void CollectObservations()
     {
         lock (lockObj)
