@@ -1,34 +1,38 @@
 # DOCUMENTATION
-- Unity side is used as simulation for cars, it can take driving input from network connection as well as send output including visual.
+- Unity side is used as simulation for cars, it can take driving input from network connection as well as send observations including visual. Python side recieves observations calculates instructions and sends them back to unity side.
+
+- comments in code and the code itself is part of documentation
 
 ## files and folders
 
-## TeamRacing/Assets
-### /Scenes
+### /TeamRacing/Assets
+#### /Scenes
 - Cars.unity, includes car prefabs
 - Freeplay.unity, used to test car driving and maps, it has 1 car connected to user input in the unity.
 - RoadTiles.unity, contains road tiles prefabs, it is used to edit and add tiles
 - Maps.unity, here are build maps from tiles also in prefab form
 - MainScene.unity, used to run enviroment
 
-### /Roads
+#### /Roads
 - contains road tiles prefabs
 - grass, road, wall, finish line materials
 - wall prefabs
+- halfway hitbox (as checkpoint)
 
-### /Maps
+#### /Maps
 - contains maps prefabs
 
-### /Cars
+#### /Cars
 - contains car prefabs
 - contains car tyre texture
 - contains car colours as materials
 - contains mirror prefabs
+
 - ICarInputProvider.cs, interface that is used by a car to request input
 - ICarObserver.cs, used to request output from car sensors, cameras speed, steering
-- ICarRewardProvider.cs, not used now
+- ICarRewardProvider.cs, used for rewards
 
-- CarController.cs, 
+- CarController.cs, handles the driving in depth described later
 
 - AgentInputProvider.cs, simple implementation of ICarInputProvider for agents
 - PlayerCarInput.cs, WSAD input implemented as ICarInputProvider
@@ -38,7 +42,7 @@
 
 - CarFollowCamera.cs, used to move camera with car
 
-### /AITraining
+#### /AITraining
 - CarAgentHandler.cs, represents unity instance of agent, connects cameras to output and agent input to car controller
 - CarObservationSerializer.cs, packs observation into byte array
 - CarObservationTransmitter.cs, sends packed observation via network
@@ -47,21 +51,92 @@
 - UnityMainThreadDispatcher.cs, used to execute tasks on main thread.
 - Buffers.cs, used to buffer packets from communication
 
-## pythonSide
+### /pythonSide
 
 - main.py, runs comumnication
 - sender.py, sends car driving instructions to unity
 - reciever.py, recievs and unpacks observation from unity
 
-## Editing and Adding Roads
+### Important files in depth
 
-## Important files in depth
+#### TeamRacing/Assets/AITraining/GameControlScript.cs + TeamRacing/pythonSide/main.py + recievers
+- Here is the main loop that controls the simulation and connects everything together
+- the program works on 4 threads each having its loop
+- - 1 reciever loop one on python side, listening for observations
+- - 1 reciever loop one on unity side, listening for commands and car instructions
+- - it has to be in separate loop to not lose packets in case the main thread would be too busy. Both loops store the recieved packets to buffers from where the main threads collect it.
+- - Unity main thread that runs update method(s), this update method is called based on framerate and is not dependent on the time running in the simulation, the simulation could be stopped and the update would still be called. The loop works efectively works like this:
+- - 1. send observations
+- - 2. recieve driving instructions from python
+- - 3. simulate
+- - 4. back to 1.
+- - This code snipped shows the order and logic of the operations (simplified)
+```C#
+void Update()
+    {
+        // This empties the command buffer and runs the commands (command to start the game for example)
+        var commands = commandBuffer.ConsumeAll();
+         // checks if the simulation is stopped or running
+        if (state == State.Running)
+        {
+            //every framesPerObservation frame get instructions and sends observations
+            if (tickCount % framesPerObservation == 0) //this is true only every framesPerObservation frame
+            {
+                if (observationsSent == false) // this is here to check if the observations were send so its not duplicite
+                {
+                    // send observations
+                    transmitter.CollectObservations();
+                    transmitter.SendObservations();
+                    observationsSent = true;
+                }
+                // Wait until we have full instruction set
+                while (instructionBuffer.HasAll() != true)
+                {
+                    return; //if the instructions are not complete this will exit the update. that will result to getting here the next frame, since observationsSent is true this works as wait loop for python side to send car instructions.
+                }
+                observationsSent = false;
+                var instructions = instructionBuffer.ConsumeAll();// empty car instruction buffer
+                ApplyCarInputs(instructions);
+            }
+            Physics.Simulate(fixedDt);//simulate next physics frame
+            tickCount++;
+            HandleCarCollisions();// ask cars if they collided, or passed checkpoins. this will flip some flags to keep track of laps, lap times, negative crash rewards...
+        }
+    }
+```
+- - python main loop
+- - 1. wait to recieve observations
+- - 2. computate driving instructions based on observations
+- - 3. send instructions
+- - 4. back to 1.
 
-### TeamRacing/Assets/AITraining/GameControlScript.cs
-- game loop and how the enviroment works
+#### TeamRacing/Assets/cars/carController.cs
+- controls how the car behaves, it works based on unity wheel collider with modifications, like downforce, surface based grip, custom breaking...
+- this snipped shows how the car works in detail (simplified)
+```C#
+void FixedUpdate()
+{
+   CarInput input = inputProvider.getInput(); //the input provider has stored input from agent for example
+   ApplySteering(input); //simply turns the wheels, if the input has speed sensitive steering devides the steering input by a constant.
 
-### TeamRacing/Assets/cars/carController.cs
-- how the car behaves
+   // Surface grip multipliers
+   AdjustWheelGripAndSpeed(Wheels);
+
+   // Throttle / brake logic
+   ApplyMotorTorqueAndBrakes(throttleInput);
+
+   // Downforce, its linear instead of real world quadratic relation
+   float currentDownforce = downforce * rb.linearVelocity.magnitude;
+   rb.AddForce(-transform.up * currentDownforce);
+
+   // Apply final grip scaling
+   SetWheelFriction(FrontWheels, gripMultiplierWithDownforce * 0.9f); //reducing the front wheel grip results in understeer slide instead of oversteer. Counter intuitively reducing grip makes the car more controllable.
+   SetWheelFriction(BackWheels, gripMultiplierWithDownforce);
+
+   UpdateAllWheelVisuals();//visual mode rotation and steering
+}
+```
+## Editing roads, maps, cars
 
 ### Edit and Add Roads
 
@@ -86,8 +161,6 @@
 5. Saving and Prefab Creation  
    - If you create a new road or modify an existing one, make sure to save it as a prefab.  
    - Add new or updated road prefabs to the `/Assets/Roads` directory.
-
-## Creating Maps
 
 ### Add or Edit Maps
 
@@ -182,6 +255,7 @@ Unity side is used as simulation for cars, it can take driving input from networ
 
 ### Communication Protocol
 
+- bytes are unsigned (0-255)
 - Observation Packet (Unity -> Python)
 
   * 10 bytes Header: 
@@ -242,5 +316,3 @@ header, image = reciever.receive_observations()
 * Merged image simplifies Python side by combining left/right cameras.
 * RGB24 format ensures 8 bits per channel with no transparency.
 * Unity and Python ports must match for successful communication.
-* Use threading or async to receive observations while sending commands for real-time control.
-
