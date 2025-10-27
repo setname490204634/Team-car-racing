@@ -1,50 +1,37 @@
-import sys
-import time
-import sender
-from reciever import ObservationReceiver
-import threading
+import os
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
+from stable_baselines3.common.callbacks import CheckpointCallback
+from UnitySingleCarEnv import UnityCarEnv  # your environment class
 
-# --- Configuration ---
-NUM_CARS = 2  # change this to the number of cars in Unity
-STEERING_NEUTRAL = 128
-THROTTLE_NEUTRAL = 128
+os.makedirs("models", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
 
-if __name__ == "__main__":
-    # Start observation receiver in background thread
-    obs_receiver = ObservationReceiver()
-    obs_receiver.start()
+unity_env = UnityCarEnv()
+env = DummyVecEnv([lambda: unity_env])  # single instance
+env = VecTransposeImage(env)  # transpose images if needed for CNN
 
-    # Optionally connect transmitter (if you have a command for that)
-    sender.send_command(10, 0)
+model = PPO(
+     policy="MultiInputPolicy",
+    env=env,
+    verbose=1,
+    batch_size=64,
+    n_steps=2048,
+    learning_rate=3e-4,
+    gamma=0.99,
+    tensorboard_log="./logs/"
+)
 
-    # Initialize a dummy control state for each car
-    car_controls = [{"steer": 255, "throttle": 255} for _ in range(NUM_CARS)]
+checkpoint_callback = CheckpointCallback(
+    save_freq=10000,
+    save_path="./models/",
+    name_prefix="ppo_unity_car"
+)
 
-    try:
-        while True:
-            # --- Wait until we have at least one observation per car ---
-            observations = []
-            while not observations:
-                observations = obs_receiver.collect_observations()  # collect and empty buffer
-                if not observations:
-                    time.sleep(0.001)  # very short sleep to yield CPU
+total_timesteps = 5000000
+model.learn(total_timesteps=total_timesteps, callback=checkpoint_callback)
 
-            # --- Process observations ---
-            for obs in observations:
-                # Currently do nothing; could add AI or logging here
-                pass
+model.save("./models/ppo_unity_car_final")
+env.close()
 
-            # --- Send instructions back to Unity ---
-            for i, ctrl in enumerate(car_controls):
-                sender.send_car_instruction(
-                    car_index=i,
-                    steering=ctrl["steer"],
-                    throttle=ctrl["throttle"]
-                )
-
-            # Optional: throttle loop slightly to avoid CPU burn
-            time.sleep(0.0001)  # minimal sleep
-
-    except KeyboardInterrupt:
-        print("Exiting...")
-        sys.exit(0)
+print("Training complete. Final model saved.")
