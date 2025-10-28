@@ -10,12 +10,13 @@ os.makedirs("models", exist_ok=True)
 os.makedirs("logs", exist_ok=True)
 
 # --- Environment ---
-unity_env = UnityCarEnv()
-env = DummyVecEnv([lambda: unity_env])
+def make_env():
+    return UnityCarEnv()
+env = DummyVecEnv([make_env])
 env = VecTransposeImage(env)
 
 # --- Load existing model ---
-model_path = "./models/ppo_unity_car_30000_steps.zip"
+model_path = "./models/ppo_unity_car_44000_steps.zip"
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Model file {model_path} not found. Train a model first.")
 
@@ -30,7 +31,7 @@ checkpoint_callback = CheckpointCallback(
 )
 
 # --- Continue training ---
-additional_timesteps = 5000000  # adjust as needed
+additional_timesteps = 10000000  # adjust as needed
 model.learn(total_timesteps=additional_timesteps, callback=checkpoint_callback)
 
 # --- Save final model ---

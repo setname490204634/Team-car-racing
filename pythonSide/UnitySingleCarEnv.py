@@ -27,15 +27,15 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver.start()
 
         sender.send_command(31, 0)  # simulation speed: unlimited
-        sender.send_command(21, 5)  # send observations every frame
+        # sender.send_command(21, 5)
 
         # --- Internal state ---
         self.current_step = 0
-        self.max_steps = 1200
+        self.max_steps = 500
         self.episode_reward = 0.0
         self.prev_action = np.zeros(self.action_space.shape, dtype=np.float32)
         self.filtered_action = np.zeros(self.action_space.shape, dtype=np.float32)
-        self.filter_alpha = 0.6  # action smoothing coefficient (0 = no smoothing)
+        self.filter_alpha = 0.6
 
 
     def _build_observation(self, obs_packet):
@@ -81,20 +81,20 @@ class UnityCarEnv(gym.Env):
 
         obs_packet = self.obs_receiver.collect_observations()[-1]
 
-        # --- Reward shaping ---
-        speed = obs_packet.speed / 255.0
-        delta_action = np.sum(np.abs(action - self.prev_action))
-
-        # Positive reward for moving fast, small penalty for jerky input
-        reward = (speed * 1.0) - (delta_action * 0.05)
-        reward = float(np.clip(reward, -5.0, 5.0))  # stabilize PPO training
+        reward = obs_packet.reward
 
         # --- Update step counters ---
         self.prev_action = np.clip(action, -1.0, 1.0)
         self.current_step += 1
         self.episode_reward += reward
-
+        
+        truncated = False
         done = self.current_step >= self.max_steps
+
+        if reward < -200:  # crash condition
+            truncated = True
+            done = True  # override max_steps if crash happens
+
         info = {}
         if done:
             info = {"episode": {"r": self.episode_reward, "l": self.current_step}}
@@ -102,7 +102,7 @@ class UnityCarEnv(gym.Env):
             self.episode_reward = 0.0
 
         obs = self._build_observation(obs_packet)
-        return obs, reward, done, False, info  # truncated=False
+        return obs, reward, done, truncated, info
 
     def close(self):
         if self.obs_receiver is not None:
