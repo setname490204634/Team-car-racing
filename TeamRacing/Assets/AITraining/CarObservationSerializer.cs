@@ -4,7 +4,7 @@ using System;
 public static class CarObservationSerializer
 {
     // Packs merged (RGB24) image + speed + steering + carID + reward
-    public static byte[] PackCarObservation(CarObservation observation, int carID, float reward)
+    public static byte[] PackCarObservation(CarObservation observation, int carID, Rewards reward)
     {
         RenderTexture leftRT = observation.leftCameraTexture;
         RenderTexture rightRT = observation.rightCameraTexture;
@@ -37,7 +37,10 @@ public static class CarObservationSerializer
         byte speedByte = observation.Speed;
         byte steerByte = observation.SteeringAngle;
         byte[] idBytes = BitConverter.GetBytes(carID);
-        byte[] rewardBytes = BitConverter.GetBytes(reward);
+        float[] rewardArray = reward.ToArray();
+        byte[] rewardBytes = new byte[rewardArray.Length * sizeof(float)];
+        Buffer.BlockCopy(rewardArray, 0, rewardBytes, 0, rewardBytes.Length);
+
 
         byte[] header = new byte[10];
         header[0] = speedByte;

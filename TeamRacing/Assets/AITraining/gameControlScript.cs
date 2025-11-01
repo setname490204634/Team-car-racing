@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using UnityEngine;
+using static UnityEngine.Rendering.GPUSort;
 
 public class gameControlScript : MonoBehaviour
 {
@@ -24,7 +25,7 @@ public class gameControlScript : MonoBehaviour
         public GameObject carObject;
         public CarAgent agent; //can be null
         public ICarInputProvider inputProvider;
-        public Rewards rewards;
+        public RewardsCalculator rewards;
         public CarRaceState raceState;
         public CarController controller;
     }
@@ -70,7 +71,9 @@ public class gameControlScript : MonoBehaviour
     private bool observationsSent = false;
 
     void Start()
-    {
+    {;
+        InitializePortsFromArgs(Environment.GetCommandLineArgs());
+
         Application.runInBackground = true;
         //The simulation will run in real time
         SetRealtimeMode();
@@ -117,16 +120,22 @@ public class gameControlScript : MonoBehaviour
         }
     }
 
+
+
     //checks car collisions with objects and lap track finish and halfway point
     private void HandleCarCollisions()
     {
         for (int i = 0; i < cars.Count; i++)
         {
             CarEntry car = cars[i];
-            (bool collided, bool finish, bool halfway) = car.controller.ConsumeCollisionFlags();
+            (bool collided, bool finish, bool halfway, bool onGrass) = car.controller.ConsumeCollisionFlags();
             if (collided)
             {
                 car.rewards.RegisterCollision();
+            }
+            if (onGrass)
+            {
+                car.rewards.RegisterOnGrass();
             }
 
             //halfway to stop incomplete loops
@@ -151,10 +160,14 @@ public class gameControlScript : MonoBehaviour
                 {
                     this.winners.Add(i);
                     car.rewards.RegisterFinalPlacement(winners.Count);
-                    if (car.rewards.GetTeammateId() != null)
+                    foreach (int ID in car.rewards.teammatesID)
                     {
-                        cars[car.rewards.GetTeammateId().Value].rewards.RegisterFinalTeammatePlacement(winners.Count);
+                        cars[ID].rewards.RegisterFinalTeammatePlacement(winners.Count);
                     }
+                }
+                foreach (int ID in car.rewards.teammatesID)
+                {
+                    cars[ID].rewards.RegisterTeammateLapTime(lapTime);
                 }
                 car.rewards.RegisterLapTime(lapTime);
             }
@@ -177,16 +190,40 @@ public class gameControlScript : MonoBehaviour
         return cars[id].carObject;
     }
 
+    private void InitializePortsFromArgs(string[] args)
+    {
+        for (int i = 0; i < args.Length; i++)
+        {
+            switch (args[i])
+            {
+                case "--controlPort":
+                    if (i + 1 < args.Length && int.TryParse(args[i + 1], out int cPort))
+                        controlPort = cPort;
+                    break;
+
+                case "--carInstructionsPort":
+                    if (i + 1 < args.Length && int.TryParse(args[i + 1], out int instrPort))
+                        carInstructionsPort = instrPort;
+                    break;
+
+                case "--observationPort":
+                    if (i + 1 < args.Length && int.TryParse(args[i + 1], out int obsPort))
+                        observationTransmitterPort = obsPort;
+                    break;
+            }
+        }
+    }
     //start both recievers
     private void InitializeNetworking()
     {
         running = true;
 
+        instructionsThread = new Thread(ListenForCarInstructions) { IsBackground = true };
+        instructionsThread.Start();
+
         controlThread = new Thread(ListenForControlCommands) { IsBackground = true };
         controlThread.Start();
 
-        instructionsThread = new Thread(ListenForCarInstructions) { IsBackground = true };
-        instructionsThread.Start();
 
         // Prepare dispatcher if used elsewhere
         var _ = UnityMainThreadDispatcher.Instance();
@@ -215,13 +252,14 @@ public class gameControlScript : MonoBehaviour
                 raceState = new CarRaceState()
             };
 
-            int? teammateID = null;
+            List<int> teammatesID = new List<int>();
             if (assignedCarObjects.Count > index + 1)
             {
-                teammateID = index + 1;
+                int teammateID = index + 1;
                 if (teammateID % 2 == 0) teammateID -= 2;
+                teammatesID.Add(teammateID);
             }
-            entry.rewards = new Rewards(entry.agent, this, obj, Rewards.Default, teammateID);
+            entry.rewards = new RewardsCalculator(entry.agent, this, obj, teammatesID);
 
             cars.Add(entry);
 

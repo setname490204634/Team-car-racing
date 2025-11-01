@@ -3,15 +3,17 @@ import struct
 import numpy as np
 import threading
 from collections import deque
+from rewards import Rewards
 
 class Observation:
     """Represents a single car observation packet."""
-    def __init__(self, car_id: int, speed: int, steer: int, reward: float, image: np.ndarray):
+    def __init__(self, car_id: int, speed: int, steer: int, rewards: Rewards, image: np.ndarray):
         self.car_id = car_id
         self.speed = speed
         self.steer = steer
-        self.reward = reward
+        self.rewards = rewards
         self.image = image
+
 
 class ObservationReceiver:
     """TCP server to receive Unity observation packets and store them in a buffer."""
@@ -20,20 +22,23 @@ class ObservationReceiver:
         self.host = host
         self.port = port
         self.buffer_size = buffer_size
-        self.observations = deque(maxlen=buffer_size)  # Holds the most recent observations
+        self.observations = deque(maxlen=buffer_size)
         self.lock = threading.Lock()
         self.running = False
 
+        # camera config
         self.CAM_WIDTH = 64
         self.CAM_HEIGHT = 64
         self.MERGED_WIDTH = self.CAM_WIDTH * 2
         self.MERGED_HEIGHT = self.CAM_HEIGHT
         self.BYTES_PER_PIXEL = 3
-        self.HEADER_SIZE = 10
+
+        # Header = 1 (speed) + 1 (steer) + 4 (carID) + 40 (10 floats * 4 bytes)
+        self.NUM_REWARDS = 10
+        self.HEADER_SIZE = 1 + 1 + 4 + self.NUM_REWARDS * 4
         self.expected_packet_size = self.HEADER_SIZE + self.MERGED_WIDTH * self.MERGED_HEIGHT * self.BYTES_PER_PIXEL
 
     def start(self):
-        """Start the TCP server in a separate thread."""
         self.running = True
         threading.Thread(target=self._receive_loop, daemon=True).start()
         print(f"ObservationReceiver started on {self.host}:{self.port}")
@@ -62,7 +67,13 @@ class ObservationReceiver:
 
                                 # Parse header
                                 header = packet[:self.HEADER_SIZE]
-                                speed, steer, car_id, reward = struct.unpack('<BBif', header)
+                                # Unpack speed, steer, car_id, and 10 floats
+                                header_format = '<BBi' + 'f' * self.NUM_REWARDS
+                                unpacked = struct.unpack(header_format, header)
+                                speed, steer, car_id = unpacked[:3]
+                                reward_values = unpacked[3:]
+
+                                rewards = Rewards(*reward_values)
 
                                 # Parse image
                                 img_bytes = packet[self.HEADER_SIZE:]
@@ -70,7 +81,7 @@ class ObservationReceiver:
                                     (self.MERGED_HEIGHT, self.MERGED_WIDTH, 3)
                                 )
 
-                                obs = Observation(car_id, speed, steer, reward, img)
+                                obs = Observation(car_id, speed, steer, rewards, img)
                                 with self.lock:
                                     self.observations.append(obs)
 
@@ -83,14 +94,12 @@ class ObservationReceiver:
                             break
 
     def collect_observations(self):
-        """Return all current observations and empty the buffer."""
         with self.lock:
             obs_list = list(self.observations)
             self.observations.clear()
         return obs_list
 
     def has_min_observations(self, n):
-        """Return True if there are at least n observations in the buffer."""
         with self.lock:
             return len(self.observations) >= n
 

@@ -38,6 +38,7 @@ public class CarController : MonoBehaviour
     private bool collided = false; //crash
     private bool crossedFinish = false;
     private bool crossedHalfway = false;
+    private bool onGrass = false;
 
     void Awake()
     {
@@ -65,6 +66,12 @@ public class CarController : MonoBehaviour
         // Reset multipliers
         currentGripMultiplier = roadGripMultiplier;
         currentSpeedMultiplier = 1f;
+
+        //on grass
+        if (currentSpeedMultiplier == grassSpeedMultiplier)
+        {
+            this.onGrass = true;
+        }
 
         // Adjust grip/speed by surface
         AdjustWheelGripAndSpeed(LFWheel);
@@ -226,12 +233,13 @@ public class CarController : MonoBehaviour
         }
     }
 
-    public (bool collided, bool finish, bool halfway) ConsumeCollisionFlags()
+    public (bool collided, bool finish, bool halfway, bool onGrass) ConsumeCollisionFlags()
     {
-        var result = (collided, crossedFinish, crossedHalfway);
+        var result = (collided, crossedFinish, crossedHalfway, onGrass);
         collided = false;
         crossedFinish = false;
         crossedHalfway = false;
+        onGrass = false;
         return result;
     }
 }

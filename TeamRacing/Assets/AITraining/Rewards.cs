@@ -14,6 +14,23 @@ public struct Rewards
     public float teamLapTime;
     public float placement;
     public float teamPlacement;
+
+    public float[] ToArray()
+    {
+        return new float[]
+        {
+        speed,
+        steeringSmoothness,
+        throttleSmoothness,
+        collisionPenalty,
+        grassPenalty,
+        teamDistance,
+        lapTime,
+        teamLapTime,
+        placement,
+        teamPlacement
+        };
+    }
 }
 
 public class RewardsCalculator : ICarRewardProvider
@@ -22,7 +39,7 @@ public class RewardsCalculator : ICarRewardProvider
     private CarAgent carAgent;
     private GameObject carObject;
     private gameControlScript gameControl;
-    private List<int> teammatesID;
+    public List<int> teammatesID;
 
     private CarInput lastInput;
 

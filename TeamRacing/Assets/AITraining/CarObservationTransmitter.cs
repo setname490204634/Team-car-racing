@@ -58,8 +58,8 @@ public class CarObservationTransmitter
 
 
                 // safe on main thread
-                CarObservation obs = entry.agent.GetCarObservation(); 
-                float reward = entry.rewards.CalculateReward();
+                CarObservation obs = entry.agent.GetCarObservation();
+                Rewards reward = entry.rewards.CalculateReward();
                 // safe on main thread
 
 
