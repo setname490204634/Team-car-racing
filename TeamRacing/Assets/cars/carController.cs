@@ -214,12 +214,12 @@ public class CarController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("FinishLine"))
+        if (other.CompareTag("finishLine"))
         {
             crossedFinish = true;
             // Debug.Log($"{name} crossed the finish line");
         }
-        else if (other.CompareTag("Halfway"))
+        else if (other.CompareTag("halfway"))
         {
             crossedHalfway = true;
             // Debug.Log($"{name} crossed the halfway point");

@@ -27,6 +27,9 @@ public class CarObservationTransmitter
 
     public void Connect()
     {
+        if (connected && client != null && client.Connected)
+            return; // already connected
+
         client = new TcpClient();
         client.Connect(IPAddress.Parse(ip), port);
         stream = client.GetStream();

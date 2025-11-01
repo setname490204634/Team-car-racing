@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Drawing.Text;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 public class gameControlScript : MonoBehaviour
 {
@@ -75,6 +71,7 @@ public class gameControlScript : MonoBehaviour
 
     void Start()
     {
+        Application.runInBackground = true;
         //The simulation will run in real time
         SetRealtimeMode();
         Physics.simulationMode = SimulationMode.Script;
@@ -219,7 +216,7 @@ public class gameControlScript : MonoBehaviour
             };
 
             int? teammateID = null;
-            if (assignedCarObjects.Count >= index + 1)
+            if (assignedCarObjects.Count > index + 1)
             {
                 teammateID = index + 1;
                 if (teammateID % 2 == 0) teammateID -= 2;
