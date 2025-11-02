@@ -2,10 +2,8 @@ import socket
 import struct
 
 HOST = "127.0.0.1"        # Unity is running locally
-CONTROLPORT = 5005        # must match controlPort in Unity
-CARINSTRUCTIONPORT = 5006 # must match carInstructionsPort in Unity
 
-def send_command(command_byte: int, value_byte: int):
+def send_command(command_byte: int, value_byte: int, port: int):
     """
     Send a 2-byte command packet to Unity control server.
     - command_byte: main command (0–255)
@@ -13,7 +11,7 @@ def send_command(command_byte: int, value_byte: int):
     """
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((HOST, CONTROLPORT))
+            s.connect((HOST, port))
             
             # Pack two bytes into a packet
             packet = struct.pack('BB', command_byte & 0xFF, value_byte & 0xFF)
@@ -24,7 +22,7 @@ def send_command(command_byte: int, value_byte: int):
     except Exception as e:
         print(f"Error: {e}")
 
-def send_car_instruction(car_index: int, steering: int, throttle: int):
+def send_car_instruction(car_index: int, steering: int, throttle: int, port: int):
     """
     Send driving instructions to Unity car instructions server.
     - car_index: 32-bit integer car ID
@@ -33,7 +31,7 @@ def send_car_instruction(car_index: int, steering: int, throttle: int):
     """
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((HOST, CARINSTRUCTIONPORT))
+            s.connect((HOST, port))
 
             # Pack 32-bit int + 2 bytes (little-endian)
             packet = struct.pack('<I2B', car_index, steering, throttle)

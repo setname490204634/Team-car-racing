@@ -29,13 +29,13 @@ class UnityCarEnv(gym.Env):
     """Unity Car environment for PPO training and inference."""
 
     def __init__(self,
-                 unity_exe_path: str = "CarSimulation.exe",
+                 unity_exe_path: str = r"TeamRacing\builds\TeamRacing.exe",
                  control_port: int = 5005,
                  car_instr_port: int = 5006,
                  obs_port: int = 5007):
         super().__init__()
 
-        # --- Observation Space (do NOT change!) ---
+        # --- Observation Space ---
         self.observation_space = spaces.Dict({
             "image": spaces.Box(low=0, high=255, shape=(64, 128, 3), dtype=np.uint8),
             "speed": spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32),
@@ -56,14 +56,14 @@ class UnityCarEnv(gym.Env):
 
         # --- Wait until Unity starts and opens its ports ---
         wait_for_port("127.0.0.1", self.control_port)
-        wait_for_port("127.0.0.1", self.obs_port)
+        wait_for_port("127.0.0.1", self.car_instr_port)
 
         # --- Start the receiver ---
         self.obs_receiver = ObservationReceiver(host="0.0.0.0", port=self.obs_port)
         self.obs_receiver.start()
 
         # --- Initialize communication ---
-        sender.send_command(31, 0)  # simulation speed: unlimited
+        sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
 
         # --- Internal state ---
         self.current_step = 0
@@ -74,6 +74,7 @@ class UnityCarEnv(gym.Env):
         self.filter_alpha = 0.6
 
     def _launch_unity(self):
+        # return #uncoment for manual unity launch
         """Launch Unity executable with port arguments."""
         if not os.path.exists(self.unity_exe_path):
             raise FileNotFoundError(f"Unity executable not found: {self.unity_exe_path}")
@@ -106,12 +107,12 @@ class UnityCarEnv(gym.Env):
 
     def reset(self, **kwargs):
         """Reset Unity and return initial observation."""
-        sender.send_command(11, 0)  # stop
-        sender.send_command(0, 0)   # reset cars
-        sender.send_command(10, 0)  # start
+        sender.send_command(11, 0, self.control_port)  # stop
+        sender.send_command(0, 0, self.control_port)   # reset cars
+        sender.send_command(10, 0, self.control_port)  # start
 
         while not self.obs_receiver.has_min_observations(1):
-            time.sleep(0.01)
+            time.sleep(0.0001)
 
         obs_packet = self.obs_receiver.collect_observations()[-1]
         self.current_step = 0
@@ -130,16 +131,16 @@ class UnityCarEnv(gym.Env):
 
         steer_cmd = int((np.clip(self.filtered_action[0], -1, 1) + 1) * 127.5)
         throttle_cmd = int((np.clip(self.filtered_action[1], -1, 1) + 1) * 127.5)
-        sender.send_car_instruction(0, steer_cmd, throttle_cmd)
+        sender.send_car_instruction(0, steer_cmd, throttle_cmd, self.car_instr_port)
 
         # Wait for observation
         while not self.obs_receiver.has_min_observations(1):
-            time.sleep(0.01)
+            time.sleep(0.0001)
 
         obs_packet = self.obs_receiver.collect_observations()[-1]
 
         # --- Handle reward vector ---
-        reward = float(np.dot(obs_packet.reward.as_vector(), RewardWeights().as_vector()))
+        reward = float(np.dot(obs_packet.rewards.as_vector(), RewardWeights().as_vector()))
 
         # --- Update state ---
         self.prev_action = np.clip(action, -1.0, 1.0)
@@ -149,8 +150,9 @@ class UnityCarEnv(gym.Env):
         truncated = False
         done = self.current_step >= self.max_steps
 
+        # print(obs_packet.rewards)
         #crashed
-        if obs_packet.reward.collision_penalty < 0:
+        if obs_packet.rewards.collision_penalty == -1:
             truncated = True
             done = True
 

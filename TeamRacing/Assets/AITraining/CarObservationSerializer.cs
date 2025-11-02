@@ -33,20 +33,21 @@ public static class CarObservationSerializer
         UnityEngine.Object.Destroy(tex);
         UnityEngine.Object.Destroy(mergedRT);
 
-        // Prepare header (10 bytes)
+        // Prepare header
         byte speedByte = observation.Speed;
         byte steerByte = observation.SteeringAngle;
         byte[] idBytes = BitConverter.GetBytes(carID);
+
         float[] rewardArray = reward.ToArray();
         byte[] rewardBytes = new byte[rewardArray.Length * sizeof(float)];
         Buffer.BlockCopy(rewardArray, 0, rewardBytes, 0, rewardBytes.Length);
 
 
-        byte[] header = new byte[10];
+        byte[] header = new byte[1 + 1 + 4 + rewardBytes.Length];
         header[0] = speedByte;
         header[1] = steerByte;
         Array.Copy(idBytes, 0, header, 2, 4);
-        Array.Copy(rewardBytes, 0, header, 6, 4);
+        Array.Copy(rewardBytes, 0, header, 6, rewardBytes.Length);
 
         // Combine header + image
         byte[] payload = new byte[header.Length + imageBytes.Length];

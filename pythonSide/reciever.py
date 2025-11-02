@@ -47,7 +47,7 @@ class ObservationReceiver:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             server.bind((self.host, self.port))
             server.listen()
-            print("Waiting for Unity to connect...")
+            print("Waiting for Unity to connect to observation reciever...")
 
             while self.running:
                 conn, addr = server.accept()
@@ -61,7 +61,6 @@ class ObservationReceiver:
                                 print("Unity disconnected.")
                                 break
                             buffer += data
-
                             while len(buffer) >= self.expected_packet_size:
                                 packet = buffer[:self.expected_packet_size]
 

@@ -422,7 +422,7 @@ public class gameControlScript : MonoBehaviour
                 {
                     byte[] buffer = new byte[2]; // command byte + value byte
                     int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead < 2)
+                    if (bytesRead < 2 && bytesRead != 0)
                     {
                         Debug.LogWarning("Incomplete command packet received");
                         continue;

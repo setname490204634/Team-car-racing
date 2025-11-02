@@ -16,7 +16,7 @@ env = DummyVecEnv([make_env])
 env = VecTransposeImage(env)
 
 # --- Load existing model ---
-model_path = "./models/ppo_unity_car_44000_steps.zip"
+model_path = "./pythonSide/models/ppo_unity_car_44000_steps.zip"
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Model file {model_path} not found. Train a model first.")
 
@@ -26,7 +26,7 @@ model = PPO.load(model_path, env=env, tensorboard_log="./logs/")
 # --- Checkpoint callback ---
 checkpoint_callback = CheckpointCallback(
     save_freq=10000,
-    save_path="./models/",
+    save_path="./pythonSide/models/",
     name_prefix="ppo_unity_car"
 )
 
@@ -35,7 +35,7 @@ additional_timesteps = 10000000  # adjust as needed
 model.learn(total_timesteps=additional_timesteps, callback=checkpoint_callback)
 
 # --- Save final model ---
-final_model_path = "./models/ppo_unity_car_final"
+final_model_path = "./pythonSide/models/ppo_unity_car_final"
 model.save(final_model_path)
 env.close()
 
