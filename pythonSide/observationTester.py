@@ -1,64 +1,49 @@
-import sys
 import time
+import cv2
+import os
 import sender
 from reciever import ObservationReceiver
-import threading
-import cv2
-import numpy as np
-import os
 
-# --- Configuration ---
-NUM_CARS = 1
-OUTPUT_DIR = "cameraTest"  # folder to save images
-os.makedirs(OUTPUT_DIR, exist_ok=True)  # create it if it doesn't exist
+# run unity first with default ports, this file will show and save the observations as pictures and write the rewards
+OUTPUT_DIR = "cameraTest"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 if __name__ == "__main__":
     obs_receiver = ObservationReceiver()
     obs_receiver.start()
 
-    sender.send_command(10, 0)
-    car_controls = [{"steer": 255, "throttle": 255} for _ in range(NUM_CARS)]
+    # Send some constant command to start Unity
+    sender.send_command(10, 0, 5005)
+
+    frame_counter = 0
 
     try:
-        frame_counter = 0  # simple counter for filenames
-
         while True:
-            observations = []
-            while not observations:
-                observations = obs_receiver.collect_observations()
-                if not observations:
-                    time.sleep(0.001)
+            observations = obs_receiver.collect_observations()
+            if not observations:
+                time.sleep(0.001)
+                continue
 
-            # --- Process observations ---
             for obs in observations:
                 frame_counter += 1
+                print(obs.rewards)
 
-                # Print reward
-                print(f"Car {obs.car_id} | Reward: {obs.reward:.3f}")
-
-                # Convert to BGR for OpenCV display and saving
+                # Convert RGB → BGR for OpenCV
                 img_bgr = cv2.cvtColor(obs.image, cv2.COLOR_RGB2BGR)
 
-                # Display image
+                # Show the image
                 cv2.imshow(f"Car {obs.car_id} Camera", img_bgr)
                 cv2.waitKey(1)
 
-                # Save image to /cameraTest/
-                filename = f"car{obs.car_id}_frame{frame_counter:05d}_reward{obs.reward:.3f}.jpg"
-                filepath = os.path.join(OUTPUT_DIR, filename)
-                cv2.imwrite(filepath, img_bgr)
+                # Save image if you want
+                filename = f"car{obs.car_id}_frame{frame_counter:05d}.jpg"
+                cv2.imwrite(os.path.join(OUTPUT_DIR, filename), img_bgr)
 
-            # --- Send instructions back to Unity ---
-            for i, ctrl in enumerate(car_controls):
-                sender.send_car_instruction(
-                    car_index=i,
-                    steering=ctrl["steer"],
-                    throttle=ctrl["throttle"]
-                )
+            # Send constant instructions back
+            sender.send_car_instruction(0, 255, 255, 5006)
 
-            time.sleep(0.0001)
+            time.sleep(0.01)
 
     except KeyboardInterrupt:
         print("Exiting...")
         cv2.destroyAllWindows()
-        sys.exit(0)

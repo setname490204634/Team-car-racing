@@ -67,11 +67,6 @@ public class CarController : MonoBehaviour
         currentGripMultiplier = roadGripMultiplier;
         currentSpeedMultiplier = 1f;
 
-        //on grass
-        if (currentSpeedMultiplier == grassSpeedMultiplier)
-        {
-            this.onGrass = true;
-        }
 
         // Adjust grip/speed by surface
         AdjustWheelGripAndSpeed(LFWheel);
@@ -163,6 +158,7 @@ public class CarController : MonoBehaviour
             {
                 currentGripMultiplier = Mathf.Min(currentGripMultiplier, grassGripMultiplier);
                 currentSpeedMultiplier = Mathf.Min(currentSpeedMultiplier, grassSpeedMultiplier);
+                this.onGrass = true;
             }
         }
     }

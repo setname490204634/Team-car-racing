@@ -6,22 +6,22 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from UnitySingleCarEnv import UnityCarEnv  # your environment class
 
 # --- Directories ---
-os.makedirs("models", exist_ok=True)
-os.makedirs("logs", exist_ok=True)
+os.makedirs("./pythonSide/models", exist_ok=True)
+os.makedirs("./pythonSide/logs", exist_ok=True)
 
 # --- Environment ---
 def make_env():
-    return UnityCarEnv()
+    return UnityCarEnv(run_headless = True)
 env = DummyVecEnv([make_env])
 env = VecTransposeImage(env)
 
 # --- Load existing model ---
-model_path = "./pythonSide/models/ppo_unity_car_44000_steps.zip"
+model_path = "./pythonSide/models/ppo_unity_car_70000_steps.zip"
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Model file {model_path} not found. Train a model first.")
 
 print(f"Loading model from {model_path} to continue training...")
-model = PPO.load(model_path, env=env, tensorboard_log="./logs/")
+model = PPO.load(model_path, env=env, tensorboard_log="./pythonSide/logs/")
 
 # --- Checkpoint callback ---
 checkpoint_callback = CheckpointCallback(

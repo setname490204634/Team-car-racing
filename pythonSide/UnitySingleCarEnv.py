@@ -32,7 +32,8 @@ class UnityCarEnv(gym.Env):
                  unity_exe_path: str = r"TeamRacing\builds\TeamRacing.exe",
                  control_port: int = 5005,
                  car_instr_port: int = 5006,
-                 obs_port: int = 5007):
+                 obs_port: int = 5007,
+                 run_headless: bool = False):
         super().__init__()
 
         # --- Observation Space ---
@@ -50,6 +51,7 @@ class UnityCarEnv(gym.Env):
         self.obs_port = obs_port
         self.unity_exe_path = unity_exe_path
         self.unity_process = None
+        self.run_headless = run_headless
 
         # --- Start Unity headless executable ---
         self._launch_unity()
@@ -86,6 +88,9 @@ class UnityCarEnv(gym.Env):
             str(self.car_instr_port),
             str(self.obs_port)
         ]
+        if (self.run_headless):
+            args.append("-batchmode")# headless mode (no graphics)
+            args.append("-nographics")# no graphics rendering)
 
         print(f"Launching Unity: {' '.join(args)}")
         self.unity_process = subprocess.Popen(
@@ -141,6 +146,7 @@ class UnityCarEnv(gym.Env):
 
         # --- Handle reward vector ---
         reward = float(np.dot(obs_packet.rewards.as_vector(), RewardWeights().as_vector()))
+        # print(obs_packet.rewards)
 
         # --- Update state ---
         self.prev_action = np.clip(action, -1.0, 1.0)
@@ -150,7 +156,6 @@ class UnityCarEnv(gym.Env):
         truncated = False
         done = self.current_step >= self.max_steps
 
-        # print(obs_packet.rewards)
         #crashed
         if obs_packet.rewards.collision_penalty == -1:
             truncated = True

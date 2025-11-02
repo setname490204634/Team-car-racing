@@ -33,10 +33,10 @@ class Rewards:
 @dataclass
 class RewardWeights:
     speed: float = 1.0
-    steering_smoothness: float = 0.5
-    throttle_smoothness: float = 0.7
-    collision_penalty: float = 500.0
-    grass_penalty: float = 10.0
+    steering_smoothness: float = 0.7
+    throttle_smoothness: float = 0.5
+    collision_penalty: float = 1000
+    grass_penalty: float = 30.0
     team_distance: float = 0.0
     lap_time: float = 0.0
     team_lap_time: float = 0.0
