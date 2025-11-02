@@ -173,9 +173,6 @@ class UnityCarEnv(gym.Env):
     # ------------------------------------------------------------------
     def close(self):
         """Clean up Unity process and receiver."""
-        if self.obs_receiver:
-            self.obs_receiver.stop()
-            self.obs_receiver = None
 
         if self.unity_process:
             print("Closing Unity process...")
@@ -186,5 +183,9 @@ class UnityCarEnv(gym.Env):
                 self.unity_process.kill()
             self.unity_process = None
 
+        if self.obs_receiver:
+            self.obs_receiver.stop()
+            self.obs_receiver = None
+            
     def __del__(self):
         self.close()
