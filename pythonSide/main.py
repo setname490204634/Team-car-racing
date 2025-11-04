@@ -18,7 +18,7 @@ model = PPO(
     verbose=1,
     batch_size=64,
     n_steps=2048,
-    learning_rate=3e-4,
+    learning_rate=1e-3,
     gamma=0.99,
     tensorboard_log="./pythonSide/logs/"
 )

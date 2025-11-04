@@ -105,7 +105,7 @@ public class CarController : MonoBehaviour
         float steering = maxSteeringAngle * steeringInput;
         if (input.UseSpeedSteering)
         {
-            float speedFactor = rb.linearVelocity.magnitude / 5.5f;
+            float speedFactor = rb.linearVelocity.magnitude / 7.0f;
             steering = maxSteeringAngle / (1f + speedFactor) * steeringInput;
         }
         LFWheel.steerAngle = steering;

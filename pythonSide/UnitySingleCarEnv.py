@@ -73,7 +73,7 @@ class UnityCarEnv(gym.Env):
         self.episode_reward = 0.0
         self.prev_action = np.zeros(self.action_space.shape, dtype=np.float32)
         self.filtered_action = np.zeros(self.action_space.shape, dtype=np.float32)
-        self.filter_alpha = 0.6
+        self.filter_alpha = 1.0
 
     def _launch_unity(self):
         # return #uncoment for manual unity launch
@@ -90,7 +90,7 @@ class UnityCarEnv(gym.Env):
         ]
         if (self.run_headless):
             args.append("-batchmode")# headless mode (no graphics)
-            args.append("-nographics")# no graphics rendering)
+            # args.append("-nographics")# no graphics rendering)
 
         print(f"Launching Unity: {' '.join(args)}")
         self.unity_process = subprocess.Popen(
@@ -102,7 +102,6 @@ class UnityCarEnv(gym.Env):
 
     def _build_observation(self, obs_packet):
         """Convert Unity observation packet to Gym-style observation dict."""
-        # Convert image, normalize speed (still 1 float)
         obs = {
             "image": obs_packet.image,
             "speed": np.array([obs_packet.speed / 255.0], dtype=np.float32),
@@ -147,6 +146,8 @@ class UnityCarEnv(gym.Env):
         # --- Handle reward vector ---
         reward = float(np.dot(obs_packet.rewards.as_vector(), RewardWeights().as_vector()))
         # print(obs_packet.rewards)
+        reward = np.clip(reward, -100, 100)
+        print(reward)
 
         # --- Update state ---
         self.prev_action = np.clip(action, -1.0, 1.0)
@@ -156,13 +157,14 @@ class UnityCarEnv(gym.Env):
         truncated = False
         done = self.current_step >= self.max_steps
 
-        #crashed
+        # crashed
         if obs_packet.rewards.collision_penalty == -1:
             truncated = True
             done = True
 
         info = {}
         if done:
+            print(self.episode_reward)
             info = {"episode": {"r": self.episode_reward, "l": self.current_step}}
             self.current_step = 0
             self.episode_reward = 0.0
