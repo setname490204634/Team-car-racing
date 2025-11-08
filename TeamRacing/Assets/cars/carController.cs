@@ -40,6 +40,16 @@ public class CarController : MonoBehaviour
     private bool crossedHalfway = false;
     private bool onGrass = false;
 
+    // acceleration, speed and distance
+    public float dicountedDistance = 0;
+    private float dicountFactor = 0.9f;
+    private Vector3 lastPos = Vector3.zero;
+
+    public Vector3 acceleration = Vector3.zero;
+    private Vector3 lastSpeed = Vector3.zero;
+
+    public Vector3 speed { get { return this.rb.linearVelocity; } }
+
     void Awake()
     {
         Debug.Log("OnActionReceived called");
@@ -95,6 +105,19 @@ public class CarController : MonoBehaviour
         SetWheelFriction(RRWheel, gripMultiplierWithDownforce);
 
         UpdateAllWheelVisuals();
+        UpdateSpeedDistanceAcceleration();
+    }
+
+    private void UpdateSpeedDistanceAcceleration()
+    {
+        Vector3 curPos = rb.position;
+        this.dicountedDistance *= dicountFactor;
+        this.dicountedDistance += (curPos - lastPos).magnitude;
+        lastPos = curPos;
+
+        Vector3 curSpeed = rb.linearVelocity;
+        this.acceleration = curSpeed - lastSpeed;
+        lastSpeed = curSpeed;
     }
 
     private void ApplySteering(CarInput input)
