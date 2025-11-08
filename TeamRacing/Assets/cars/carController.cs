@@ -39,6 +39,7 @@ public class CarController : MonoBehaviour
     private bool crossedFinish = false;
     private bool crossedHalfway = false;
     private bool onGrass = false;
+    private bool outOfBounds = false;
 
     // acceleration, speed and distance
     public float dicountedDistance = 0;
@@ -49,6 +50,8 @@ public class CarController : MonoBehaviour
     private Vector3 lastSpeed = Vector3.zero;
 
     public Vector3 speed { get { return this.rb.linearVelocity; } }
+    public Vector3 position { get { return this.rb.position; } }
+    public Quaternion rotation { get { return this.rb.rotation; } }
 
     void Awake()
     {
@@ -69,6 +72,10 @@ public class CarController : MonoBehaviour
     void FixedUpdate()
     {
         if (inputProvider == null) return;
+
+        //out of bounds
+        if (this.position.y < 5f) this.outOfBounds = true;
+
         CarInput input = inputProvider.getInput();
         ApplySteering(input);
         float throttleInput = DecodeByteToNormalized(input.Throttle);
@@ -252,13 +259,14 @@ public class CarController : MonoBehaviour
         }
     }
 
-    public (bool collided, bool finish, bool halfway, bool onGrass) ConsumeCollisionFlags()
+    public (bool collided, bool finish, bool halfway, bool onGrass, bool outOfBounds) ConsumeCollisionFlags()
     {
-        var result = (collided, crossedFinish, crossedHalfway, onGrass);
+        var result = (collided, crossedFinish, crossedHalfway, onGrass, outOfBounds);
         collided = false;
         crossedFinish = false;
         crossedHalfway = false;
         onGrass = false;
+        outOfBounds = false;
         return result;
     }
 }

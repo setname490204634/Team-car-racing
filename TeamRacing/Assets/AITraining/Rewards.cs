@@ -35,16 +35,17 @@ public struct Rewards
 
 public class RewardsCalculator : ICarRewardProvider
 {
-    private Rigidbody rb;
     private CarAgent carAgent;
     private GameObject carObject;
     private gameControlScript gameControl;
+    private CarController controller;
     public List<int> teammatesID;
 
     private CarInput lastInput;
 
     private bool collided = false;
     private bool onGrass = false;
+    private bool outOfBounds = false;
     private float lastLapTime = 0f;
     private int finalPlacement = -1; // -1 means not registered
     private List<int> finalTeammatePlacement = new List<int>();
@@ -58,13 +59,13 @@ public class RewardsCalculator : ICarRewardProvider
         0, 25, 18, 15, 12, 10, 8, 6, 4, 2, 0
     };
 
-    public RewardsCalculator(CarAgent agent, gameControlScript gameControl, GameObject carObject, List<int> teammatesID = null)
+    public RewardsCalculator(CarAgent agent, gameControlScript gameControl, GameObject carObject, CarController controller, List<int> teammatesID = null)
     {
         this.carAgent = agent;
         this.carObject = carObject;
-        this.rb = carObject.GetComponent<Rigidbody>();
         this.gameControl = gameControl;
         this.teammatesID = teammatesID ?? new List<int>();
+        this.controller = controller;
 
         lastInput = agent.agentInputProvider.getInput();
     }
@@ -93,7 +94,7 @@ public class RewardsCalculator : ICarRewardProvider
     // Speed along local X
     private float SpeedReward()
     {
-        Vector3 velocity = rb.linearVelocity;
+        Vector3 velocity = controller.speed;
 
         // Project velocity onto the car's forward vector (in world space)
         float forwardSpeed = Vector3.Dot(velocity, carObject.transform.forward);
@@ -215,4 +216,16 @@ public class RewardsCalculator : ICarRewardProvider
     {
         return this.teammatesID;
     }
+
+    public float OutOfBoundsPenalty()
+    {
+        float output = 0f;
+        if (outOfBounds)
+            output = -1.0f;
+        outOfBounds = false;
+        return output;
+    }
+
+    public void RegisterOutOfBounds() { this.outOfBounds = true; }
+
 }

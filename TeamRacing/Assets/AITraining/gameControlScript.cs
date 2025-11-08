@@ -128,7 +128,7 @@ public class gameControlScript : MonoBehaviour
         for (int i = 0; i < cars.Count; i++)
         {
             CarEntry car = cars[i];
-            (bool collided, bool finish, bool halfway, bool onGrass) = car.controller.ConsumeCollisionFlags();
+            (bool collided, bool finish, bool halfway, bool onGrass, bool outOfBounds) = car.controller.ConsumeCollisionFlags();
             if (collided)
             {
                 car.rewards.RegisterCollision();
@@ -136,6 +136,10 @@ public class gameControlScript : MonoBehaviour
             if (onGrass)
             {
                 car.rewards.RegisterOnGrass();
+            }
+            if (outOfBounds)
+            {
+                car.rewards.RegisterOutOfBounds();
             }
 
             //halfway to stop incomplete loops
@@ -259,7 +263,7 @@ public class gameControlScript : MonoBehaviour
                 if (teammateID % 2 == 0) teammateID -= 2;
                 teammatesID.Add(teammateID);
             }
-            entry.rewards = new RewardsCalculator(entry.agent, this, obj, teammatesID);
+            entry.rewards = new RewardsCalculator(entry.agent, this, obj, obj.GetComponent<CarController>(), teammatesID);
 
             cars.Add(entry);
 
