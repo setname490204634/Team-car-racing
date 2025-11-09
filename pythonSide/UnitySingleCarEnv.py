@@ -161,6 +161,10 @@ class UnityCarEnv(gym.Env):
         if obs_packet.rewards.collision_penalty == -1:
             truncated = True
             done = True
+            
+        if obs_packet.rewards.out_of_bounds_penalty == -1:
+            truncated = True
+            done = True
 
         info = {}
         if done:

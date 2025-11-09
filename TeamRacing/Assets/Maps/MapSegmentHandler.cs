@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -149,7 +150,7 @@ public class MapSegmentHandler : MonoBehaviour
         return (road[index2] - pos).normalized;
     }
 
-    public Vector2 GetVectorIII(int index)
+    public Vector2 GetVectorIII(int index, Vector2 pos)
     {
         if (road == null || road.Count < 3) return Vector2.zero;
         int count = road.Count;
@@ -158,7 +159,7 @@ public class MapSegmentHandler : MonoBehaviour
         return (road[index1] - road[index]).normalized;
     }
 
-    public Vector2 GetVectorIV(int index)
+    public Vector2 GetVectorIV(int index, Vector2 pos)
     {
         if (road == null || road.Count < 3) return Vector2.zero;
         int count = road.Count;
@@ -168,31 +169,16 @@ public class MapSegmentHandler : MonoBehaviour
         return (road[index2] - road[index1]).normalized;
     }
 
-    public (Vector2 dir, float radius) GetVectorV(int index, Vector2 pos)
+    public Vector2 GetVectorV(int index, Vector2 pos)
     {
-        if (road == null || road.Count < 3) return (Vector2.zero, 0f);
+        if (road == null || road.Count < 3) return Vector2.zero;
 
         int count = road.Count;
         int index1 = (index + 1) % count;
         int index2 = (index + 2) % count;
 
-        // Midpoints between i,i+1 and i+1,i+2
-        Vector2 mid1 = (road[index] + road[index1]) / 2;
-        Vector2 mid2 = (road[index1] + road[index2]) / 2;
-
-        // Perpendicular bisectors of each segment
-        Vector2 line1vec = (road[index1] - road[index]).normalized;
-        Vector2 line2vec = (road[index2] - road[index1]).normalized;
-
-        Vector2 perp1 = new Vector2(-line1vec.y, line1vec.x);
-        Vector2 perp2 = new Vector2(-line2vec.y, line2vec.x);
-
-        // Solve for circle center (intersection of bisectors)
-        bool found = LineLineIntersection(mid1, mid1 + perp1, mid2, mid2 + perp2, out Vector2 center);
-        if (!found) return (Vector2.zero, 0f);
-
-        // Direction from center to i+1
-        float radius = (road[index] - center).magnitude;
+        (Vector2 center, float radius) = MakeCircle(road[index], road[index1], road[index2]);
+        if (float.Equals(radius, 0f)) return Vector2.zero;
 
         Vector2 carLine = (pos - center).normalized;
 
@@ -203,7 +189,27 @@ public class MapSegmentHandler : MonoBehaviour
         if (Vector2.Dot(tangent, road[index1] - road[index]) < 0)
             tangent = -tangent;
 
-        return (tangent.normalized, radius);
+        return tangent.normalized;
+    }
+
+    private (Vector2 center, float radius) MakeCircle(Vector2 a, Vector2 b, Vector2 c)
+    {
+        Vector2 mid1 = (a + b) / 2;
+        Vector2 mid2 = (b + c) / 2;
+
+        // Perpendicular bisectors of each segment
+        Vector2 line1vec = (b - a).normalized;
+        Vector2 line2vec = (c - b).normalized;
+
+        Vector2 perp1 = new Vector2(-line1vec.y, line1vec.x);
+        Vector2 perp2 = new Vector2(-line2vec.y, line2vec.x);
+
+        // Solve for circle center (intersection of bisectors)
+        bool found = LineLineIntersection(mid1, mid1 + perp1, mid2, mid2 + perp2, out Vector2 center);
+        if (!found) return (Vector2.zero, 0f);
+
+        float radius = (a - center).magnitude;
+        return (center, radius);
     }
 
     private bool LineLineIntersection(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, out Vector2 intersection)
@@ -245,6 +251,19 @@ public class MapSegmentHandler : MonoBehaviour
         int index2 = (index + 2) % count;
 
         return Vector2.Distance(pos, road[index2]) / Vector2.Distance(road[index], road[index2]);
+    }
+
+    public float GetDistanceIII(int index, Vector2 pos)
+    {
+        if (road == null || road.Count < 3) return 0f;
+
+        int count = road.Count;
+        int index1 = (index + 1) % count;
+        int index2 = (index + 2) % count;
+
+        (Vector2 center, float radius) = MakeCircle(road[index], road[index1], road[index2]);
+        if (float.Equals(radius, 0f)) return 0f;
+        else return (Vector2.Distance(pos, center) - radius)/radius;
     }
 
 #if UNITY_EDITOR

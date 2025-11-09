@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
@@ -48,29 +49,67 @@ public struct Rewards
 
     public float distanceI;
     public float distanceII;
+    public float distanceIII;
 
     public float[] ToArray()
     {
-        return new float[]
+        float[] arr = new float[50]
         {
-        speed,
-        steeringSmoothness,
-        throttleSmoothness,
-        collisionPenalty,
-        grassPenalty,
-        teamDistance,
-        lapTime,
-        teamLapTime,
-        placement,
-        teamPlacement
+            steeringSmoothness,
+            throttleSmoothness,
+
+            outOfBoundsPenalty,
+            collisionPenalty,
+            grassPenalty,
+
+            teamDistance,
+            lapTime,
+            teamLapTime,
+            placement,
+            teamPlacement,
+
+
+            speed,
+            acceleration,
+            distance,
+            discountedDistance,
+
+            speedI,
+            speedII,
+            speedIII,
+            speedIV,
+            speedV,
+
+            accelerationI,
+            accelerationII,
+            accelerationIII,
+            accelerationIV,
+            accelerationV,
+
+            angleI,
+            angleII,
+            angleIII,
+            angleIV,
+            angleV,
+
+            distanceI,
+            distanceII,
+            distanceIII,
+
+            //reserved for later use
+            0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f,
+
+            0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f
         };
+
+        return arr;
     }
 }
 
 public class RewardsCalculator : ICarRewardProvider
 {
     private gameControlScript gameControl;
-    public List<int> teammatesID;
+    private List<int> teammatesID;
     CarEntry entry;
     MapSegmentHandler segmentHandler;
 
@@ -144,26 +183,27 @@ public class RewardsCalculator : ICarRewardProvider
             discountedDistance = DiscountedDistanceReward(),
             distance = DistanceReward(),
 
-                    speedI = SpeedRewardI(),
-            speedII = SpeedRewardII(),
-            speedIII = SpeedRewardIII(),
-            speedIV = SpeedRewardIV(),
-            speedV = SpeedRewardV(),
+            speedI = SpeedRewardInDirection(segmentHandler.GetVectorI),
+            speedII = SpeedRewardInDirection(segmentHandler.GetVectorII),
+            speedIII = SpeedRewardInDirection(segmentHandler.GetVectorIII),
+            speedIV = SpeedRewardInDirection(segmentHandler.GetVectorIV),
+            speedV = SpeedRewardInDirection(segmentHandler.GetVectorV),
 
-            accelerationI = AccelerationRewardI(),
-            accelerationII = AccelerationRewardII(),
-            accelerationIII = AccelerationRewardIII(),
-            accelerationIV = AccelerationRewardIV(),
-            accelerationV = AccelerationRewardV(),
+            accelerationI = AccelerationRewardInDirection(segmentHandler.GetVectorI),
+            accelerationII = AccelerationRewardInDirection(segmentHandler.GetVectorII),
+            accelerationIII = AccelerationRewardInDirection(segmentHandler.GetVectorIII),
+            accelerationIV = AccelerationRewardInDirection(segmentHandler.GetVectorIV),
+            accelerationV = AccelerationRewardInDirection(segmentHandler.GetVectorV),
 
-            angleI = AngleRewardI(),
-            angleII = AngleRewardII(),
-            angleIII = AngleRewardIII(),
-            angleIV = AngleRewardIV(),
-            angleV = AngleRewardV(),
+            angleI = AngleRewardInDirection(segmentHandler.GetVectorI),
+            angleII = AngleRewardInDirection(segmentHandler.GetVectorII),
+            angleIII = AngleRewardInDirection(segmentHandler.GetVectorIII),
+            angleIV = AngleRewardInDirection(segmentHandler.GetVectorIV),
+            angleV = AngleRewardInDirection(segmentHandler.GetVectorV),
 
-            distanceI = DistanceRewardI(),
-            distanceII = DistanceRewardII()
+            distanceI = DistanceRewardTo(segmentHandler.GetDistanceI),
+            distanceII = DistanceRewardTo(segmentHandler.GetDistanceII),
+            distanceIII = DistanceRewardTo(segmentHandler.GetDistanceIII),
         };
 
         // reset it here since its used at 2 places
@@ -279,7 +319,7 @@ public class RewardsCalculator : ICarRewardProvider
         return output;
     }
 
-    public float TeamLapTimeReward()
+    private float TeamLapTimeReward()
     {
         float output = 0.0f;
         foreach (int time in teammateLapTimes)
@@ -290,7 +330,7 @@ public class RewardsCalculator : ICarRewardProvider
         return output;
     }
 
-    public float GrassPenalty()
+    private float GrassPenalty()
     {
         float output = 0f;
         if (onGrass)
@@ -299,8 +339,7 @@ public class RewardsCalculator : ICarRewardProvider
         return output;
     }
 
-
-    public float OutOfBoundsPenalty()
+    private float OutOfBoundsPenalty()
     {
         float output = 0f;
         if (outOfBounds)
@@ -309,92 +348,27 @@ public class RewardsCalculator : ICarRewardProvider
         return output;
     }
 
-    public float SpeedRewardI()
+    private float SpeedRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)
     {
-        return GetVectorMagnitudeInDirection(entry.controller.speed2D, segmentHandler.GetVectorI(entry.segmentIndex, entry.controller.position2D));
-    }
-
-    public float SpeedRewardII()
-    {
-        return GetVectorMagnitudeInDirection(entry.controller.speed2D, segmentHandler.GetVectorII(entry.segmentIndex, entry.controller.position2D));
-    }
-
-    public float SpeedRewardIII()
-    {
-        return GetVectorMagnitudeInDirection(entry.controller.speed2D, segmentHandler.GetVectorIII(entry.segmentIndex));
-    }
-
-    public float SpeedRewardIV()
-    {
-        return GetVectorMagnitudeInDirection(entry.controller.speed2D, segmentHandler.GetVectorIV(entry.segmentIndex));
-    }
-
-    public float SpeedRewardV()
-    {
-        (Vector2 dir, float r) = segmentHandler.GetVectorV(entry.segmentIndex, entry.controller.position2D);
+        Vector2 dir = getVectorFunc(entry.segmentIndex, entry.controller.position2D);
         return GetVectorMagnitudeInDirection(entry.controller.speed2D, dir);
     }
 
-    public float AccelerationRewardI()
+    private float AccelerationRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)
     {
-        return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, segmentHandler.GetVectorI(entry.segmentIndex, entry.controller.position2D));
-    }
-
-    public float AccelerationRewardII()
-    {
-        return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, segmentHandler.GetVectorII(entry.segmentIndex, entry.controller.position2D));
-    }
-
-    public float AccelerationRewardIII()
-    {
-        return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, segmentHandler.GetVectorIII(entry.segmentIndex));
-    }
-
-    public float AccelerationRewardIV()
-    {
-        return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, segmentHandler.GetVectorIV(entry.segmentIndex));
-    }
-
-    public float AccelerationRewardV()
-    {
-        (Vector2 dir, float r) = segmentHandler.GetVectorV(entry.segmentIndex, entry.controller.position2D);
+        Vector2 dir = getVectorFunc(entry.segmentIndex, entry.controller.position2D);
         return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, dir);
     }
 
-    public float AngleRewardI()
+    private float AngleRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)
     {
-        return GetVectorAngleInDirection(entry.controller.speed2D, segmentHandler.GetVectorI(entry.segmentIndex, entry.controller.position2D));
-    }
-
-    public float AngleRewardII()
-    {
-        return GetVectorAngleInDirection(entry.controller.speed2D, segmentHandler.GetVectorII(entry.segmentIndex, entry.controller.position2D));
-    }
-
-    public float AngleRewardIII()
-    {
-        return GetVectorAngleInDirection(entry.controller.speed2D, segmentHandler.GetVectorIII(entry.segmentIndex));
-    }
-
-    public float AngleRewardIV()
-    {
-        return GetVectorAngleInDirection(entry.controller.speed2D, segmentHandler.GetVectorIV(entry.segmentIndex));
-    }
-
-    public float AngleRewardV()
-    {
-        (Vector2 dir, float r) = segmentHandler.GetVectorV(entry.segmentIndex, entry.controller.position2D);
+        Vector2 dir = getVectorFunc(entry.segmentIndex, entry.controller.position2D);
         return GetVectorAngleInDirection(entry.controller.speed2D, dir);
     }
 
-    public float DistanceRewardI()
+    private float DistanceRewardTo(Func<int, Vector2, float> getDistanceFunc)
     {
-        return segmentHandler.GetDistanceI(entry.segmentIndex, entry.controller.position2D);
-    }
-
-    public float DistanceRewardII()
-    {
-        return segmentHandler.GetDistanceII(entry.segmentIndex, entry.controller.position2D);
+        return getDistanceFunc(entry.segmentIndex, entry.controller.position2D);
     }
 
     private float GetVectorMagnitudeInDirection(Vector2 vector, Vector2 direction)

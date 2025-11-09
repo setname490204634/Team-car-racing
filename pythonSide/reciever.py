@@ -34,7 +34,7 @@ class ObservationReceiver:
         self.BYTES_PER_PIXEL = 3
 
         # Header = 1 (speed) + 1 (steer) + 4 (carID) + 40 (10 floats * 4 bytes)
-        self.NUM_REWARDS = 10
+        self.NUM_REWARDS = 50
         self.HEADER_SIZE = 1 + 1 + 4 + self.NUM_REWARDS * 4
         self.expected_packet_size = self.HEADER_SIZE + self.MERGED_WIDTH * self.MERGED_HEIGHT * self.BYTES_PER_PIXEL
 
