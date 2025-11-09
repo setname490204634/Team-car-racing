@@ -144,7 +144,7 @@ class UnityCarEnv(gym.Env):
         obs_packet = self.obs_receiver.collect_observations()[-1]
 
         # --- Handle reward vector ---
-        reward = float(np.dot(obs_packet.rewards.as_vector(), RewardWeights().as_vector()))
+        reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.efaultWeights().as_vector()))
         # print(obs_packet.rewards)
         reward = np.clip(reward, -100, 100)
         print(reward)
