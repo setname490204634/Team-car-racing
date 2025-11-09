@@ -4,31 +4,32 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using UnityEngine;
-using static UnityEngine.Rendering.GPUSort;
+
+public class CarRaceState
+{
+    public int lapCount = 0;
+    public float currentLapTime = 0f;
+    public float lastLapTotalTime = 0f;
+    public float bestLapTime = float.MaxValue;
+
+    public bool passedHalfway = false;
+    public bool crossedFinish = true;
+
+    public bool finished = false;
+}
+public class CarEntry
+{
+    public GameObject carObject;
+    public CarAgent agent; //can be null
+    public ICarInputProvider inputProvider;
+    public RewardsCalculator rewards;
+    public CarRaceState raceState;
+    public CarController controller;
+    public int segmentIndex;
+}
 
 public class gameControlScript : MonoBehaviour
 {
-    public class CarRaceState
-    {
-        public int lapCount = 0;
-        public float currentLapTime = 0f;
-        public float lastLapTotalTime = 0f;
-        public float bestLapTime = float.MaxValue;
-
-        public bool passedHalfway = false;
-        public bool crossedFinish = true;
-
-        public bool finished = false;
-    }
-    public class CarEntry
-    {
-        public GameObject carObject;
-        public CarAgent agent; //can be null
-        public ICarInputProvider inputProvider;
-        public RewardsCalculator rewards;
-        public CarRaceState raceState;
-        public CarController controller;
-    }
     public struct TransformEntry
     {
         public Vector3 position;
@@ -49,11 +50,11 @@ public class gameControlScript : MonoBehaviour
     private Thread instructionsThread;
     private bool running = false;
 
+    private CarObservationTransmitter transmitter;
+
     // Buffers
     private InstructionBuffer instructionBuffer;
     private GameCommandBuffer commandBuffer;
-
-    private CarObservationTransmitter transmitter;
 
     [Header("Server Settings")]
     public int controlPort = 5005;
@@ -69,9 +70,11 @@ public class gameControlScript : MonoBehaviour
     private enum State { Idle, WaitingToStart, Running, Stopped }
     private State state = State.Idle;
     private bool observationsSent = false;
+    public MapSegmentHandler currentSegmentHandler;
 
     void Start()
-    {;
+    {
+        ;
         InitializePortsFromArgs(Environment.GetCommandLineArgs());
 
         Application.runInBackground = true;
@@ -119,8 +122,6 @@ public class gameControlScript : MonoBehaviour
             HandleCarCollisions();
         }
     }
-
-
 
     //checks car collisions with objects and lap track finish and halfway point
     private void HandleCarCollisions()
@@ -253,7 +254,8 @@ public class gameControlScript : MonoBehaviour
                 agent = obj.GetComponent<CarAgent>(),
                 inputProvider = obj.GetComponent<ICarInputProvider>(),
                 controller = obj.GetComponent<CarController>(),
-                raceState = new CarRaceState()
+                raceState = new CarRaceState(),
+                segmentIndex = 1 // always start from the 1, that coresponds to the middle of start tile
             };
 
             List<int> teammatesID = new List<int>();
@@ -263,7 +265,7 @@ public class gameControlScript : MonoBehaviour
                 if (teammateID % 2 == 0) teammateID -= 2;
                 teammatesID.Add(teammateID);
             }
-            entry.rewards = new RewardsCalculator(entry.agent, this, obj, obj.GetComponent<CarController>(), teammatesID);
+            entry.rewards = new RewardsCalculator(entry, this, this.currentSegmentHandler, teammatesID);
 
             cars.Add(entry);
 
@@ -290,6 +292,11 @@ public class gameControlScript : MonoBehaviour
         {
             var entry = cars[i];
             var t = startTransforms[i];
+            entry.segmentIndex = 1;
+            entry.raceState = new CarRaceState();
+            entry.rewards.Reset();
+            entry.controller.distance = 0f;
+
 
             Rigidbody rb = entry.carObject.GetComponent<Rigidbody>();
             if (rb != null)
@@ -299,7 +306,7 @@ public class gameControlScript : MonoBehaviour
                 rb.angularVelocity = Vector3.zero;
                 rb.position = t.position;
                 rb.rotation = t.rotation;
-                rb.Sleep(); // ensures physics doesn�t move it on the next tick
+                rb.Sleep(); // ensures physics doesnt move it on the next tick
             }
             else
             {

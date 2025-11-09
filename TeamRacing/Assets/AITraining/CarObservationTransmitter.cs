@@ -12,13 +12,13 @@ public class CarObservationTransmitter
     private int port;
     private bool connected = false;
 
-    private List<gameControlScript.CarEntry> cars;
+    private List<CarEntry> cars;
 
     // Internal buffer for latest observations
     private List<byte[]> observationPackets = new List<byte[]>();
     private readonly object lockObj = new object();
 
-    public CarObservationTransmitter(string ip, int port, List<gameControlScript.CarEntry> cars)
+    public CarObservationTransmitter(string ip, int port, List<CarEntry> cars)
     {
         this.ip = ip;
         this.port = port;

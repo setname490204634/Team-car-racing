@@ -42,6 +42,7 @@ public class CarController : MonoBehaviour
     private bool outOfBounds = false;
 
     // acceleration, speed and distance
+    public float distance = 0;
     public float dicountedDistance = 0;
     private float dicountFactor = 0.9f;
     private Vector3 lastPos = Vector3.zero;
@@ -52,6 +53,12 @@ public class CarController : MonoBehaviour
     public Vector3 speed { get { return this.rb.linearVelocity; } }
     public Vector3 position { get { return this.rb.position; } }
     public Quaternion rotation { get { return this.rb.rotation; } }
+    public Vector2 speed2D { get { return new Vector2(this.rb.linearVelocity.x, this.rb.linearVelocity.z); } }
+    public Vector2 position2D { get { return new Vector2(this.rb.position.x, this.rb.position.z); } }
+    public Vector2 forward2D { get { Vector3 forward3D = this.rb.rotation * Vector3.forward; return new Vector2(forward3D.x, forward3D.z); } }
+    public Vector2 acceleration2D { get { return new Vector2(this.acceleration.x, this.acceleration.z); } }
+
+
 
     void Awake()
     {
@@ -120,6 +127,7 @@ public class CarController : MonoBehaviour
         Vector3 curPos = rb.position;
         this.dicountedDistance *= dicountFactor;
         this.dicountedDistance += (curPos - lastPos).magnitude;
+        this.distance += (curPos - lastPos).magnitude;
         lastPos = curPos;
 
         Vector3 curSpeed = rb.linearVelocity;

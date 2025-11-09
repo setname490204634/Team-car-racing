@@ -131,11 +131,6 @@ public class MapSegmentHandler : MonoBehaviour
         return bestIndex;
     }
 
-    private float GetVectorMagnitudeInDirection(Vector2 vector, Vector2 direction)
-    {
-        return Mathf.Abs(Vector2.Dot(vector, direction.normalized)); ;
-    }
-
     public Vector2 GetVectorI(int index, Vector2 pos)
     {
         if (road == null || road.Count < 3) return Vector2.zero;
@@ -173,9 +168,9 @@ public class MapSegmentHandler : MonoBehaviour
         return (road[index2] - road[index1]).normalized;
     }
 
-    public Vector2 GetVectorV(int index, Vector2 pos)
+    public (Vector2 dir, float radius) GetVectorV(int index, Vector2 pos)
     {
-        if (road == null || road.Count < 3) return Vector2.zero;
+        if (road == null || road.Count < 3) return (Vector2.zero, 0f);
 
         int count = road.Count;
         int index1 = (index + 1) % count;
@@ -194,24 +189,24 @@ public class MapSegmentHandler : MonoBehaviour
 
         // Solve for circle center (intersection of bisectors)
         bool found = LineLineIntersection(mid1, mid1 + perp1, mid2, mid2 + perp2, out Vector2 center);
-        if (!found) return Vector2.zero;
+        if (!found) return (Vector2.zero, 0f);
 
         // Direction from center to i+1
-        Vector2 radius = (road[index1] - center).normalized;
+        float radius = (road[index] - center).magnitude;
 
         Vector2 carLine = (pos - center).normalized;
 
         // Tangent direction (90 degrees to radius)
         Vector2 tangent = new Vector2(-carLine.y, carLine.x);
 
-        // Ensure tangent direction goes from i+1 toward i+2
-        if (Vector2.Dot(tangent, road[index2] - road[index1]) < 0)
+        // Ensure tangent direction goes from i toward i+1
+        if (Vector2.Dot(tangent, road[index1] - road[index]) < 0)
             tangent = -tangent;
 
-        return tangent.normalized;
+        return (tangent.normalized, radius);
     }
 
-    bool LineLineIntersection(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, out Vector2 intersection)
+    private bool LineLineIntersection(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, out Vector2 intersection)
     {
         intersection = Vector2.zero;
         float A1 = p2.y - p1.y;
@@ -224,7 +219,7 @@ public class MapSegmentHandler : MonoBehaviour
 
         float denominator = A1 * B2 - A2 * B1;
 
-        if (Mathf.Abs(denominator) < 0.0001f) return false; // parallel
+        if (Mathf.Abs(denominator) < 0.01f) return false; // almost parallel
 
         intersection = new Vector2(
             (B2 * C1 - B1 * C2) / denominator,
@@ -233,66 +228,23 @@ public class MapSegmentHandler : MonoBehaviour
         return true;
     }
 
-
-    // absolute angle between the road segment direction and the velocity vector
-    public float GetAngleToNext(int index, Vector2 velocity)
+    public float GetDistanceI(int index, Vector2 pos)
     {
-        if (road == null || road.Count < 2) return 0f;
-
+        if (road == null || road.Count < 3) return 0f;
         int count = road.Count;
-        int nextIndex = (index + 1) % count;
+        int index1 = (index + 1) % count;
 
-        Vector2 dir = (road[nextIndex] - road[index]);
-
-        float angle = Vector2.SignedAngle(dir, velocity);
-
-        return Mathf.Abs(angle);
+        return Vector2.Distance(pos, road[index1]) / Vector2.Distance(road[index], road[index1]);
     }
 
-    // distance to next point, normalized to 0-1 based on the segment length
-    public float GetDistanceToNext(int index, Vector2 pos)
+    public float GetDistanceII(int index, Vector2 pos)
     {
-        if (road == null || road.Count < 2) return 0f;
-
+        if (road == null || road.Count < 3) return 0f;
         int count = road.Count;
-        int nextIndex = (index + 1) % count;
+        int index1 = (index + 1) % count;
+        int index2 = (index + 2) % count;
 
-        return Vector2.Distance(pos, road[nextIndex]) / Vector2.Distance(road[index], road[nextIndex]);
-    }
-
-    // shortest distance from pos to segment
-    public float GetDistanceFromSegment(int index, Vector2 pos)
-    {
-        if (road == null || road.Count < 2) return 0f;
-
-        int count = road.Count;
-        int nextIndex = (index + 1) % count;
-
-        Vector2 a = road[index];
-        Vector2 b = road[nextIndex];
-        Vector2 ap = pos - a;
-        Vector2 ab = b - a;
-
-        float abLenSqr = ab.sqrMagnitude;
-        if (abLenSqr < 0.0001f) return ap.magnitude;
-
-        float t = Mathf.Clamp01(Vector2.Dot(ap, ab) / abLenSqr);
-        Vector2 closest = a + ab * t;
-
-        return Vector2.Distance(pos, closest);
-    }
-    //speed in a direction of next point
-    public Vector2 GetNextDirectionSpeed(int index, float speed)
-    {
-        if (road == null || road.Count < 2)
-            return Vector2.zero;
-
-        int count = road.Count;
-        int nextIndex = (index + 1) % count;
-        int nextNextIndex = (index + 2) % count;
-
-        Vector2 dir = (road[nextNextIndex] - road[nextIndex]).normalized;
-        return dir * speed;
+        return Vector2.Distance(pos, road[index2]) / Vector2.Distance(road[index], road[index2]);
     }
 
 #if UNITY_EDITOR
