@@ -105,7 +105,6 @@ class Rewards:
             throttle_smoothness=0.005,
             collision_penalty=10.0,
             grass_penalty=1.0,
-            out_of_bounds_penalty=10.0
         )
 
 

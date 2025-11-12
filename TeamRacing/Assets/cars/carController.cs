@@ -43,8 +43,8 @@ public class CarController : MonoBehaviour
 
     // acceleration, speed and distance
     public float distance = 0;
-    public float dicountedDistance = 0;
-    private float dicountFactor = 0.9f;
+    public float discountedDistance = 0;
+    private float discountFactor = 0.9f;
     private Vector3 lastPos = Vector3.zero;
 
     public Vector3 acceleration = Vector3.zero;
@@ -58,7 +58,22 @@ public class CarController : MonoBehaviour
     public Vector2 forward2D { get { Vector3 forward3D = this.rb.rotation * Vector3.forward; return new Vector2(forward3D.x, forward3D.z); } }
     public Vector2 acceleration2D { get { return new Vector2(this.acceleration.x, this.acceleration.z); } }
 
+    public void ResetCar()
+    {
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        distance = 0;
+        discountedDistance = 0;
+        lastPos = this.rb.position;
+        acceleration = Vector3.zero;
+        lastSpeed = Vector3.zero;
 
+        collided = false;
+        crossedFinish = false;
+        crossedHalfway = false;
+        onGrass = false;
+        outOfBounds = false;
+    }
 
     void Awake()
     {
@@ -81,7 +96,7 @@ public class CarController : MonoBehaviour
         if (inputProvider == null) return;
 
         //out of bounds
-        if (this.position.y < 5f) this.outOfBounds = true;
+        if (this.position.y < -5f || this.position.y > 5f) this.outOfBounds = true;
 
         CarInput input = inputProvider.getInput();
         ApplySteering(input);
@@ -125,8 +140,8 @@ public class CarController : MonoBehaviour
     private void UpdateSpeedDistanceAcceleration()
     {
         Vector3 curPos = rb.position;
-        this.dicountedDistance *= dicountFactor;
-        this.dicountedDistance += (curPos - lastPos).magnitude;
+        this.discountedDistance *= discountFactor;
+        this.discountedDistance += (curPos - lastPos).magnitude;
         this.distance += (curPos - lastPos).magnitude;
         lastPos = curPos;
 

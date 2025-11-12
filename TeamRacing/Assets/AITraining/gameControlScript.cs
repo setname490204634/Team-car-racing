@@ -16,6 +16,17 @@ public class CarRaceState
     public bool crossedFinish = true;
 
     public bool finished = false;
+
+    public void Reset()
+    {
+        lapCount = 0;
+        currentLapTime = 0f;
+        lastLapTotalTime = 0f;
+        bestLapTime = float.MaxValue;
+        passedHalfway = false;
+        crossedFinish = true;
+        finished = false;
+    }
 }
 public class CarEntry
 {
@@ -26,6 +37,15 @@ public class CarEntry
     public CarRaceState raceState;
     public CarController controller;
     public int segmentIndex;
+
+    public void Reset()
+    {
+        inputProvider.SetInput(CarInput.Default);
+        rewards.Reset();
+        raceState.Reset();
+        controller.ResetCar();
+        segmentIndex = 0;
+    }
 }
 
 public class gameControlScript : MonoBehaviour
@@ -70,12 +90,16 @@ public class gameControlScript : MonoBehaviour
     private enum State { Idle, WaitingToStart, Running, Stopped }
     private State state = State.Idle;
     private bool observationsSent = false;
+
     public MapSegmentHandler currentSegmentHandler;
+    public MapManager mapManager;
 
     void Start()
     {
-        ;
         InitializePortsFromArgs(Environment.GetCommandLineArgs());
+
+        mapManager = GetComponent<MapManager>();
+        this.currentSegmentHandler = mapManager.currentSegmentHandler;
 
         Application.runInBackground = true;
         //The simulation will run in real time
@@ -292,33 +316,17 @@ public class gameControlScript : MonoBehaviour
         {
             var entry = cars[i];
             var t = startTransforms[i];
-            entry.segmentIndex = 1;
-            entry.raceState = new CarRaceState();
-            entry.rewards.Reset();
-            entry.controller.distance = 0f;
-
-
             Rigidbody rb = entry.carObject.GetComponent<Rigidbody>();
             if (rb != null)
             {
                 // reset physics-based position & rotation
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
                 rb.position = t.position;
                 rb.rotation = t.rotation;
                 rb.Sleep(); // ensures physics doesnt move it on the next tick
             }
-            else
-            {
-                // fallback if no Rigidbody
-                entry.carObject.transform.SetPositionAndRotation(t.position, t.rotation);
-            }
-
-            // clear inputs so car doesn't immediately move again
-            if (entry.inputProvider != null)
-            {
-                entry.inputProvider.SetInput(CarInput.Default);
-            }
+            
+            //it is important to call entry.reset here since the cars position has to be stored in this line (after its moved to starting position)
+            entry.Reset();
         }
         Debug.Log("Cars have been reset.");
     }
@@ -350,7 +358,6 @@ public class gameControlScript : MonoBehaviour
 
     private void StartGame()
     {
-        ResetCars();
         state = State.Running;
         Debug.Log("Game started.");
         tickCount = 0;
@@ -384,14 +391,19 @@ public class gameControlScript : MonoBehaviour
             case 0: // reset
                 UnityMainThreadDispatcher.Instance().Enqueue(() => ResetCars());
                 break;
-            case 1: // shuffle
+            case 1: // shuffle cars
                 UnityMainThreadDispatcher.Instance().Enqueue(() => ShuffleStartTransforms());
                 break;
             case 2: // set lap count
                 this.lapCount = value;
                 break;
             case 3: // change map
-                // unfinished
+                mapManager.LoadMap(value);
+                this.currentSegmentHandler = mapManager.currentSegmentHandler;
+                break;
+            case 4: // change map randomly
+                mapManager.LoadRandomMap();
+                this.currentSegmentHandler = mapManager.currentSegmentHandler;
                 break;
             case 10: // start the simulation
                 StartGame();

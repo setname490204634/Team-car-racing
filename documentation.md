@@ -262,7 +262,7 @@ Unity side is used as simulation for cars, it can take driving input from networ
     * 1 byte speed
     * 1 byte steering
     * 4 bytes car ID (int32, little-endian)
-    * 4 bytes reward (int32, little-endian)
+    * 50 bytes reward (float, little-endian)
   * RGB24 camera image
 
 - Driving Instruction Packet (Python -> Unity)
@@ -298,12 +298,15 @@ header, image = reciever.receive_observations()
 
 ### Unity Game Commands
 
+- after every command the game has to be reset
+
 | **First Byte** | **Second Byte** | **Description** |
 |-----------------|------------------|-----------------|
 | `0` | `-` | Reset all cars to the start block |
 | `1` | `-` | Randomly shuffle car starting positions |
 | `2` | `x` | set lap count to x |
 | `3` | `x` | Swap map to maps[x] |
+| `4` | `x` | Swap map randomly |
 | `10` | `-` | Start the game |
 | `11` | `-` | Stop the game |
 | `20` | `x` | Set the simulation refresh rate (that translates to delta time) |

@@ -109,9 +109,9 @@ public struct Rewards
 public class RewardsCalculator : ICarRewardProvider
 {
     private gameControlScript gameControl;
-    private List<int> teammatesID;
-    CarEntry entry;
-    MapSegmentHandler segmentHandler;
+    public List<int> teammatesID;
+    private CarEntry entry;
+    private MapSegmentHandler segmentHandler;
 
     private CarInput lastInput;
 
@@ -159,6 +159,7 @@ public class RewardsCalculator : ICarRewardProvider
         finalTeammatePlacement.Clear();
         teammateLapTimes.Clear();
         lastInput = entry.agent.agentInputProvider.getInput();
+        this.segmentHandler = this.gameControl.currentSegmentHandler;
     }
 
     public Rewards CalculateReward()
@@ -241,7 +242,7 @@ public class RewardsCalculator : ICarRewardProvider
 
     private float DiscountedDistanceReward()
     {
-        return entry.controller.dicountedDistance;
+        return entry.controller.discountedDistance;
     }
 
     private float DistanceReward()

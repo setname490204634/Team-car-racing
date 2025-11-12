@@ -52,6 +52,8 @@ class UnityCarEnv(gym.Env):
         self.unity_exe_path = unity_exe_path
         self.unity_process = None
         self.run_headless = run_headless
+        self.episode_rewards_per_category = Rewards()  # new Rewards instance to accumulate sums
+        self.resetCount = 0
 
         # --- Start Unity headless executable ---
         self._launch_unity()
@@ -65,6 +67,7 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver.start()
 
         # --- Initialize communication ---
+        sender.send_command(3, 4, self.control_port)   # mediumMap1 for start
         sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
 
         # --- Internal state ---
@@ -111,13 +114,18 @@ class UnityCarEnv(gym.Env):
 
     def reset(self, **kwargs):
         """Reset Unity and return initial observation."""
+        self.resetCount += 1
         sender.send_command(11, 0, self.control_port)  # stop
+        if (self.resetCount % 25 == 0):
+            sender.send_command(4, 0, self.control_port)   # random map
         sender.send_command(0, 0, self.control_port)   # reset cars
         sender.send_command(10, 0, self.control_port)  # start
 
         while not self.obs_receiver.has_min_observations(1):
             time.sleep(0.0001)
 
+        self.episode_rewards_per_category = Rewards()  # reset at start of episode
+        
         obs_packet = self.obs_receiver.collect_observations()[-1]
         self.current_step = 0
         self.episode_reward = 0.0
@@ -144,10 +152,15 @@ class UnityCarEnv(gym.Env):
         obs_packet = self.obs_receiver.collect_observations()[-1]
 
         # --- Handle reward vector ---
-        reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.efaultWeights().as_vector()))
+        reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.defaultWeights().as_vector()))
         # print(obs_packet.rewards)
-        reward = np.clip(reward, -100, 100)
-        print(reward)
+        # print(obs_packet.rewards)
+        # Update the per-category sums (unweighted)
+        for field in vars(obs_packet.rewards):
+            current_value = getattr(obs_packet.rewards, field)
+            prev_sum = getattr(self.episode_rewards_per_category, field)
+            setattr(self.episode_rewards_per_category, field, prev_sum + current_value)
+
 
         # --- Update state ---
         self.prev_action = np.clip(action, -1.0, 1.0)
@@ -169,14 +182,20 @@ class UnityCarEnv(gym.Env):
         info = {}
         if done:
             print(self.episode_reward)
-            info = {"episode": {"r": self.episode_reward, "l": self.current_step}}
+            info = {
+                "episode": {
+                    "r": self.episode_reward,
+                    "l": self.current_step,
+                    "rewards_per_category": vars(self.episode_rewards_per_category)
+                }
+            }
             self.current_step = 0
             self.episode_reward = 0.0
+            self.episode_rewards_per_category = Rewards()
 
         obs = self._build_observation(obs_packet)
         return obs, reward, done, truncated, info
 
-    # ------------------------------------------------------------------
     def close(self):
         """Clean up Unity process and receiver."""
 

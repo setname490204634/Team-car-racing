@@ -56,7 +56,7 @@ class ObservationReceiver:
                     buffer = b""
                     while self.running:
                         try:
-                            data = conn.recv(4096)
+                            data = conn.recv(32 * 1024)
                             if not data:
                                 print("Unity disconnected.")
                                 break
@@ -70,7 +70,7 @@ class ObservationReceiver:
                                 header_format = '<BBi' + 'f' * self.NUM_REWARDS
                                 unpacked = struct.unpack(header_format, header)
                                 speed, steer, car_id = unpacked[:3]
-                                reward_values = unpacked[3:]
+                                reward_values = unpacked[3:35]
 
                                 rewards = Rewards(*reward_values)
 

@@ -12,7 +12,7 @@ public class MapSegmentHandler : MonoBehaviour
     [Tooltip("Maximum distance allowed to connect two endpoints.")]
     public const float connectionThreshold = 0.1f;
 
-    public List<Vector2> road = new List<Vector2>();
+    public List<Vector2> road = null;
 
     private class TilePath
     {

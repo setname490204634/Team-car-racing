@@ -8,7 +8,7 @@ from UnitySingleCarEnv import UnityCarEnv  # your environment class
 os.makedirs("./pythonSide/models", exist_ok=True)
 os.makedirs("./pythonSide/logs", exist_ok=True)
 
-unity_env = UnityCarEnv(run_headless = True)
+unity_env = UnityCarEnv(run_headless = False)
 env = DummyVecEnv([lambda: unity_env])
 env = VecTransposeImage(env)  # transpose images if needed for CNN
 
