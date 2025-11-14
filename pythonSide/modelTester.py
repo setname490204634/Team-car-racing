@@ -16,7 +16,7 @@ env = DummyVecEnv([make_env])
 env = VecTransposeImage(env)
 
 # --- Load existing model ---
-model_path = "./pythonSide/models/ppo_unity_car_20000_steps.zip"
+model_path = "./pythonSide/models/ppo_unity_car_1020000_steps.zip"
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Model file {model_path} not found. Train a model first.")
 

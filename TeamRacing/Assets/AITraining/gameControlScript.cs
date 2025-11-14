@@ -108,6 +108,7 @@ public class gameControlScript : MonoBehaviour
         UpdateSimulationDeltaTime();
 
         InitializeCars();
+        ResetCars();
 
         InitializeNetworking();
 
@@ -143,6 +144,7 @@ public class gameControlScript : MonoBehaviour
             }
             Physics.Simulate(fixedDt);
             tickCount++;
+            UpdateCarSegmentPos();
             HandleCarCollisions();
         }
     }
@@ -307,6 +309,16 @@ public class gameControlScript : MonoBehaviour
         instructionBuffer = new InstructionBuffer(cars.Count);
         commandBuffer = new GameCommandBuffer();
         transmitter = new CarObservationTransmitter("127.0.0.1", observationTransmitterPort, cars);
+    }
+
+    public void UpdateCarSegmentPos()
+    {
+        for (int i = 0; i < cars.Count; i++)
+        {
+            var entry = cars[i];
+            entry.segmentIndex = this.currentSegmentHandler.GetClosestIndex(entry.segmentIndex, entry.controller.position2D);
+        }
+        return;
     }
 
     // Reset all cars to their start transforms

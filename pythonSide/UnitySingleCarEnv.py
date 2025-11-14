@@ -9,6 +9,7 @@ import socket
 import os
 import sys
 from rewards import *
+import tensorflow as tf
 
 
 def wait_for_port(host: str, port: int, timeout=20):
@@ -54,6 +55,10 @@ class UnityCarEnv(gym.Env):
         self.run_headless = run_headless
         self.episode_rewards_per_category = Rewards()  # new Rewards instance to accumulate sums
         self.resetCount = 0
+        self.changeMapEvery = 20
+        
+        self.tb_writer = tf.summary.create_file_writer("./pythonSide/logs")  # You can change path
+        self.global_step = 0  # Use this for step/episode count
 
         # --- Start Unity headless executable ---
         self._launch_unity()
@@ -67,7 +72,7 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver.start()
 
         # --- Initialize communication ---
-        sender.send_command(3, 4, self.control_port)   # mediumMap1 for start
+        sender.send_command(3, 0, self.control_port)  # set first map
         sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
 
         # --- Internal state ---
@@ -79,7 +84,7 @@ class UnityCarEnv(gym.Env):
         self.filter_alpha = 1.0
 
     def _launch_unity(self):
-        # return #uncoment for manual unity launch
+        return #uncoment for manual unity launch
         """Launch Unity executable with port arguments."""
         if not os.path.exists(self.unity_exe_path):
             raise FileNotFoundError(f"Unity executable not found: {self.unity_exe_path}")
@@ -116,8 +121,10 @@ class UnityCarEnv(gym.Env):
         """Reset Unity and return initial observation."""
         self.resetCount += 1
         sender.send_command(11, 0, self.control_port)  # stop
-        if (self.resetCount % 25 == 0):
-            sender.send_command(4, 0, self.control_port)   # random map
+        
+        # if (self.resetCount % self.changeMapEvery == 0):
+        #     sender.send_command(4, 0, self.control_port)   # random map
+            
         sender.send_command(0, 0, self.control_port)   # reset cars
         sender.send_command(10, 0, self.control_port)  # start
 
@@ -153,8 +160,7 @@ class UnityCarEnv(gym.Env):
 
         # --- Handle reward vector ---
         reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.defaultWeights().as_vector()))
-        # print(obs_packet.rewards)
-        # print(obs_packet.rewards)
+        #print(obs_packet.rewards)
         # Update the per-category sums (unweighted)
         for field in vars(obs_packet.rewards):
             current_value = getattr(obs_packet.rewards, field)
@@ -182,16 +188,25 @@ class UnityCarEnv(gym.Env):
         info = {}
         if done:
             print(self.episode_reward)
+            
+            with self.tb_writer.as_default():
+                for key, value in vars(self.episode_rewards_per_category).items():
+                    tf.summary.scalar(f"rewards/{key}", value, step=self.global_step)
+                tf.summary.scalar("episode/total_reward", self.episode_reward, step=self.global_step)
+                tf.summary.scalar("episode/length", self.current_step, step=self.global_step)
+                self.tb_writer.flush()
+                
             info = {
                 "episode": {
                     "r": self.episode_reward,
-                    "l": self.current_step,
-                    "rewards_per_category": vars(self.episode_rewards_per_category)
+                    "l": self.current_step
                 }
             }
             self.current_step = 0
             self.episode_reward = 0.0
             self.episode_rewards_per_category = Rewards()
+            
+            self.global_step += 1  # increment episode count
 
         obs = self._build_observation(obs_packet)
         return obs, reward, done, truncated, info
