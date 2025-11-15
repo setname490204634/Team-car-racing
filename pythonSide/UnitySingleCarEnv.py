@@ -84,7 +84,7 @@ class UnityCarEnv(gym.Env):
         self.filter_alpha = 1.0
 
     def _launch_unity(self):
-        return #uncoment for manual unity launch
+        #return #uncoment for manual unity launch
         """Launch Unity executable with port arguments."""
         if not os.path.exists(self.unity_exe_path):
             raise FileNotFoundError(f"Unity executable not found: {self.unity_exe_path}")

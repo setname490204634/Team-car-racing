@@ -100,11 +100,45 @@ class Rewards:
     def defaultWeights() -> "Rewards":
         """Return a Rewards instance representing the default weights."""
         return Rewards(
-            speed=0.15,
-            steering_smoothness=0.005,
-            throttle_smoothness=0.005,
-            collision_penalty=10.0,
-            grass_penalty=1.0,
+            steering_smoothness = 0.0001,
+            throttle_smoothness =0.0001,
+
+            out_of_bounds_penalty = 0.0,
+            collision_penalty =10.0,
+            grass_penalty = 1.0,
+
+            team_distance = 0.0,
+            lap_time = 0.0,
+            team_lap_time = 0.0,
+            placement = 0.0,
+            team_placement = 0.0,
+
+            speed = 0.01,
+            acceleration = 0.01,
+            distance = 0.0,
+            discounted_distance = 0.01,
+
+            speedI = 0.01,
+            speedII = 0.01,
+            speedIII = 0.01,
+            speedIV = 0.01,
+            speedV = 0.01,
+
+            accelerationI = 0.01,
+            accelerationII = 0.01,
+            accelerationIII = 0.01,
+            accelerationIV = 0.01,
+            accelerationV = 0.01,
+
+            angleI = -0.002,
+            angleII = -0.002,
+            angleIII = -0.002,
+            angleIV = -0.002,
+            angleV = -0.002,
+
+            distanceI = 0.01,
+            distanceII = 0.01,
+            distanceIII = 0.01
         )
 
 
