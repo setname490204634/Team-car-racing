@@ -89,7 +89,7 @@ class Rewards:
             self.distanceI,
             self.distanceII,
             self.distanceIII,
-            self.progressReward
+            self.progressReward,
 
             # reserved for later use (8 + 10 zeros)
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -140,7 +140,7 @@ class Rewards:
 
             distanceI = 0.0,
             distanceII = 0.0,
-            distanceIII = 0.0
+            distanceIII = 0.0,
             progressReward = 1.0
         )
 

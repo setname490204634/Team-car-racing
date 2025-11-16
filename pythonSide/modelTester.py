@@ -11,13 +11,13 @@ os.makedirs("./pythonSide/logs", exist_ok=True)
 
 # --- Environment ---
 def make_env():
-    return UnityCarEnv(run_headless = False)
+    return UnityCarEnv(run_headless=False)
+
 env = DummyVecEnv([make_env])
-env = VecTransposeImage(env)
+# env = VecTransposeImage(env)
 
 # --- Load existing model ---
-model_path = "./pythonSide/models/ppo_unity_car_160000_steps.zip"
-#model_path = "./pythonSide/models/straightDrivingCar.zip"
+model_path = "./pythonSide/models/ppo_unity_car_240000_steps.zip"
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Model file {model_path} not found. Train a model first.")
 
@@ -32,7 +32,7 @@ checkpoint_callback = CheckpointCallback(
 )
 
 # --- Continue training ---
-additional_timesteps = 10000000  # adjust as needed
+additional_timesteps = 5_000_000  # adjust as needed
 model.learn(total_timesteps=additional_timesteps, callback=checkpoint_callback)
 
 # --- Save final model ---

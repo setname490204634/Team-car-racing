@@ -9,8 +9,8 @@ class Observation:
     """Represents a single car observation packet."""
     def __init__(self, car_id: int, speed: int, steer: int, rewards: Rewards, image: np.ndarray):
         self.car_id = car_id
-        self.speed = speed
-        self.steer = steer
+        self.speed = speed / 255.0
+        self.steer = (steer / 255.0) * 2.0 - 1.0
         self.rewards = rewards
         self.image = image
 

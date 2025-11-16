@@ -61,7 +61,7 @@ public class CarAgent : MonoBehaviour, ICarObserver
     public CarObservation GetCarObservation()
     {
         // Example max values
-        const float maxSpeed = 100f;
+        const float maxSpeed = 200f;
         const float maxSteering = 180f;
 
         // Convert float -> byte
