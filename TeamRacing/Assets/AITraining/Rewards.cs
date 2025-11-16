@@ -50,6 +50,7 @@ public struct Rewards
     public float distanceI;
     public float distanceII;
     public float distanceIII;
+    public float progressReward;
 
     public float[] ToArray()
     {
@@ -95,9 +96,10 @@ public struct Rewards
             distanceI,
             distanceII,
             distanceIII,
+            progressReward,
 
             //reserved for later use
-            0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f,
+            0f, 0f, 0f, 0f, 0f, 0f, 0f,
 
             0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f
         };
@@ -122,6 +124,7 @@ public class RewardsCalculator : ICarRewardProvider
     private int finalPlacement = -1; // -1 means not registered
     private List<int> finalTeammatePlacement = new List<int>();
     private List<float> teammateLapTimes = new List<float>();
+    private float segmentProgress = 0f;
 
     const float idealDistance = 10f; //for closeness reward
 
@@ -148,6 +151,7 @@ public class RewardsCalculator : ICarRewardProvider
     public void RegisterTeammateLapTime(float time) { this.teammateLapTimes.Add(time); }
     public void RegisterOnGrass() { this.onGrass = true; }
     public void RegisterOutOfBounds() { this.outOfBounds = true; }
+    public void RegisterProgressReward(float reward) {  this.segmentProgress =  reward; }
 
     public void Reset()
     {
@@ -160,6 +164,7 @@ public class RewardsCalculator : ICarRewardProvider
         teammateLapTimes.Clear();
         lastInput = entry.agent.agentInputProvider.getInput();
         this.segmentHandler = this.gameControl.currentSegmentHandler;
+        this.segmentProgress = 0f;
     }
 
     public Rewards CalculateReward()
@@ -205,6 +210,7 @@ public class RewardsCalculator : ICarRewardProvider
             distanceI = DistanceRewardTo(segmentHandler.GetDistanceI),
             distanceII = DistanceRewardTo(segmentHandler.GetDistanceII),
             distanceIII = DistanceRewardTo(segmentHandler.GetDistanceIII),
+            progressReward = GetProgressReward()
         };
 
         // reset it here since its used at 2 places
@@ -370,6 +376,13 @@ public class RewardsCalculator : ICarRewardProvider
     private float DistanceRewardTo(Func<int, Vector2, float> getDistanceFunc)
     {
         return getDistanceFunc(entry.segmentIndex, entry.controller.position2D);
+    }
+
+    private float GetProgressReward()
+    {
+        float output = this.segmentProgress;
+        this.segmentProgress = 0f;
+        return output;
     }
 
     private float GetVectorMagnitudeInDirection(Vector2 vector, Vector2 direction)

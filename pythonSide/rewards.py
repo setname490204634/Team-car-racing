@@ -45,6 +45,7 @@ class Rewards:
     distanceI: float = 0.0
     distanceII: float = 0.0
     distanceIII: float = 0.0
+    progressReward: float = 0.0
 
     def as_vector(self) -> np.ndarray:
         """Return rewards as a NumPy vector of length 50."""
@@ -88,9 +89,10 @@ class Rewards:
             self.distanceI,
             self.distanceII,
             self.distanceIII,
+            self.progressReward
 
             # reserved for later use (8 + 10 zeros)
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         ], dtype=np.float32)
 
@@ -113,32 +115,33 @@ class Rewards:
             placement = 0.0,
             team_placement = 0.0,
 
-            speed = 0.01,
+            speed = 0.005,
             acceleration = 0.01,
             distance = 0.0,
             discounted_distance = 0.01,
 
-            speedI = 0.01,
-            speedII = 0.01,
-            speedIII = 0.01,
-            speedIV = 0.01,
+            speedI = 0.0,
+            speedII = 0.0,
+            speedIII = 0.0,
+            speedIV = 0.0,
             speedV = 0.01,
 
-            accelerationI = 0.01,
-            accelerationII = 0.01,
-            accelerationIII = 0.01,
+            accelerationI = 0.0,
+            accelerationII = 0.0,
+            accelerationIII = 0.0,
             accelerationIV = 0.01,
-            accelerationV = 0.01,
+            accelerationV = 0.0,
 
-            angleI = -0.002,
-            angleII = -0.002,
-            angleIII = -0.002,
-            angleIV = -0.002,
+            angleI = -0.0,
+            angleII = -0.0,
+            angleIII = -0.0,
+            angleIV = -0.0,
             angleV = -0.002,
 
-            distanceI = 0.01,
-            distanceII = 0.01,
-            distanceIII = 0.01
+            distanceI = 0.0,
+            distanceII = 0.0,
+            distanceIII = 0.0
+            progressReward = 1.0
         )
 
 

@@ -316,7 +316,17 @@ public class gameControlScript : MonoBehaviour
         for (int i = 0; i < cars.Count; i++)
         {
             var entry = cars[i];
-            entry.segmentIndex = this.currentSegmentHandler.GetClosestIndex(entry.segmentIndex, entry.controller.position2D);
+            int oldIndex = entry.segmentIndex;
+            int newIndex = this.currentSegmentHandler.GetClosestIndex(oldIndex, entry.controller.position2D);
+            entry.segmentIndex = newIndex;
+            if ((oldIndex + 1) % this.currentSegmentHandler.road.Count == newIndex)//moved forward
+            {
+                entry.rewards.RegisterProgressReward(1.0f);
+            }
+            else if ((oldIndex - 1 + this.currentSegmentHandler.road.Count) % this.currentSegmentHandler.road.Count == newIndex)//moved back
+            {
+                entry.rewards.RegisterProgressReward(-1.0f);
+            }
         }
         return;
     }

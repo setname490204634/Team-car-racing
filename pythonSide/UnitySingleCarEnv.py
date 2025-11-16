@@ -77,7 +77,7 @@ class UnityCarEnv(gym.Env):
 
         # --- Internal state ---
         self.current_step = 0
-        self.max_steps = 500
+        self.max_steps = 2000
         self.episode_reward = 0.0
         self.prev_action = np.zeros(self.action_space.shape, dtype=np.float32)
         self.filtered_action = np.zeros(self.action_space.shape, dtype=np.float32)

@@ -178,7 +178,7 @@ public class MapSegmentHandler : MonoBehaviour
         int index2 = (index + 2) % count;
 
         (Vector2 center, float radius) = MakeCircle(road[index], road[index1], road[index2]);
-        if (float.Equals(radius, 0f)) return Vector2.zero;
+        if (float.Equals(radius, 0f)) return GetVectorIII(index, pos); // if circle cant be made or is too large the direction is straight
 
         Vector2 carLine = (pos - center).normalized;
 
