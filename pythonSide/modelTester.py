@@ -11,7 +11,7 @@ os.makedirs("./pythonSide/logs", exist_ok=True)
 
 # --- Environment ---
 def make_env():
-    return UnityCarEnv(run_headless=False)
+    return UnityCarEnv(run_headless=True)
 
 env = DummyVecEnv([make_env])
 # env = VecTransposeImage(env)
