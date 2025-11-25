@@ -91,7 +91,7 @@ class Rewards:
             self.distanceIII,
             self.progressReward,
 
-            # reserved for later use (8 + 10 zeros)
+            # reserved for later use
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         ], dtype=np.float32)
@@ -102,8 +102,8 @@ class Rewards:
     def defaultWeights() -> "Rewards":
         """Return a Rewards instance representing the default weights."""
         return Rewards(
-            steering_smoothness = 0.0001,
-            throttle_smoothness =0.0001,
+            steering_smoothness = 0.001,
+            throttle_smoothness =0.001,
 
             out_of_bounds_penalty = 0.0,
             collision_penalty =10.0,
@@ -115,8 +115,8 @@ class Rewards:
             placement = 0.0,
             team_placement = 0.0,
 
-            speed = 0.005,
-            acceleration = 0.01,
+            speed = 0.0,
+            acceleration = 0.0,
             distance = 0.0,
             discounted_distance = 0.01,
 
@@ -136,11 +136,11 @@ class Rewards:
             angleII = -0.0,
             angleIII = -0.0,
             angleIV = -0.0,
-            angleV = -0.002,
+            angleV = -0.02,
 
             distanceI = 0.0,
             distanceII = 0.0,
-            distanceIII = 0.0,
+            distanceIII = -0.1,
             progressReward = 1.0
         )
 

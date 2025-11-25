@@ -70,7 +70,10 @@ class ObservationReceiver:
                                 header_format = '<BBi' + 'f' * self.NUM_REWARDS
                                 unpacked = struct.unpack(header_format, header)
                                 speed, steer, car_id = unpacked[:3]
-                                reward_values = unpacked[3:35]
+                                #!!!
+                                # common bug place the number has to be change based on how many rewards are acutally used
+                                #!!!
+                                reward_values = unpacked[3:36]
 
                                 rewards = Rewards(*reward_values)
 

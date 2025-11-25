@@ -93,7 +93,7 @@ class UnityCarEnv(gym.Env):
         self.frame_buffer[-1] = new_frame
 
     def _launch_unity(self):
-        #return #uncoment for manual unity launch
+        #return #uncomment for manual unity launch
         """Launch Unity executable with port arguments."""
         if not os.path.exists(self.unity_exe_path):
             raise FileNotFoundError(f"Unity executable not found: {self.unity_exe_path}")
@@ -208,6 +208,9 @@ class UnityCarEnv(gym.Env):
         if obs_packet.rewards.out_of_bounds_penalty == -1:
             truncated = True
             done = True
+            
+        if obs_packet.rewards.progressReward != 0:
+             print(obs_packet.rewards)
 
         info = {}
         if done:
