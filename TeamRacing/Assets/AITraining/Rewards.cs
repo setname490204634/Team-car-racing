@@ -11,16 +11,22 @@ public struct Rewards
     public float throttleSmoothness;
 
     //collisions
-    public float outOfBoundsPenalty;
+    public float outOfBoundsPenalty; //used to detect bug for now
     public float collisionPenalty;
+    public float dicountedCollisionPenalty;//
     public float grassPenalty;
+    public float dicountedGrassPenalty;//
 
     //game state
     public float teamDistance;
     public float lapTime;
+    public float dicountedLapTime;//
     public float teamLapTime;
+    public float dicountedTeamLapTime;//
     public float placement;
+    public float dicountedPlacement;//
     public float teamPlacement;
+    public float dicountedTeamPlacement;//
 
     //car controller
     public float speed;
@@ -51,6 +57,7 @@ public struct Rewards
     public float distanceII;
     public float distanceIII;
     public float progressReward;
+    public float dicountedProgressReward;//
 
     public float[] ToArray()
     {
@@ -61,13 +68,19 @@ public struct Rewards
 
             outOfBoundsPenalty,
             collisionPenalty,
+            dicountedCollisionPenalty,
             grassPenalty,
+            dicountedGrassPenalty,
 
             teamDistance,
             lapTime,
+            dicountedLapTime,
             teamLapTime,
+            dicountedTeamLapTime,
             placement,
+            dicountedPlacement,
             teamPlacement,
+            dicountedTeamPlacement,
 
 
             speed,
@@ -97,10 +110,9 @@ public struct Rewards
             distanceII,
             distanceIII,
             progressReward,
+            dicountedProgressReward,
 
             //reserved for later use
-            0f, 0f, 0f, 0f, 0f, 0f, 0f,
-
             0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f
         };
 
@@ -117,14 +129,43 @@ public class RewardsCalculator : ICarRewardProvider
 
     private CarInput lastInput;
 
+
     private bool collided = false;
+    private float collidedReward = 0f;
+    private float collidedSum = 0f;
+    private float collidedDiscount = 0.8f;
+
     private bool onGrass = false;
+    private float onGrassReward = 0f;
+    private float onGrassSum = 0f;
+    private float onGrassDiscount = 0.9f;
+
     private bool outOfBounds = false;
+
     private float lastLapTime = 0f;
-    private int finalPlacement = -1; // -1 means not registered
+    private float lapTimeReward = 0f;
+    private float lastLapTimeSum = 0f;
+    private float lastLapTimeDiscount = 0.7f;
+
+    private int finalPlacement = 0; // 0 means not registered
+    private float placementReward = 0f;
+    private float finalPlacementSum = 0f;
+    private float finalPlacementDiscount = 0.7f;
+
     private List<int> finalTeammatePlacement = new List<int>();
+    private float finalTeammatePlacementReward = 0f;
+    private float finalTeammatePlacementSum = 0f;
+    private float finalTeammatePlacementDiscount = 0.7f;
+
     private List<float> teammateLapTimes = new List<float>();
+    private float teammateLapReward = 0f;
+    private float teammateLapTimeSum = 0f;
+    private float teammateLapDiscount = 0.7f;
+
     private float segmentProgress = 0f;
+    private float segmentProgressReward = 0f;
+    private float segmentProgressSum = 0f;
+    private float segmentProgressDiscount = 0.8f;
 
     const float idealDistance = 10f; //for closeness reward
 
@@ -159,30 +200,46 @@ public class RewardsCalculator : ICarRewardProvider
         onGrass = false;
         outOfBounds = false;
         lastLapTime = 0f;
-        finalPlacement = -1;
+        finalPlacement = 0;
         finalTeammatePlacement.Clear();
         teammateLapTimes.Clear();
         lastInput = entry.agent.agentInputProvider.getInput();
         this.segmentHandler = this.gameControl.currentSegmentHandler;
         this.segmentProgress = 0f;
+
+        collidedSum = 0f;
+        onGrassSum = 0f;
+        lastLapTimeSum = 0f;
+        finalPlacementSum = 0f;
+        finalTeammatePlacementSum = 0f;
+        teammateLapTimeSum = 0f;
+        segmentProgressSum = 0f;
     }
 
     public Rewards CalculateReward()
     {
+        UpdateLastRewards();
+        UpdateDiscountedRewards();
         Rewards output = new Rewards()
         {
             steeringSmoothness = SteeringSmoothnessReward(),
             throttleSmoothness = ThrottleSmoothnessReward(),
 
             outOfBoundsPenalty = OutOfBoundsPenalty(),
-            collisionPenalty = CollisionPenalty(),
-            grassPenalty = GrassPenalty(),
+            collisionPenalty = collidedReward,
+            dicountedCollisionPenalty = collidedSum,
+            grassPenalty = onGrassReward,
+            dicountedGrassPenalty = onGrassSum,
 
             teamDistance = TeamDistanceReward(),
-            lapTime = LapTimeReward(),
-            teamLapTime = TeamLapTimeReward(),
-            placement = PlacementReward(),
-            teamPlacement = TeamPlacementReward(),
+            lapTime = lapTimeReward,
+            dicountedLapTime = lastLapTimeSum,
+            teamLapTime = teammateLapReward,
+            dicountedTeamLapTime = teammateLapTimeSum,
+            placement = placementReward,
+            dicountedPlacement = finalPlacementSum,
+            teamPlacement = finalTeammatePlacementReward,
+            dicountedTeamPlacement = finalTeammatePlacementSum,
 
             speed = SpeedReward(),
             acceleration = AccelerationReward(),
@@ -210,13 +267,59 @@ public class RewardsCalculator : ICarRewardProvider
             distanceI = DistanceRewardTo(segmentHandler.GetDistanceI),
             distanceII = DistanceRewardTo(segmentHandler.GetDistanceII),
             distanceIII = DistanceRewardTo(segmentHandler.GetDistanceIII),
-            progressReward = GetProgressReward()
+            progressReward = segmentProgressReward,
+            dicountedProgressReward = segmentProgressSum
         };
 
         // reset it here since its used at 2 places
         lastInput = entry.agent.agentInputProvider.getInput();
 
         return output;
+    }
+
+    public void UpdateLastRewards()
+    {
+        collidedReward = collided ? 1.0f : 0.0f;
+        collided = false;
+
+        onGrassReward = onGrass ? 1.0f : 0.0f;
+        onGrass = false;
+
+        lapTimeReward = lastLapTime;
+        lastLapTime = 0f;
+
+        if (finalPlacement < placementPoints.Length)
+            placementReward = placementPoints[finalPlacement];
+        else
+            placementReward = 0f;
+        finalPlacement = 0;
+
+        finalTeammatePlacementReward = 0f;
+        foreach (int place in finalTeammatePlacement)
+        {
+            if (place < placementPoints.Length)
+                finalTeammatePlacementReward += placementPoints[place];
+        }
+        finalTeammatePlacement.Clear();
+
+        teammateLapReward = 0f;
+        foreach (float t in teammateLapTimes)
+            teammateLapReward += t;
+        teammateLapTimes.Clear();
+
+        segmentProgressReward = segmentProgress;
+        segmentProgress = 0f;
+    }
+
+    public void UpdateDiscountedRewards()
+    {
+        collidedSum = collidedSum * collidedDiscount + collidedReward;
+        onGrassSum = onGrassSum * onGrassDiscount + onGrassReward;
+        lastLapTimeSum = lastLapTimeSum * lastLapTimeDiscount + lapTimeReward;
+        finalPlacementSum = finalPlacementSum * finalPlacementDiscount + placementReward;
+        finalTeammatePlacementSum = finalTeammatePlacementSum * finalTeammatePlacementDiscount + finalTeammatePlacementReward;
+        teammateLapTimeSum = teammateLapTimeSum * teammateLapDiscount + teammateLapReward;
+        segmentProgressSum = segmentProgressSum * segmentProgressDiscount + segmentProgressReward;
     }
 
     public List<int> GetTeammateId()
@@ -233,7 +336,7 @@ public class RewardsCalculator : ICarRewardProvider
         float forwardSpeed = Vector3.Dot(velocity, entry.carObject.transform.forward);
 
         // Reward forward speed (positive = moving forward, negative = reversing)
-        return forwardSpeed;
+        return forwardSpeed / 100;
     }
 
     private float AccelerationReward()
@@ -243,41 +346,31 @@ public class RewardsCalculator : ICarRewardProvider
         // Project Acceleration onto the car's forward vector (in world space)
         float forwardAcceleration = Vector3.Dot(acc, entry.carObject.transform.forward);
 
-        return math.max(forwardAcceleration, 0f);
+        return math.max(forwardAcceleration, 0f) / 10;
     }
 
     private float DiscountedDistanceReward()
     {
-        return entry.controller.discountedDistance;
+        return entry.controller.discountedDistance / 100;
     }
 
     private float DistanceReward()
     {
-        return entry.controller.distance;
+        return entry.controller.distance / 1000;
     }
 
     // Steering change penalty
     private float SteeringSmoothnessReward()
     {
         float delta = Mathf.Abs(entry.agent.agentInputProvider.getInput().Steering - lastInput.Steering);
-        return -delta;
+        return delta / 128;
     }
 
     // Throttle change penalty
     private float ThrottleSmoothnessReward()
     {
         float delta = Mathf.Abs(entry.agent.agentInputProvider.getInput().Throttle - lastInput.Throttle);
-        return -delta;
-    }
-
-    // Collision penalty
-    private float CollisionPenalty()
-    {
-        float output = 0f;
-        if (collided)
-            output = -1.0f;
-        collided = false;
-        return output;
+        return delta / 128;
     }
 
     // Distance from teammate
@@ -294,63 +387,11 @@ public class RewardsCalculator : ICarRewardProvider
         return output;
     }
 
-    // Lap time reward
-    private float LapTimeReward()
-    {
-        float output = lastLapTime;
-        lastLapTime = 0;
-        return output;
-    }
-
-    // Placement reward
-    private float PlacementReward()
-    {
-        if (finalPlacement == -1 || finalPlacement >= placementPoints.Length) return 0f;
-
-        float output = placementPoints[finalPlacement];
-        finalPlacement = -1;
-        return output;
-    }
-
-    // Team placement reward
-    // rewards car for teammate placement
-    private float TeamPlacementReward()
-    {
-        float output = 0.0f;
-        foreach (int teammatePlace in finalTeammatePlacement)
-        {
-            if (teammatePlace >= placementPoints.Length) continue;
-            output += placementPoints[teammatePlace];
-        }
-        this.finalTeammatePlacement.Clear();
-        return output;
-    }
-
-    private float TeamLapTimeReward()
-    {
-        float output = 0.0f;
-        foreach (int time in teammateLapTimes)
-        {
-            output += time;
-        }
-        this.teammateLapTimes.Clear();
-        return output;
-    }
-
-    private float GrassPenalty()
-    {
-        float output = 0f;
-        if (onGrass)
-            output = -1.0f;
-        onGrass = false;
-        return output;
-    }
-
     private float OutOfBoundsPenalty()
     {
         float output = 0f;
         if (outOfBounds)
-            output = -1.0f;
+            output = 1.0f;
         outOfBounds = false;
         return output;
     }
@@ -358,31 +399,24 @@ public class RewardsCalculator : ICarRewardProvider
     private float SpeedRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)
     {
         Vector2 dir = getVectorFunc(entry.segmentIndex, entry.controller.position2D);
-        return GetVectorMagnitudeInDirection(entry.controller.speed2D, dir);
+        return GetVectorMagnitudeInDirection(entry.controller.speed2D, dir) / 100;
     }
 
     private float AccelerationRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)
     {
         Vector2 dir = getVectorFunc(entry.segmentIndex, entry.controller.position2D);
-        return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, dir);
+        return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, dir) / 10;
     }
 
     private float AngleRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)
     {
         Vector2 dir = getVectorFunc(entry.segmentIndex, entry.controller.position2D);
-        return GetVectorAngleInDirection(entry.controller.speed2D, dir);
+        return GetVectorAngleInDirection(entry.controller.speed2D, dir) / 3.14f;
     }
 
     private float DistanceRewardTo(Func<int, Vector2, float> getDistanceFunc)
     {
         return getDistanceFunc(entry.segmentIndex, entry.controller.position2D);
-    }
-
-    private float GetProgressReward()
-    {
-        float output = this.segmentProgress;
-        this.segmentProgress = 0f;
-        return output;
     }
 
     private float GetVectorMagnitudeInDirection(Vector2 vector, Vector2 direction)

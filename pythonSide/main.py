@@ -11,7 +11,7 @@ os.makedirs("./pythonSide/models", exist_ok=True)
 os.makedirs("./pythonSide/logs", exist_ok=True)
 
 def make_env():
-    return UnityCarEnv(run_headless=True)
+    return UnityCarEnv(run_headless=False)
 env = DummyVecEnv([make_env])
 
 policy_kwargs = dict(
@@ -31,16 +31,23 @@ model = PPO(
     policy_kwargs=policy_kwargs,
     verbose=1,
 
-    learning_rate=3e-4,
-    batch_size=64,
-    n_steps=2048,
-    gamma=0.995,
-    ent_coef=0.0003,
-    clip_range=0.2,
+    learning_rate=lambda f: 3e-4 * f,
+
+    n_steps=4096,
+    batch_size=512,
+    n_epochs=10,
+
+    gamma=0.99,
     gae_lambda=0.95,
+    clip_range=0.1,
+
+    ent_coef=0.0001,
+    vf_coef=1.0,
+    max_grad_norm=0.5,
 
     tensorboard_log="./pythonSide/logs/"
 )
+
 
 checkpoint_callback = CheckpointCallback(
     save_freq=20000,

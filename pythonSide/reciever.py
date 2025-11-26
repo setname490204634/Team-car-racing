@@ -72,8 +72,9 @@ class ObservationReceiver:
                                 speed, steer, car_id = unpacked[:3]
                                 #!!!
                                 # common bug place the number has to be change based on how many rewards are acutally used
+                                # the second number is 3 + Number of rewards actually used
                                 #!!!
-                                reward_values = unpacked[3:36]
+                                reward_values = unpacked[3:43]
 
                                 rewards = Rewards(*reward_values)
 

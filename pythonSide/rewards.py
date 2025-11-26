@@ -11,13 +11,19 @@ class Rewards:
 
     out_of_bounds_penalty: float = 0.0
     collision_penalty: float = 0.0
+    discounted_collision_penalty: float = 0.0
     grass_penalty: float = 0.0
+    discounted_grass_penalty: float = 0.0
 
     team_distance: float = 0.0
     lap_time: float = 0.0
+    discounted_lap_time: float = 0.0
     team_lap_time: float = 0.0
+    discounted_team_lap_time: float = 0.0
     placement: float = 0.0
+    discounted_placement: float = 0.0
     team_placement: float = 0.0
+    discounted_team_placement: float = 0.0
 
     speed: float = 0.0
     acceleration: float = 0.0
@@ -46,6 +52,7 @@ class Rewards:
     distanceII: float = 0.0
     distanceIII: float = 0.0
     progressReward: float = 0.0
+    discounted_progressReward: float = 0.0
 
     def as_vector(self) -> np.ndarray:
         """Return rewards as a NumPy vector of length 50."""
@@ -102,18 +109,24 @@ class Rewards:
     def defaultWeights() -> "Rewards":
         """Return a Rewards instance representing the default weights."""
         return Rewards(
-            steering_smoothness = 0.001,
-            throttle_smoothness =0.001,
+            steering_smoothness = -0.1,
+            throttle_smoothness = -0.1,
 
-            out_of_bounds_penalty = 0.0,
-            collision_penalty =10.0,
-            grass_penalty = 1.0,
+            out_of_bounds_penalty = -0.0,
+            collision_penalty = -0.0,
+            discounted_collision_penalty= -0.1,
+            grass_penalty = -0.0,
+            discounted_grass_penalty= -0.01,
 
-            team_distance = 0.0,
-            lap_time = 0.0,
-            team_lap_time = 0.0,
+            team_distance = -0.0,
+            lap_time = -0.0,
+            discounted_lap_time= -0.0,
+            team_lap_time = -0.0,
+            discounted_team_lap_time= -0.0,
             placement = 0.0,
+            discounted_placement= 0.0,
             team_placement = 0.0,
+            discounted_team_placement= 0.0,
 
             speed = 0.0,
             acceleration = 0.0,
@@ -124,7 +137,7 @@ class Rewards:
             speedII = 0.0,
             speedIII = 0.0,
             speedIV = 0.0,
-            speedV = 0.01,
+            speedV = 0.02,
 
             accelerationI = 0.0,
             accelerationII = 0.0,
@@ -138,10 +151,11 @@ class Rewards:
             angleIV = -0.0,
             angleV = -0.02,
 
-            distanceI = 0.0,
-            distanceII = 0.0,
+            distanceI = -0.0,
+            distanceII = -0.0,
             distanceIII = -0.1,
-            progressReward = 1.0
+            progressReward = 0.0,
+            discounted_progressReward= 0.1
         )
 
 
