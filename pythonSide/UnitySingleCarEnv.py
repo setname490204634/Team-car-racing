@@ -26,6 +26,16 @@ def wait_for_port(host: str, port: int, timeout=20):
     print(f"Timeout: Unity did not open port {port} in {timeout} seconds.")
     return False
 
+def is_port_free(port: int) -> bool:
+    """Check if a TCP port is available."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+    return True
+
 
 class UnityCarEnv(gym.Env):
     """Unity Car environment for PPO training and inference."""
@@ -93,11 +103,27 @@ class UnityCarEnv(gym.Env):
         self.frame_buffer[-1] = new_frame
 
     def _launch_unity(self):
-        return #uncomment for manual unity launch
+        #return #uncomment for manual unity launch, then default ports are expected
         """Launch Unity executable with port arguments."""
         if not os.path.exists(self.unity_exe_path):
             raise FileNotFoundError(f"Unity executable not found: {self.unity_exe_path}")
 
+            # --- PORT VALIDATION LOOP ---
+        while True:
+            free_control = is_port_free(self.control_port)
+            free_car_instr = is_port_free(self.car_instr_port)
+            free_obs = is_port_free(self.obs_port)
+ 
+            if free_control and free_car_instr and free_obs:
+                break  # all good
+
+            print(f"Ports [{self.control_port}, {self.car_instr_port}, {self.obs_port}] "
+                f"in use. Shifting +3 and retrying...")
+
+            self.control_port += 3
+            self.car_instr_port += 3
+            self.obs_port += 3
+            
         # Pass ports as command-line args
         args = [
             self.unity_exe_path,
@@ -195,19 +221,28 @@ class UnityCarEnv(gym.Env):
         # --- Update state ---
         self.prev_action = np.clip(action, -1.0, 1.0)
         self.current_step += 1
-        self.episode_reward += reward
 
         truncated = False
         done = self.current_step >= self.max_steps
 
         # crashed
-        if obs_packet.rewards.collision_penalty == -1:
+        if obs_packet.rewards.collision_penalty > 0.5:
             truncated = True
             done = True
             
-        if obs_packet.rewards.out_of_bounds_penalty == -1:
+        if obs_packet.rewards.out_of_bounds_penalty > 0.5:
             truncated = True
             done = True
+            self.episode_reward -= reward
+            reward = 0
+            
+        if obs_packet.rewards.acceleration > 100:
+            truncated = True
+            done = True
+            self.episode_reward -= reward
+            reward = 0
+            
+        self.episode_reward += reward
 
         info = {}
         if done:

@@ -13,20 +13,20 @@ public struct Rewards
     //collisions
     public float outOfBoundsPenalty; //used to detect bug for now
     public float collisionPenalty;
-    public float dicountedCollisionPenalty;//
+    public float dicountedCollisionPenalty;
     public float grassPenalty;
-    public float dicountedGrassPenalty;//
+    public float dicountedGrassPenalty;
 
     //game state
     public float teamDistance;
     public float lapTime;
-    public float dicountedLapTime;//
+    public float dicountedLapTime;
     public float teamLapTime;
-    public float dicountedTeamLapTime;//
+    public float dicountedTeamLapTime;
     public float placement;
-    public float dicountedPlacement;//
+    public float dicountedPlacement;
     public float teamPlacement;
-    public float dicountedTeamPlacement;//
+    public float dicountedTeamPlacement;
 
     //car controller
     public float speed;
@@ -57,7 +57,7 @@ public struct Rewards
     public float distanceII;
     public float distanceIII;
     public float progressReward;
-    public float dicountedProgressReward;//
+    public float dicountedProgressReward;
 
     public float[] ToArray()
     {
@@ -336,7 +336,7 @@ public class RewardsCalculator : ICarRewardProvider
         float forwardSpeed = Vector3.Dot(velocity, entry.carObject.transform.forward);
 
         // Reward forward speed (positive = moving forward, negative = reversing)
-        return forwardSpeed / 100;
+        return forwardSpeed;
     }
 
     private float AccelerationReward()
@@ -346,31 +346,31 @@ public class RewardsCalculator : ICarRewardProvider
         // Project Acceleration onto the car's forward vector (in world space)
         float forwardAcceleration = Vector3.Dot(acc, entry.carObject.transform.forward);
 
-        return math.max(forwardAcceleration, 0f) / 10;
+        return math.max(forwardAcceleration, 0f);
     }
 
     private float DiscountedDistanceReward()
     {
-        return entry.controller.discountedDistance / 100;
+        return entry.controller.discountedDistance;
     }
 
     private float DistanceReward()
     {
-        return entry.controller.distance / 1000;
+        return entry.controller.distance;
     }
 
     // Steering change penalty
     private float SteeringSmoothnessReward()
     {
         float delta = Mathf.Abs(entry.agent.agentInputProvider.getInput().Steering - lastInput.Steering);
-        return delta / 128;
+        return delta / 255;
     }
 
     // Throttle change penalty
     private float ThrottleSmoothnessReward()
     {
         float delta = Mathf.Abs(entry.agent.agentInputProvider.getInput().Throttle - lastInput.Throttle);
-        return delta / 128;
+        return delta / 255;
     }
 
     // Distance from teammate
@@ -399,13 +399,13 @@ public class RewardsCalculator : ICarRewardProvider
     private float SpeedRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)
     {
         Vector2 dir = getVectorFunc(entry.segmentIndex, entry.controller.position2D);
-        return GetVectorMagnitudeInDirection(entry.controller.speed2D, dir) / 100;
+        return GetVectorMagnitudeInDirection(entry.controller.speed2D, dir);
     }
 
     private float AccelerationRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)
     {
         Vector2 dir = getVectorFunc(entry.segmentIndex, entry.controller.position2D);
-        return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, dir) / 10;
+        return GetVectorMagnitudeInDirection(entry.controller.acceleration2D, dir);
     }
 
     private float AngleRewardInDirection(Func<int, Vector2, Vector2> getVectorFunc)

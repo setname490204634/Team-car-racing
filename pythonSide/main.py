@@ -3,15 +3,38 @@ import os
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
 from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import BaseCallback
+import sender
 
 from UnitySingleCarEnv import UnityCarEnv
 from simplecCNN import SmallRacingCNN
+
+class FreezeCarDuringPPO(BaseCallback):
+
+    def __init__(self):
+        super().__init__()
+        self.paused = False
+
+    def _on_rollout_end(self):
+        env = self.model.env.envs[0]
+        print("Pausing Unity simulation...")
+        sender.send_command(11, 0, env.control_port)  # PAUSE
+        self.paused = True
+        return True
+
+    def _on_step(self):
+        if self.paused:
+            env = self.model.env.envs[0]
+            print("Unpausing Unity simulation...")
+            sender.send_command(12, 0, env.control_port)  # UNPAUSE
+            self.paused = False
+        return True
 
 os.makedirs("./pythonSide/models", exist_ok=True)
 os.makedirs("./pythonSide/logs", exist_ok=True)
 
 def make_env():
-    return UnityCarEnv(run_headless=False)
+    return UnityCarEnv(run_headless=True)
 env = DummyVecEnv([make_env])
 
 policy_kwargs = dict(
@@ -55,8 +78,13 @@ checkpoint_callback = CheckpointCallback(
     name_prefix="ppo_unity_car"
 )
 
+callbacks = [
+    checkpoint_callback,
+    FreezeCarDuringPPO()
+]
+
 total_timesteps = 5_000_000
-model.learn(total_timesteps=total_timesteps, callback=checkpoint_callback)
+model.learn(total_timesteps=total_timesteps, callback=callbacks)
 
 final_model_path = "./pythonSide/models/ppo_unity_car_final"
 model.save(final_model_path)

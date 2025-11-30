@@ -62,13 +62,19 @@ class Rewards:
 
             self.out_of_bounds_penalty,
             self.collision_penalty,
+            self.discounted_collision_penalty,
             self.grass_penalty,
+            self.discounted_grass_penalty,
 
             self.team_distance,
             self.lap_time,
+            self.discounted_lap_time,
             self.team_lap_time,
+            self.discounted_team_lap_time,
             self.placement,
+            self.discounted_placement,
             self.team_placement,
+            self.discounted_team_placement,
 
             self.speed,
             self.acceleration,
@@ -97,9 +103,9 @@ class Rewards:
             self.distanceII,
             self.distanceIII,
             self.progressReward,
+            self.discounted_progressReward,
 
             # reserved for later use
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         ], dtype=np.float32)
 
@@ -114,9 +120,9 @@ class Rewards:
 
             out_of_bounds_penalty = -0.0,
             collision_penalty = -0.0,
-            discounted_collision_penalty= -0.1,
-            grass_penalty = -0.0,
-            discounted_grass_penalty= -0.01,
+            discounted_collision_penalty= -0.0,
+            grass_penalty = -0.1,
+            discounted_grass_penalty= -0.0,
 
             team_distance = -0.0,
             lap_time = -0.0,
@@ -131,31 +137,31 @@ class Rewards:
             speed = 0.0,
             acceleration = 0.0,
             distance = 0.0,
-            discounted_distance = 0.01,
+            discounted_distance = 0.,
 
             speedI = 0.0,
             speedII = 0.0,
             speedIII = 0.0,
             speedIV = 0.0,
-            speedV = 0.02,
+            speedV = 0.01,
 
             accelerationI = 0.0,
             accelerationII = 0.0,
             accelerationIII = 0.0,
-            accelerationIV = 0.01,
+            accelerationIV = 0.0,
             accelerationV = 0.0,
 
             angleI = -0.0,
             angleII = -0.0,
             angleIII = -0.0,
             angleIV = -0.0,
-            angleV = -0.02,
+            angleV = -0.2,
 
             distanceI = -0.0,
             distanceII = -0.0,
-            distanceIII = -0.1,
+            distanceIII = -0.0,
             progressReward = 0.0,
-            discounted_progressReward= 0.1
+            discounted_progressReward= 0.0
         )
 
 

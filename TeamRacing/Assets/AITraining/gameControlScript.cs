@@ -393,6 +393,11 @@ public class gameControlScript : MonoBehaviour
         state = State.Stopped;
         Debug.Log("Game stopped.");
     }
+    private void ContinueGame()
+    {
+        state = State.Running;
+        Debug.Log("Game unpaused.");
+    }
 
     void SetRealtimeMode()
     {
@@ -432,6 +437,9 @@ public class gameControlScript : MonoBehaviour
                 break;
             case 11: // stop the simulation
                 StopGame();
+                break;
+            case 12:
+                ContinueGame();
                 break;
             case 20: // update delta time for simulation
                 this.fixedHz = value;

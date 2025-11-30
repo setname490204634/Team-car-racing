@@ -96,7 +96,9 @@ public class CarController : MonoBehaviour
         if (inputProvider == null) return;
 
         //out of bounds
+        if (this.position.x < -1500f || this.position.x > 1500f) this.outOfBounds = true;
         if (this.position.y < -5f || this.position.y > 5f) this.outOfBounds = true;
+        if (this.position.z < -1500f || this.position.z > 1500f) this.outOfBounds = true;
 
         CarInput input = inputProvider.getInput();
         ApplySteering(input);
