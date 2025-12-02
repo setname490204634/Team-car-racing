@@ -119,10 +119,10 @@ class Rewards:
             throttle_smoothness = -0.1,
 
             out_of_bounds_penalty = -0.0,
-            collision_penalty = -0.0,
+            collision_penalty = -10.0,
             discounted_collision_penalty= -0.0,
-            grass_penalty = -0.1,
-            discounted_grass_penalty= -0.0,
+            grass_penalty = -0.0,
+            discounted_grass_penalty= -0.1,
 
             team_distance = -0.0,
             lap_time = -0.0,
@@ -137,13 +137,13 @@ class Rewards:
             speed = 0.0,
             acceleration = 0.0,
             distance = 0.0,
-            discounted_distance = 0.,
+            discounted_distance = 0.0,
 
             speedI = 0.0,
             speedII = 0.0,
             speedIII = 0.0,
             speedIV = 0.0,
-            speedV = 0.01,
+            speedV = 0.1,
 
             accelerationI = 0.0,
             accelerationII = 0.0,
@@ -155,7 +155,7 @@ class Rewards:
             angleII = -0.0,
             angleIII = -0.0,
             angleIV = -0.0,
-            angleV = -0.2,
+            angleV = -0.4,
 
             distanceI = -0.0,
             distanceII = -0.0,

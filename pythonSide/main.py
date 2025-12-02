@@ -22,13 +22,17 @@ class FreezeCarDuringPPO(BaseCallback):
         self.paused = True
         return True
 
-    def _on_step(self):
+    def _on_rollout_start(self):
         if self.paused:
             env = self.model.env.envs[0]
             print("Unpausing Unity simulation...")
             sender.send_command(12, 0, env.control_port)  # UNPAUSE
             self.paused = False
         return True
+    
+    def _on_step(self) -> bool:
+        return True
+
 
 os.makedirs("./pythonSide/models", exist_ok=True)
 os.makedirs("./pythonSide/logs", exist_ok=True)

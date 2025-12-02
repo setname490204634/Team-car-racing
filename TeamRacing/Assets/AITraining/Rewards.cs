@@ -421,7 +421,7 @@ public class RewardsCalculator : ICarRewardProvider
 
     private float GetVectorMagnitudeInDirection(Vector2 vector, Vector2 direction)
     {
-        return Mathf.Abs(Vector2.Dot(vector, direction.normalized)); ;
+        return Vector2.Dot(vector, direction.normalized); ;
     }
 
     private float GetVectorAngleInDirection(Vector2 vector, Vector2 direction)
