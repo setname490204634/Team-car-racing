@@ -2,9 +2,7 @@
 import os
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from UnitySingleCarEnv import UnityCarEnv
-import sender
 from callbacks import SaveVecNormalizeCallback
 from callbacks import FreezeCarDuringPPO
 
@@ -55,7 +53,7 @@ if CONTINUE_TRAINING:
     print("Continuing PPO training...")
     model.learn(
         total_timesteps=TOTAL_TIMESTEPS,
-        callback=[  SaveVecNormalizeCallback("./pythonSide/models/", 20),
+        callback=[  SaveVecNormalizeCallback("./pythonSide/models/", 20000),
                     FreezeCarDuringPPO()]
     )
 

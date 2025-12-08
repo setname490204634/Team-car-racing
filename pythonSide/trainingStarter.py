@@ -2,9 +2,6 @@
 import os
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-from stable_baselines3.common.callbacks import CheckpointCallback
-from stable_baselines3.common.callbacks import BaseCallback
-import sender
 from callbacks import SaveVecNormalizeCallback
 from callbacks import FreezeCarDuringPPO
 
@@ -55,7 +52,7 @@ model = PPO(
 
 
 callbacks = [
-    SaveVecNormalizeCallback("./pythonSide/models/", 20),
+    SaveVecNormalizeCallback("./pythonSide/models/", 20000),
     FreezeCarDuringPPO()
 ]
 

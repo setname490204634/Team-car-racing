@@ -1,5 +1,5 @@
 import os
-from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
+from stable_baselines3.common.callbacks import  BaseCallback
 import sender
 
 class SaveVecNormalizeCallback(BaseCallback):
