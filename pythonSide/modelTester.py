@@ -1,72 +1,78 @@
 # continue_training.py
 import os
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
-from stable_baselines3.common.callbacks import CheckpointCallback
-from UnitySingleCarEnv import UnityCarEnv  # your environment class
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
+from UnitySingleCarEnv import UnityCarEnv
 import sender
-from stable_baselines3.common.callbacks import BaseCallback
+from callbacks import SaveVecNormalizeCallback
+from callbacks import FreezeCarDuringPPO
 
-# --- Directories ---
-os.makedirs("./pythonSide/models", exist_ok=True)
-os.makedirs("./pythonSide/logs", exist_ok=True)
 
-class FreezeCarDuringPPO(BaseCallback):
+CONTINUE_TRAINING = True
+HEADLESS_MODE = False
 
-    def __init__(self):
-        super().__init__()
-        self.paused = False
+MODEL_PATH = "./pythonSide/models/model_20.zip"
+VECNORM_PATH = "./pythonSide/models/vecnormalize_20.pkl"
 
-    def _on_rollout_end(self):
-        env = self.model.env.envs[0]
-        print("Pausing Unity simulation...")
-        sender.send_command(11, 0, env.control_port)  # PAUSE
-        self.paused = True
-        return True
+TOTAL_TIMESTEPS = 5_000_000
 
-    def _on_rollout_start(self):
-        if self.paused:
-            env = self.model.env.envs[0]
-            print("Unpausing Unity simulation...")
-            sender.send_command(12, 0, env.control_port)  # UNPAUSE
-            self.paused = False
-        return True
-    
-    def _on_step(self) -> bool:
-        return True
-
-# --- Environment ---
 def make_env():
-    return UnityCarEnv(run_headless=True)
+    return UnityCarEnv(run_headless=HEADLESS_MODE)
 
-env = DummyVecEnv([make_env])
-# env = VecTransposeImage(env)
+# Always create a fresh Unity environment
+raw_env = DummyVecEnv([make_env])
 
-# --- Load existing model ---
-model_path = "./pythonSide/models/head2.zip"
-if not os.path.exists(model_path):
-    raise FileNotFoundError(f"Model file {model_path} not found. Train a model first.")
+# Training: need VecNormalize in training mode
+# Inference: load VecNormalize stats in eval mode
+if CONTINUE_TRAINING:
+    if os.path.exists(VECNORM_PATH):
+        print("Loading VecNormalize stats...")
+        env = VecNormalize.load(VECNORM_PATH, raw_env)
+        env.training = True
+        env.norm_reward = True
+    else:
+        print("No VecNormalize file found, creating new normalization wrapper...")
+        env = VecNormalize(raw_env, norm_obs=True, norm_reward=True, clip_obs=10.)
+else:
+    print("Running in INFERENCE mode...")
+    if not os.path.exists(VECNORM_PATH):
+        raise FileNotFoundError("VecNormalize stats missing! Cannot run inference.")
+    env = VecNormalize.load(VECNORM_PATH, raw_env)
+    env.training = False
+    env.norm_reward = False
 
-print(f"Loading model from {model_path} to continue training...")
-model = PPO.load(model_path, env=env, tensorboard_log="./pythonSide/logs/")
 
-checkpoint_callback = CheckpointCallback(
-    save_freq=20000,
-    save_path="./pythonSide/models/",
-    name_prefix="ppo_unity_car"
-)
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(f"Model file {MODEL_PATH} not found!")
 
-callbacks = [
-    checkpoint_callback,
-    FreezeCarDuringPPO()
-]
+print(f"Loading PPO model from: {MODEL_PATH}")
+model = PPO.load(MODEL_PATH, env=env, tensorboard_log="./pythonSide/logs/")
 
-total_timesteps = 5_000_000
-model.learn(total_timesteps=total_timesteps, callback=callbacks)
 
-# --- Save final model ---
-final_model_path = "./pythonSide/models/ppo_unity_car_final"
-model.save(final_model_path)
+if CONTINUE_TRAINING:
+
+    print("Continuing PPO training...")
+    model.learn(
+        total_timesteps=TOTAL_TIMESTEPS,
+        callback=[  SaveVecNormalizeCallback("./pythonSide/models/", 20),
+                    FreezeCarDuringPPO()]
+    )
+
+    print("Saving final model + normalization...")
+    model.save("./pythonSide/models/ppo_unity_car_final")
+    env.save(VECNORM_PATH)
+
+else:
+    print("Inference mode: model will drive around...")
+
+    obs = env.reset()
+    while True:
+        action, _ = model.predict(obs, deterministic=True)
+        obs, reward, done, info = env.step(action)
+        if done:
+            obs = env.reset()
+
+
 env.close()
-
-print(f"Training resumed and completed. Final model saved to {final_model_path}")
+print("Program finished.")

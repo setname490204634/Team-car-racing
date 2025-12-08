@@ -122,7 +122,7 @@ class Rewards:
             collision_penalty = -10.0,
             discounted_collision_penalty= -0.0,
             grass_penalty = -0.0,
-            discounted_grass_penalty= -0.1,
+            discounted_grass_penalty= -0.5,
 
             team_distance = -0.0,
             lap_time = -0.0,
@@ -155,7 +155,7 @@ class Rewards:
             angleII = -0.0,
             angleIII = -0.0,
             angleIV = -0.0,
-            angleV = -0.4,
+            angleV = -0.3,
 
             distanceI = -0.0,
             distanceII = -0.0,

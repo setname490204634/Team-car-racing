@@ -67,7 +67,7 @@ class UnityCarEnv(gym.Env):
         self.run_headless = run_headless
         self.episode_rewards_per_category = Rewards()  # new Rewards instance to accumulate sums
         self.resetCount = 0
-        self.changeMapEvery = 20
+        self.changeMapEvery = -1
         
         self.stack_size = 2
         self.frame_buffer = np.zeros((self.stack_size, 64, 128, 3), dtype=np.uint8)
@@ -96,7 +96,7 @@ class UnityCarEnv(gym.Env):
         self.episode_reward = 0.0
         self.prev_action = np.zeros(self.action_space.shape, dtype=np.float32)
         self.filtered_action = np.zeros(self.action_space.shape, dtype=np.float32)
-        self.filter_alpha = 0.9
+        self.filter_alpha = 0.8
         
     def _update_frame_stack(self, new_frame):
         self.frame_buffer[:-1] = self.frame_buffer[1:]
@@ -108,7 +108,6 @@ class UnityCarEnv(gym.Env):
         if not os.path.exists(self.unity_exe_path):
             raise FileNotFoundError(f"Unity executable not found: {self.unity_exe_path}")
 
-            # --- PORT VALIDATION LOOP ---
         while True:
             free_control = is_port_free(self.control_port)
             free_car_instr = is_port_free(self.car_instr_port)
@@ -189,7 +188,6 @@ class UnityCarEnv(gym.Env):
         return self._build_observation(obs_packet), {}
 
     def step(self, action):
-        """Send action to Unity and receive next observation."""
         # Smooth control
         self.filtered_action = (
             self.filter_alpha * action + (1 - self.filter_alpha) * self.filtered_action
@@ -208,7 +206,6 @@ class UnityCarEnv(gym.Env):
         rgb = obs_packet.image
         self._update_frame_stack(rgb)
 
-        # --- Handle reward vector ---
         reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.defaultWeights().as_vector()))
         #print(obs_packet.rewards)
         # Update the per-category sums (unweighted)
@@ -217,8 +214,6 @@ class UnityCarEnv(gym.Env):
             prev_sum = getattr(self.episode_rewards_per_category, field)
             setattr(self.episode_rewards_per_category, field, prev_sum + current_value)
 
-
-        # --- Update state ---
         self.prev_action = np.clip(action, -1.0, 1.0)
         self.current_step += 1
 
@@ -233,13 +228,11 @@ class UnityCarEnv(gym.Env):
         if obs_packet.rewards.out_of_bounds_penalty > 0.5:
             truncated = True
             done = True
-            self.episode_reward -= reward
             reward = 0
             
         if obs_packet.rewards.acceleration > 100:
             truncated = True
             done = True
-            self.episode_reward -= reward
             reward = 0
             
         self.episode_reward += reward
@@ -265,7 +258,7 @@ class UnityCarEnv(gym.Env):
             self.episode_reward = 0.0
             self.episode_rewards_per_category = Rewards()
             
-            self.global_step += 1  # increment episode count
+            self.global_step += 1 #episode count
 
         obs = self._build_observation(obs_packet)
         return obs, reward, done, truncated, info
