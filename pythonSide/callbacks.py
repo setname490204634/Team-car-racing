@@ -45,3 +45,27 @@ class FreezeCarDuringPPO(BaseCallback):
     
     def _on_step(self) -> bool:
         return True
+    
+class RewardLogCallback(BaseCallback):
+    def __init__(self, verbose=0):
+        super().__init__(verbose)
+
+    def _on_step(self) -> bool:
+
+        info = self.locals["infos"][0]
+        if "episode" in info:
+
+            episode_data = info["episode"]
+
+            # Log total reward + length
+            self.logger.record("episode/total_reward", episode_data["r"])
+            self.logger.record("episode/length", episode_data["l"])
+
+            # Log every reward component
+            if "reward_details" in episode_data:
+                reward_details = episode_data["reward_details"]
+
+                for key, value in reward_details.items():
+                    self.logger.record(f"rewards/{key}", value)
+
+        return True

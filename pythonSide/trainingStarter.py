@@ -4,6 +4,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from callbacks import SaveVecNormalizeCallback
 from callbacks import FreezeCarDuringPPO
+from callbacks import RewardLogCallback
 
 from UnitySingleCarEnv import UnityCarEnv
 from simplecCNN import SmallRacingCNN
@@ -34,16 +35,16 @@ model = PPO(
     policy_kwargs=policy_kwargs,
     verbose=1,
 
-    learning_rate=lambda f: 3e-4 * f,
+    learning_rate=1e-4,
 
-    n_steps=1024,
+    n_steps=512,
     batch_size=256,
     n_epochs=5,
 
     gamma=0.99,
     gae_lambda=0.95,
 
-    ent_coef=0.0003,
+    ent_coef=0.03,
     vf_coef=1.0,
     max_grad_norm=0.5,
 
@@ -53,7 +54,8 @@ model = PPO(
 
 callbacks = [
     SaveVecNormalizeCallback("./pythonSide/models/", 20000),
-    FreezeCarDuringPPO()
+    FreezeCarDuringPPO(),
+    RewardLogCallback
 ]
 
 total_timesteps = 5_000_000

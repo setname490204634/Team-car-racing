@@ -7,11 +7,11 @@ from callbacks import SaveVecNormalizeCallback
 from callbacks import FreezeCarDuringPPO
 
 
-CONTINUE_TRAINING = True
+CONTINUE_TRAINING = False
 HEADLESS_MODE = False
 
-MODEL_PATH = "./pythonSide/models/model_20.zip"
-VECNORM_PATH = "./pythonSide/models/vecnormalize_20.pkl"
+MODEL_PATH = "./pythonSide/models/modelHead6.zip"
+VECNORM_PATH = "./pythonSide/models/vecnormalizeHead6.pkl"
 
 TOTAL_TIMESTEPS = 5_000_000
 
