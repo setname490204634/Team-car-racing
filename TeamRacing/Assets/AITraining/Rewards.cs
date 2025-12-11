@@ -57,7 +57,7 @@ public struct Rewards
     public float distanceII;
     public float distanceIII;
     public float progressReward;
-    public float dicountedProgressReward;
+    public float survivalReward;
 
     public float[] ToArray()
     {
@@ -110,7 +110,7 @@ public struct Rewards
             distanceII,
             distanceIII,
             progressReward,
-            dicountedProgressReward,
+            survivalReward,
 
             //reserved for later use
             0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f
@@ -164,8 +164,6 @@ public class RewardsCalculator : ICarRewardProvider
 
     private float segmentProgress = 0f;
     private float segmentProgressReward = 0f;
-    private float segmentProgressSum = 0f;
-    private float segmentProgressDiscount = 0.8f;
 
     const float idealDistance = 10f; //for closeness reward
 
@@ -213,7 +211,6 @@ public class RewardsCalculator : ICarRewardProvider
         finalPlacementSum = 0f;
         finalTeammatePlacementSum = 0f;
         teammateLapTimeSum = 0f;
-        segmentProgressSum = 0f;
     }
 
     public Rewards CalculateReward()
@@ -268,7 +265,7 @@ public class RewardsCalculator : ICarRewardProvider
             distanceII = DistanceRewardTo(segmentHandler.GetDistanceII),
             distanceIII = DistanceRewardTo(segmentHandler.GetDistanceIII),
             progressReward = segmentProgressReward,
-            dicountedProgressReward = segmentProgressSum
+            survivalReward = 1
         };
 
         // reset it here since its used at 2 places
@@ -319,7 +316,6 @@ public class RewardsCalculator : ICarRewardProvider
         finalPlacementSum = finalPlacementSum * finalPlacementDiscount + placementReward;
         finalTeammatePlacementSum = finalTeammatePlacementSum * finalTeammatePlacementDiscount + finalTeammatePlacementReward;
         teammateLapTimeSum = teammateLapTimeSum * teammateLapDiscount + teammateLapReward;
-        segmentProgressSum = segmentProgressSum * segmentProgressDiscount + segmentProgressReward;
     }
 
     public List<int> GetTeammateId()

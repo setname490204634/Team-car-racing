@@ -1,42 +1,36 @@
-# start_training.py
 import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-from callbacks import SaveVecNormalizeCallback
-from callbacks import FreezeCarDuringPPO
-from callbacks import RewardLogCallback
+from callbacks import SaveVecNormalizeCallback, FreezeCarDuringPPO, RewardLogCallback
 
 from UnitySingleCarEnv import UnityCarEnv
-from simplecCNN import SmallRacingCNN
+from CNNs import SmallCNN, VGG16StackedFramesExtractor
 
 os.makedirs("./pythonSide/models", exist_ok=True)
 os.makedirs("./pythonSide/logs", exist_ok=True)
+
+# FEATURE_EXTRACTOR = VGG16StackedFramesExtractor
+FEATURE_EXTRACTOR = SmallCNN
 
 def make_env():
     return UnityCarEnv(run_headless=True)
 
 env = DummyVecEnv([make_env])
-env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.)
+env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0)
 
 policy_kwargs = dict(
-    features_extractor_class=SmallRacingCNN,
+    features_extractor_class=FEATURE_EXTRACTOR,
     features_extractor_kwargs=dict(features_dim=256),
-
-    # MLP for non-image inputs (speed, prev_action)
-    net_arch=dict(
-        pi=[256, 128],
-        vf=[256, 128]
-    )
 )
 
 model = PPO(
-    policy="MultiInputPolicy",
+    policy="CnnPolicy",
     env=env,
     policy_kwargs=policy_kwargs,
     verbose=1,
 
     learning_rate=1e-4,
-
     n_steps=512,
     batch_size=256,
     n_epochs=5,
@@ -51,11 +45,10 @@ model = PPO(
     tensorboard_log="./pythonSide/logs/"
 )
 
-
 callbacks = [
-    SaveVecNormalizeCallback("./pythonSide/models/", 20000),
+    SaveVecNormalizeCallback("./pythonSide/models/", 200),
     FreezeCarDuringPPO(),
-    RewardLogCallback
+    RewardLogCallback()
 ]
 
 total_timesteps = 5_000_000
@@ -63,7 +56,7 @@ model.learn(total_timesteps=total_timesteps, callback=callbacks)
 
 final_model_path = "./pythonSide/models/ppo_unity_car_final"
 model.save(final_model_path)
-env.save("./pythonSide/models/vecnormalize.pkl")
+env.save("./pythonSide/models/vecnormalize_final.pkl")
 env.close()
 
 print(f"Training complete. Final model saved to {final_model_path}")

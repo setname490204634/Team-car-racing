@@ -42,12 +42,7 @@ class UnityCarEnv(gym.Env):
                  run_headless: bool = False):
         super().__init__()
 
-        self.observation_space = spaces.Dict({
-            "image": spaces.Box(low=0, high=255, shape=(6, 64, 128), dtype=np.uint8),
-            "speed": spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32),
-            "steer": spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32),
-            "prev_action": spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
-        })
+        self.observation_space = spaces.Box(low=0, high=255, shape=(12, 64, 128), dtype=np.uint8)
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
@@ -64,15 +59,13 @@ class UnityCarEnv(gym.Env):
         self.mapSwitchCount = 0
         self.changeMapEvery = 10000000000
         
-        self.stack_size = 2
+        self.stack_size = 4
         self.frame_buffer = np.zeros((self.stack_size, 64, 128, 3), dtype=np.uint8)
         
         self.episodeCount = 0
         self.current_step = 0
         self.max_steps = 2000
         self.episode_reward = 0.0
-        self.prev_action = np.zeros(self.action_space.shape, dtype=np.float32)
-
 
         self._launch_unity()
 
@@ -82,7 +75,7 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver = ObservationReceiver(host="0.0.0.0", port=self.obs_port)
         self.obs_receiver.start()
 
-        sender.send_command(3, 0, self.control_port)  # set first map
+        sender.send_command(3, 4, self.control_port)  # set first map
         sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
 
         
@@ -127,16 +120,9 @@ class UnityCarEnv(gym.Env):
         )
 
     def _build_observation(self, obs_packet):
-
-        stacked = self.frame_buffer.reshape(64, 128, 6)
+        stacked = self.frame_buffer.reshape(64, 128, 12)
         stacked = np.transpose(stacked, (2, 0, 1))
-
-        obs = {
-            "image": stacked.astype(np.uint8),
-            "speed": np.array([obs_packet.speed], dtype=np.float32),
-            "steer": np.array([obs_packet.steer], dtype=np.float32),
-            "prev_action": self.prev_action.astype(np.float32)
-        }
+        obs = stacked.astype(np.uint8)
         return obs
 
     def reset(self, **kwargs):
@@ -158,7 +144,6 @@ class UnityCarEnv(gym.Env):
         obs_packet = self.obs_receiver.collect_observations()[-1]
         self.current_step = 0
         self.episode_reward = 0.0
-        self.prev_action[:] = 0.0
         
         rgb = obs_packet.image  # shape (64,128,3)
 
@@ -191,7 +176,6 @@ class UnityCarEnv(gym.Env):
             prev_sum = getattr(self.episode_rewards_per_category, field)
             setattr(self.episode_rewards_per_category, field, prev_sum + current_value)
 
-        self.prev_action = np.clip(action, -1.0, 1.0)
         self.current_step += 1
 
         truncated = False

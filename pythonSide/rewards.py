@@ -52,7 +52,7 @@ class Rewards:
     distanceII: float = 0.0
     distanceIII: float = 0.0
     progressReward: float = 0.0
-    discounted_progressReward: float = 0.0
+    survivalReward: float = 0.0
 
     def as_vector(self) -> np.ndarray:
         """Return rewards as a NumPy vector of length 50."""
@@ -103,7 +103,7 @@ class Rewards:
             self.distanceII,
             self.distanceIII,
             self.progressReward,
-            self.discounted_progressReward,
+            self.survivalReward,
 
             # reserved for later use
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -160,8 +160,8 @@ class Rewards:
             distanceI = -0.0,
             distanceII = -0.0,
             distanceIII = -0.0,
-            progressReward = 2.0,
-            discounted_progressReward= 0.0
+            progressReward = 1.0,
+            survivalReward= -0.1
         )
 
 
