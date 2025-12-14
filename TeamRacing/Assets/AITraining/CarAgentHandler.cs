@@ -9,9 +9,8 @@ public class CarAgent : MonoBehaviour, ICarObserver
     private CarController car;
 
     [Header("Settings")]
-    public Camera leftCamera;
-    public Camera rightCamera;
-    public int cameraWidth = 64;
+    public Camera mainCamera;
+    public int cameraWidth = 128;
     public int cameraHeight = 64;
 
     [Header("Input Provider")]
@@ -40,10 +39,7 @@ public class CarAgent : MonoBehaviour, ICarObserver
         {
             Debug.LogError("CarController does not have an inputProvider field!");
         }
-
-        // Ensure cameras have RenderTextures
-        SetupCameraRenderTexture(leftCamera, cameraWidth, cameraHeight);
-        SetupCameraRenderTexture(rightCamera, cameraWidth, cameraHeight);
+        SetupCameraRenderTexture(mainCamera, cameraWidth, cameraHeight);
     }
 
     private void SetupCameraRenderTexture(Camera cam, int width, int height)
@@ -72,11 +68,8 @@ public class CarAgent : MonoBehaviour, ICarObserver
             }
         }
 
-        if (leftCamera != null)
-            leftCamera.Render();
-
-        if (rightCamera != null)
-            rightCamera.Render();
+        if (mainCamera != null)
+            mainCamera.Render();
 
         const float maxSpeed = 200f;
         const float maxSteering = 180f;
@@ -89,8 +82,7 @@ public class CarAgent : MonoBehaviour, ICarObserver
 
         return new CarObservation
         {
-            leftCameraTexture = leftCamera.targetTexture,
-            rightCameraTexture = rightCamera.targetTexture,
+            cameraTexture = mainCamera.targetTexture,
             Speed = speedByte,
             SteeringAngle = steeringByte
         };

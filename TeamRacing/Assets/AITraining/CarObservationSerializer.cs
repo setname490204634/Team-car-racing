@@ -6,32 +6,22 @@ public static class CarObservationSerializer
     // Packs merged (RGB24) image + speed + steering + carID + reward
     public static byte[] PackCarObservation(CarObservation observation, int carID, Rewards reward)
     {
-        RenderTexture leftRT = observation.leftCameraTexture;
-        RenderTexture rightRT = observation.rightCameraTexture;
+        RenderTexture rt = observation.cameraTexture;
+        int width = rt.width;
+        int height = rt.height;
 
-        int width = leftRT.width;
-        int height = leftRT.height;
-        int mergedWidth = width * 2;
-        int mergedHeight = height;
-
-        // Merge both camera views
-        RenderTexture mergedRT = MergeRenderTextures(leftRT, rightRT);
-
-        // Read merged RenderTexture to Texture2D (RGB24)
         RenderTexture prev = RenderTexture.active;
-        RenderTexture.active = mergedRT;
+        RenderTexture.active = rt;
 
-        Texture2D tex = new Texture2D(mergedWidth, mergedHeight, TextureFormat.RGB24, false);
-        tex.ReadPixels(new Rect(0, 0, mergedWidth, mergedHeight), 0, 0);
-        tex.Apply();
+        Texture2D tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+        tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        tex.Apply(false, false);
 
         RenderTexture.active = prev;
 
-        // Extract raw bytes (3 bytes per pixel)
         byte[] imageBytes = tex.GetRawTextureData();
 
         UnityEngine.Object.Destroy(tex);
-        UnityEngine.Object.Destroy(mergedRT);
 
         // Prepare header
         byte speedByte = observation.Speed;
@@ -55,27 +45,5 @@ public static class CarObservationSerializer
         Buffer.BlockCopy(imageBytes, 0, payload, header.Length, imageBytes.Length);
 
         return payload;
-    }
-
-    // Merge two RenderTextures side by side (left | right)
-    private static RenderTexture MergeRenderTextures(RenderTexture left, RenderTexture right)
-    {
-        int width = left.width;
-        int height = left.height;
-
-        RenderTexture merged = new RenderTexture(width * 2, height, 0, RenderTextureFormat.ARGB32);
-        RenderTexture prev = RenderTexture.active;
-        RenderTexture.active = merged;
-
-        GL.PushMatrix();
-        GL.LoadPixelMatrix(0, merged.width, merged.height, 0);
-
-        Graphics.DrawTexture(new Rect(0, 0, width, height), left);
-        Graphics.DrawTexture(new Rect(width, 0, width, height), right);
-
-        GL.PopMatrix();
-        RenderTexture.active = prev;
-
-        return merged;
     }
 }

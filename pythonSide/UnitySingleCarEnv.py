@@ -65,7 +65,7 @@ class UnityCarEnv(gym.Env):
         
         self.episodeCount = 0
         self.current_step = 0
-        self.max_steps = 300
+        self.max_steps = 400
         self.episode_reward = 0.0
 
         self._launch_unity()
@@ -77,7 +77,8 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver.start()
 
         sender.send_command(3, 4, self.control_port)  # set first map
-        #sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
+        sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
+        sender.send_command(22, 32, self.control_port)  # set max steering change
 
         
     def _update_frame_stack(self, new_frame):
