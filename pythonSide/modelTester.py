@@ -1,36 +1,45 @@
-# continue_training.py
+# continue_or_infer.py
 import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-from UnitySingleCarEnv import UnityCarEnv
-from callbacks import SaveVecNormalizeCallback
-from callbacks import FreezeCarDuringPPO
 
+from UnitySingleCarEnv import UnityCarEnv
+from CNNs import SmallCNN, VGG16StackedFramesExtractor
+from callbacks import SaveVecNormalizeCallback, FreezeCarDuringPPO, RewardLogCallback
 
 CONTINUE_TRAINING = False
 HEADLESS_MODE = False
 
-MODEL_PATH = "./pythonSide/models/modelHead6.zip"
-VECNORM_PATH = "./pythonSide/models/vecnormalizeHead6.pkl"
+# CONTINUE_TRAINING = True
+# HEADLESS_MODE = True
 
+
+
+FEATURE_EXTRACTOR = SmallCNN  # must match training
 TOTAL_TIMESTEPS = 5_000_000
+
+
+# Paths
+MODEL_PATH = "./pythonSide/models/model_4820000.zip"
+VECNORM_PATH = "./pythonSide/models/vecnormalize_4820000.pkl"
+LOG_DIR = "./pythonSide/logs/"
 
 def make_env():
     return UnityCarEnv(run_headless=HEADLESS_MODE)
 
+
 # Always create a fresh Unity environment
 raw_env = DummyVecEnv([make_env])
 
-# Training: need VecNormalize in training mode
-# Inference: load VecNormalize stats in eval mode
 if CONTINUE_TRAINING:
     if os.path.exists(VECNORM_PATH):
-        print("Loading VecNormalize stats...")
+        print("Loading VecNormalize stats for CONTINUED TRAINING...")
         env = VecNormalize.load(VECNORM_PATH, raw_env)
         env.training = True
         env.norm_reward = True
     else:
-        print("No VecNormalize file found, creating new normalization wrapper...")
+        print("No VecNormalize found → creating new one.")
         env = VecNormalize(raw_env, norm_obs=True, norm_reward=True, clip_obs=10.)
 else:
     print("Running in INFERENCE mode...")
@@ -40,31 +49,46 @@ else:
     env.training = False
     env.norm_reward = False
 
-
 if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"Model file {MODEL_PATH} not found!")
+    raise FileNotFoundError(f"Model path does not exist: {MODEL_PATH}")
 
 print(f"Loading PPO model from: {MODEL_PATH}")
-model = PPO.load(MODEL_PATH, env=env, tensorboard_log="./pythonSide/logs/")
 
+model = PPO.load(
+    MODEL_PATH,
+    env=env,
+    tensorboard_log=LOG_DIR,
+    custom_objects={
+        "features_extractor_class": FEATURE_EXTRACTOR,
+        "features_dim": 256,
+    }
+)
 
 if CONTINUE_TRAINING:
+    print("Continuing training...")
 
-    print("Continuing PPO training...")
+    callbacks = [
+        SaveVecNormalizeCallback("./pythonSide/models/", save_freq=20000),
+        FreezeCarDuringPPO(),
+        RewardLogCallback(),
+    ]
+
     model.learn(
         total_timesteps=TOTAL_TIMESTEPS,
-        callback=[  SaveVecNormalizeCallback("./pythonSide/models/", 20000),
-                    FreezeCarDuringPPO()]
+        callback=callbacks,
     )
 
-    print("Saving final model + normalization...")
+    print("Saving final model + VecNormalize...")
     model.save("./pythonSide/models/ppo_unity_car_final")
     env.save(VECNORM_PATH)
 
+    print("Training finished.")
+
 else:
-    print("Inference mode: model will drive around...")
+    print("Inference mode running... Press CTRL+C to quit.")
 
     obs = env.reset()
+
     while True:
         action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action)

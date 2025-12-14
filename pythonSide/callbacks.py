@@ -62,8 +62,8 @@ class RewardLogCallback(BaseCallback):
             self.logger.record("episode/length", episode_data["l"])
 
             # Log every reward component
-            if "reward_details" in episode_data:
-                reward_details = episode_data["reward_details"]
+            if "rewards" in episode_data:
+                reward_details = episode_data["rewards"]
 
                 for key, value in reward_details.items():
                     self.logger.record(f"rewards/{key}", value)

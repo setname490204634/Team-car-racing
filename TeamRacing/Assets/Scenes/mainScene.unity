@@ -14215,6 +14215,7 @@ MonoBehaviour:
   forwardStiffness: 3
   sidewaysStiffness: 3
   brakeForce: 1000
+  maxSteeringChange: 16
   roadGripMultiplier: 1
   grassGripMultiplier: 0.3
   grassSpeedMultiplier: 0.2
@@ -18824,6 +18825,9 @@ MonoBehaviour:
   cameraWidth: 64
   cameraHeight: 64
   agentInputProvider: {fileID: 8977697167361296887}
+  mirrors:
+  - {fileID: 3939645256358222369}
+  - {fileID: 7671483727831780029}
 --- !u!114 &8985952976066175861
 MonoBehaviour:
   m_ObjectHideFlags: 0

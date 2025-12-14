@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -22,6 +23,7 @@ public class CarController : MonoBehaviour
     public float forwardStiffness = 3f;
     public float sidewaysStiffness = 3f;
     public float brakeForce = 3000f;
+    public byte maxSteeringChange = 16;
 
     [Header("Surface Grip Settings")]
     public float roadGripMultiplier = 1f;
@@ -30,6 +32,7 @@ public class CarController : MonoBehaviour
 
     private Rigidbody rb;
     private ICarInputProvider inputProvider;
+    private CarInput lastInput;
 
     private float currentGripMultiplier = 1f;
     private float currentSpeedMultiplier = 1f;
@@ -68,6 +71,8 @@ public class CarController : MonoBehaviour
         acceleration = Vector3.zero;
         lastSpeed = Vector3.zero;
 
+        lastInput = CarInput.Default;
+
         collided = false;
         crossedFinish = false;
         crossedHalfway = false;
@@ -101,7 +106,19 @@ public class CarController : MonoBehaviour
         if (this.position.z < -1500f || this.position.z > 1500f) this.outOfBounds = true;
 
         CarInput input = inputProvider.getInput();
+        int delta = input.Steering - lastInput.Steering;
+
+        if (delta > maxSteeringChange)
+        {
+            input.Steering = (byte)(lastInput.Steering + maxSteeringChange);
+        }
+        else if (delta < -maxSteeringChange)
+        {
+            input.Steering = (byte)(lastInput.Steering - maxSteeringChange);
+        }
+
         ApplySteering(input);
+
         float throttleInput = DecodeByteToNormalized(input.Throttle);
 
         // Reset multipliers
@@ -137,6 +154,7 @@ public class CarController : MonoBehaviour
 
         UpdateAllWheelVisuals();
         UpdateSpeedDistanceAcceleration();
+        this.lastInput = input;
     }
 
     private void UpdateSpeedDistanceAcceleration()

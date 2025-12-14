@@ -46,7 +46,7 @@ model = PPO(
 )
 
 callbacks = [
-    SaveVecNormalizeCallback("./pythonSide/models/", 200),
+    SaveVecNormalizeCallback("./pythonSide/models/", 20000),
     FreezeCarDuringPPO(),
     RewardLogCallback()
 ]

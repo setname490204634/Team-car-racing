@@ -37,6 +37,14 @@ public class StaticMirror : MonoBehaviour
         }
     }
 
+    public void RenderMirror()
+    {
+        if (mirrorCamera != null)
+        {
+            mirrorCamera.Render();
+        }
+    }
+
     void OnDisable()
     {
         if (rt != null)

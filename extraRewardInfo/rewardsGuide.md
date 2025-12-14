@@ -37,4 +37,4 @@ distanceI -distance to next road segment 0.0-1.0 DONT USE
 distanceII -distance to next next road segment 0.0-1.0 DONT USE 
 distanceIII -distance from optimal trajectory aproximation 0-1.0
 progressReward -0.0 no progress +-1.0 if moved 
-discounted_progressReward -discounted sum of progressReward
+survivalReward -always 1.0

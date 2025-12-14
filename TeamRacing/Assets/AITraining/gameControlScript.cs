@@ -83,7 +83,7 @@ public class gameControlScript : MonoBehaviour
 
     [Header("Simulation Settings (can be changed with commands)")]
     public int fixedHz = 48;           // physics frequency
-    public int framesPerObservation = 8;  // send obs every N frames
+    public int framesPerObservation = 6;  // send obs every N frames
     private float fixedDt;
     private long tickCount = 0;
 
@@ -109,6 +109,7 @@ public class gameControlScript : MonoBehaviour
 
         InitializeCars();
         ResetCars();
+        SetMaxSteeringChange(38);
 
         InitializeNetworking();
 
@@ -411,6 +412,15 @@ public class gameControlScript : MonoBehaviour
         Application.targetFrameRate = -1;
     }
 
+    void SetMaxSteeringChange(byte value)
+    {
+        for (int i = 0; i < cars.Count; i++)
+        {
+            var entry = cars[i];
+            entry.controller.maxSteeringChange = value;
+        }
+    }
+
     private void ProcessCommand(byte command, byte value)
     {
         switch (command)
@@ -447,6 +457,9 @@ public class gameControlScript : MonoBehaviour
                 break;
             case 21: // set how often to send observations
                 this.framesPerObservation = value;
+                break;
+            case 22:
+                SetMaxSteeringChange(value);
                 break;
             case 30: // normal speed of the simulation
                 SetRealtimeMode();

@@ -8,6 +8,7 @@ import subprocess
 import socket
 import os
 from rewards import *
+import cv2
 
 def wait_for_port(host: str, port: int, timeout=20):
     """Wait until a TCP port is open."""
@@ -64,7 +65,7 @@ class UnityCarEnv(gym.Env):
         
         self.episodeCount = 0
         self.current_step = 0
-        self.max_steps = 2000
+        self.max_steps = 300
         self.episode_reward = 0.0
 
         self._launch_unity()
@@ -76,7 +77,7 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver.start()
 
         sender.send_command(3, 4, self.control_port)  # set first map
-        sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
+        #sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
 
         
     def _update_frame_stack(self, new_frame):
@@ -166,6 +167,21 @@ class UnityCarEnv(gym.Env):
         obs_packet = self.obs_receiver.collect_observations()[-1]
         
         rgb = obs_packet.image
+        
+        
+        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        bgr = cv2.flip(bgr, 0)
+        bgr = cv2.resize(
+            bgr,
+            None,
+            fx=4,
+            fy=4,
+            interpolation=cv2.INTER_LINEAR
+        )
+        cv2.imshow("Unity Observation", bgr)
+        cv2.waitKey(1)
+        
+                
         self._update_frame_stack(rgb)
 
         reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.defaultWeights().as_vector()))

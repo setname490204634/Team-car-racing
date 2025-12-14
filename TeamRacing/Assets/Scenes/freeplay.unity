@@ -59054,11 +59054,12 @@ MonoBehaviour:
   forwardStiffness: 3
   sidewaysStiffness: 3
   brakeForce: 1000
+  maxSteeringChange: 6
   roadGripMultiplier: 1
   grassGripMultiplier: 0.3
   grassSpeedMultiplier: 0.2
   distance: 0
-  dicountedDistance: 0
+  discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}
 --- !u!23 &8269966190334988403
 MeshRenderer:
