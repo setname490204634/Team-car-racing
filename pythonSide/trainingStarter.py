@@ -5,13 +5,13 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from callbacks import SaveVecNormalizeCallback, FreezeCarDuringPPO, RewardLogCallback
 
 from UnitySingleCarEnv import UnityCarEnv
-from CNNs import SmallCNN, VGG16StackedFramesExtractor
+from CNNs import SmallCNN, VGG16StackedFramesExtractor, SmallCNN2
 
 os.makedirs("./pythonSide/models", exist_ok=True)
 os.makedirs("./pythonSide/logs", exist_ok=True)
 
 # FEATURE_EXTRACTOR = VGG16StackedFramesExtractor
-FEATURE_EXTRACTOR = SmallCNN
+FEATURE_EXTRACTOR = SmallCNN2
 
 def make_env():
     return UnityCarEnv(run_headless=True)

@@ -78,7 +78,7 @@ class UnityCarEnv(gym.Env):
 
         sender.send_command(3, 4, self.control_port)  # set first map
         sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
-        sender.send_command(22, 32, self.control_port)  # set max steering change
+        sender.send_command(22, 6, self.control_port)  # set max steering change
 
         
     def _update_frame_stack(self, new_frame):
@@ -170,17 +170,17 @@ class UnityCarEnv(gym.Env):
         rgb = obs_packet.image
         
         
-        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        bgr = cv2.flip(bgr, 0)
-        bgr = cv2.resize(
-            bgr,
-            None,
-            fx=4,
-            fy=4,
-            interpolation=cv2.INTER_LINEAR
-        )
-        cv2.imshow("Unity Observation", bgr)
-        cv2.waitKey(1)
+        # bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        # bgr = cv2.flip(bgr, 0)
+        # bgr = cv2.resize(
+        #     bgr,
+        #     None,
+        #     fx=4,
+        #     fy=4,
+        #     interpolation=cv2.INTER_LINEAR
+        # )
+        # cv2.imshow("Unity Observation", bgr)
+        # cv2.waitKey(1)
         
                 
         self._update_frame_stack(rgb)

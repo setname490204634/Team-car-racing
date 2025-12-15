@@ -14,8 +14,6 @@ class SmallCNN(BaseFeaturesExtractor):
         h = observation_space.shape[1]
         w = observation_space.shape[2]
 
-        assert w == 128, "Expected input width = 128"
-
         self.cnn = nn.Sequential(
             nn.Upsample(size=(h, 64), mode="bilinear", align_corners=False),
 
@@ -40,6 +38,28 @@ class SmallCNN(BaseFeaturesExtractor):
             nn.ReLU()
         )
 
+    def forward(self, x):
+        return self.linear(self.cnn(x))
+    
+    
+class SmallCNN2(BaseFeaturesExtractor):
+    def __init__(self, observation_space, features_dim=256):
+        super().__init__(observation_space, features_dim)
+        n_channels = observation_space.shape[0]
+        h = observation_space.shape[1]
+        w = observation_space.shape[2]
+        self.cnn = nn.Sequential(
+            nn.Conv2d(n_channels, 32, kernel_size=8, stride=4),
+            nn.ReLU(), nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(), nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU(), nn.Flatten(), )
+        # compute output size
+        with torch.no_grad():
+            sample = torch.zeros(1, n_channels, h, w)
+            n_flatten = self.cnn(sample).shape[1]
+            self.linear = nn.Sequential(
+                nn.Linear(n_flatten, features_dim),
+                nn.ReLU() )
     def forward(self, x):
         return self.linear(self.cnn(x))
 
