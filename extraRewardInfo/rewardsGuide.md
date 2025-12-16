@@ -1,40 +1,37 @@
-steering_smoothness -0 no change at all 1 maximum change
-throttle_smoothness -0 no change at all 1 maximum change
-out_of_bounds_penalty -0 nothing, 1 the car is under the map or too far away
-collision_penalty -0 nothing, 1 the car collided
-discounted_collision_penalty -discounted sum of all collisions penalties
-grass_penalty -0 nothing, 1 the car is on grass
-discounted_grass_penalty -discounted sum of all grass penalties
-team_distance  -sum of diferences of temeates positions
-lap_time -lap time in seconds
-discounted_lap_time -discounted sum of all lap time in seconds
-team_lap_time -teammate lap time in seconds
-discounted_team_lap_time -discounted sum of all teammate lap times in seconds
-placement -points acording to F1 rating
-discounted_placement -discounted sum of all points acording to F1 rating
-team_placement -points of teammates acording to F1 rating
-discounted_team_placement -discounted sum of all points of teammates acording to F1 rating
-speed -speed in forward direction in m/s
-acceleration -acceleration in forward direction in m/(s*s)
-distance -distance traveled in m
-discounted_distance -discounted sum of all distance traveled in m
-speedI -speed in special direction in m/s
-speedII -speed in special direction in m/s
-speedIII -speed in special direction in m/s
-speedIV -speed in special direction in m/s
-speedV -speed in special direction in m/s
-accelerationI -acceleration in special direction in m/(s*s)
-accelerationII -acceleration in special direction in m/(s*s)
-accelerationIII -acceleration in special direction in m/(s*s)
-accelerationIV -acceleration in special direction in m/(s*s)
-accelerationV -acceleration in special direction in m/(s*s)
-angleI -deviation from angle in special direction in 0.0-1.0 1.0 being 180 degrees off
-angleII -deviation from angle in special direction in 0.0-1.0 1.0 being 180 degrees off
-angleIII -deviation from angle in special direction in 0.0-1.0 1.0 being 180 degrees off
-angleIV -deviation from angle in special direction in 0.0-1.0 1.0 being 180 degrees off
-angleV -deviation from angle in special direction in 0.0-1.0 1.0 being 180 degrees off
-distanceI -distance to next road segment 0.0-1.0 DONT USE 
-distanceII -distance to next next road segment 0.0-1.0 DONT USE 
-distanceIII -distance from optimal trajectory aproximation 0-1.0
-progressReward -0.0 no progress +-1.0 if moved 
-survivalReward -always 1.0
+Reward Name                   | Range      | Multiagent | Unit                 | Description
+------------------------------|------------|------------|----------------------|----------------------------------------------------------
+steeringSmoothnessPenalty     | -1 – 0     | No         | None                 | 0 = no change, -1 = maximum steering change
+throttleSmoothnessPenalty     | -1 – 0     | No         | None                 | 0 = no change, -1 = maximum throttle change
+outOfBoundsPenalty            | -1 - 0     | No         | None                 | 0 = normal, -1 = car under map or too far away
+collisionPenalty              | -1 - 0     | No         | None                 | 0 = normal, -1 = car collided
+grassPenalty                  | -1 - 0     | No         | None                 | 0 = on track, -1 = car on grass
+teamDistancePenalty           | 0 – ∞      | Yes        | m                    | Sum of differences of teammates position from "optimal" distance (10m)
+lapTimePenalty                | 0 – ∞      | No         | seconds              | 0 = lap was not completed, Lap time in seconds
+teamLapTimePenalty            | 0 – ∞      | Yes        | seconds              | 0 = lap was not completed, sum of teammates lap times in seconds
+finalPlacementReward          | 0 – 25     | No         | points               | Points according to F1 rating
+currentPlacementReward        | 0 – 25     | No         | points               | Points according to F1 rating at current tick
+teamFinalPlacementReward      | 0 – 25     | Yes        | points               | Sum of teammates points according to F1 rating
+currentTeamPlacementReward    | 0 – 25     | Yes        | points               | Sum of teammates points according to F1 rating at current tick
+tickPenalty                   | -1         | No         | None                 | Penalty per step/tick
+speedReward                   | –∞ – ∞     | No         | m/s                  | Forward speed, what would car tochometer show
+accelerationReward            | –∞ – ∞     | No         | m/s²                 | Forward acceleration in m/s²
+distanceReward                | 0 – ∞      | No         | m                    | Distance traveled in meters from last step in any direction
+speedRewardI                  | –∞ – ∞     | No         | m/s                  | Speed in special direction I
+speedRewardII                 | –∞ – ∞     | No         | m/s                  | Speed in special direction II
+speedRewardIII                | –∞ – ∞     | No         | m/s                  | Speed in special direction III
+speedRewardIV                 | –∞ – ∞     | No         | m/s                  | Speed in special direction IV
+speedRewardV                  | –∞ – ∞     | No         | m/s                  | Speed in special direction V
+accelerationRewardI           | –∞ – ∞     | No         | m/s²                 | Acceleration in special direction I
+accelerationRewardII          | –∞ – ∞     | No         | m/s²                 | Acceleration in special direction II
+accelerationRewardIII         | –∞ – ∞     | No         | m/s²                 | Acceleration in special direction III
+accelerationRewardIV          | –∞ – ∞     | No         | m/s²                 | Acceleration in special direction IV
+accelerationRewardV           | –∞ – ∞     | No         | m/s²                 | Acceleration in special direction V
+anglePenaltyI                 | -1 – 0     | No         | None                 | Deviation from angle in special direction I (-1 = 180° off)
+anglePenaltyII                | -1 – 0     | No         | None                 | Deviation from angle in special direction II (-1 = 180° off)
+anglePenaltyIII               | -1 – 0     | No         | None                 | Deviation from angle in special direction III (-1 = 180° off)
+anglePenaltyIV                | -1 – 0     | No         | None                 | Deviation from angle in special direction IV (-1 = 180° off)
+anglePenaltyV                 | -1 – 0     | No         | None                 | Deviation from angle in special direction V (-1 = 180° off)
+distancePenaltyI              | 0          | No         | None                 | 0 for now
+distancePenaltyII             | 0          | No         | None                 | 0 for now
+distancePenaltyIII            | –∞ – 0     | No         | m                    | Distance from optimal trajectory approximation, if trajectory is straight then its always 0
+progressReward                | -1 – 1     | No         | None                 | 0 = no progress, +-1 = moved forward/backward in checkpoints

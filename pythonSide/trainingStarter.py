@@ -1,7 +1,7 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize, SubprocVecEnv
 from callbacks import SaveVecNormalizeCallback, FreezeCarDuringPPO, RewardLogCallback
 
 from UnitySingleCarEnv import UnityCarEnv
@@ -32,7 +32,7 @@ model = PPO(
 
     learning_rate=1e-4,
     n_steps=512,
-    batch_size=256,
+    batch_size=128,
     n_epochs=5,
 
     gamma=0.99,
@@ -45,8 +45,9 @@ model = PPO(
     tensorboard_log="./pythonSide/logs/"
 )
 
+
 callbacks = [
-    SaveVecNormalizeCallback("./pythonSide/models/", 20000),
+    SaveVecNormalizeCallback("./pythonSide/models/", 50000),
     FreezeCarDuringPPO(),
     RewardLogCallback()
 ]

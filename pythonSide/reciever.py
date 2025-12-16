@@ -27,16 +27,16 @@ class ObservationReceiver:
         self.running = False
 
         # camera config
-        self.CAM_WIDTH = 64
+        self.CAM_WIDTH = 128
         self.CAM_HEIGHT = 64
-        self.MERGED_WIDTH = self.CAM_WIDTH * 2
-        self.MERGED_HEIGHT = self.CAM_HEIGHT
         self.BYTES_PER_PIXEL = 3
 
         # Header = 1 (speed) + 1 (steer) + 4 (carID) + 200 (50 floats * 4 bytes)
         self.NUM_REWARDS = 50
+        self.ACTUAL_REWARDS = 35
+        self.__DONT_TOUCH_INDEX__ = self.ACTUAL_REWARDS + 3
         self.HEADER_SIZE = 1 + 1 + 4 + self.NUM_REWARDS * 4
-        self.expected_packet_size = self.HEADER_SIZE + self.MERGED_WIDTH * self.MERGED_HEIGHT * self.BYTES_PER_PIXEL
+        self.expected_packet_size = self.HEADER_SIZE + self.CAM_WIDTH * self.CAM_HEIGHT * self.BYTES_PER_PIXEL
 
     def start(self):
         self.running = True
@@ -70,18 +70,14 @@ class ObservationReceiver:
                                 header_format = '<BBi' + 'f' * self.NUM_REWARDS
                                 unpacked = struct.unpack(header_format, header)
                                 speed, steer, car_id = unpacked[:3]
-                                #!!!
-                                # common bug place the number has to be change based on how many rewards are acutally used
-                                # the second number is 3 + Number of rewards actually used
-                                #!!!
-                                reward_values = unpacked[3:43]
+                                reward_values = unpacked[3:self.__DONT_TOUCH_INDEX__]
 
                                 rewards = Rewards(*reward_values)
 
                                 # Parse image
                                 img_bytes = packet[self.HEADER_SIZE:]
                                 img = np.frombuffer(img_bytes, dtype=np.uint8).reshape(
-                                    (self.MERGED_HEIGHT, self.MERGED_WIDTH, 3)
+                                    (self.CAM_HEIGHT, self.CAM_WIDTH, 3)
                                 )
 
                                 obs = Observation(car_id, speed, steer, rewards, img)

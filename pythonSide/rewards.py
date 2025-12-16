@@ -6,106 +6,110 @@ from dataclasses import dataclass
 
 @dataclass
 class Rewards:
-    steering_smoothness: float = 0.0
-    throttle_smoothness: float = 0.0
+    # input change
+    steeringSmoothnessPenalty: float = 0.0
+    throttleSmoothnessPenalty: float = 0.0
 
-    out_of_bounds_penalty: float = 0.0
-    collision_penalty: float = 0.0
-    discounted_collision_penalty: float = 0.0
-    grass_penalty: float = 0.0
-    discounted_grass_penalty: float = 0.0
+    # collisions
+    outOfBoundsPenalty: float = 0.0
+    collisionPenalty: float = 0.0
+    grassPenalty: float = 0.0
 
-    team_distance: float = 0.0
-    lap_time: float = 0.0
-    discounted_lap_time: float = 0.0
-    team_lap_time: float = 0.0
-    discounted_team_lap_time: float = 0.0
-    placement: float = 0.0
-    discounted_placement: float = 0.0
-    team_placement: float = 0.0
-    discounted_team_placement: float = 0.0
+    # game state
+    teamDistancePenalty: float = 0.0
+    lapTimePenalty: float = 0.0
+    teamLapTimePenalty: float = 0.0
+    finalPlacementReward: float = 0.0
+    currentPlacementReward: float = 0.0
+    teamFinalPlacementReward: float = 0.0
+    currentTeamPlacementReward: float = 0.0
+    tickPenalty: float = 0.0
 
-    speed: float = 0.0
-    acceleration: float = 0.0
-    distance: float = 0.0
-    discounted_distance: float = 0.0
+    # car controller
+    speedReward: float = 0.0
+    accelerationReward: float = 0.0
+    distanceReward: float = 0.0
 
-    speedI: float = 0.0
-    speedII: float = 0.0
-    speedIII: float = 0.0
-    speedIV: float = 0.0
-    speedV: float = 0.0
+    # segments
+    speedRewardI: float = 0.0
+    speedRewardII: float = 0.0
+    speedRewardIII: float = 0.0
+    speedRewardIV: float = 0.0
+    speedRewardV: float = 0.0
 
-    accelerationI: float = 0.0
-    accelerationII: float = 0.0
-    accelerationIII: float = 0.0
-    accelerationIV: float = 0.0
-    accelerationV: float = 0.0
+    accelerationRewardI: float = 0.0
+    accelerationRewardII: float = 0.0
+    accelerationRewardIII: float = 0.0
+    accelerationRewardIV: float = 0.0
+    accelerationRewardV: float = 0.0
 
-    angleI: float = 0.0
-    angleII: float = 0.0
-    angleIII: float = 0.0
-    angleIV: float = 0.0
-    angleV: float = 0.0
+    anglePenaltyI: float = 0.0
+    anglePenaltyII: float = 0.0
+    anglePenaltyIII: float = 0.0
+    anglePenaltyIV: float = 0.0
+    anglePenaltyV: float = 0.0
 
-    distanceI: float = 0.0
-    distanceII: float = 0.0
-    distanceIII: float = 0.0
+    distancePenaltyI: float = 0.0
+    distancePenaltyII: float = 0.0
+    distancePenaltyIII: float = 0.0
+
     progressReward: float = 0.0
-    survivalReward: float = 0.0
 
     def as_vector(self) -> np.ndarray:
         """Return rewards as a NumPy vector of length 50."""
         arr = np.array([
-            self.steering_smoothness,
-            self.throttle_smoothness,
+            # input change
+            self.steeringSmoothnessPenalty,
+            self.throttleSmoothnessPenalty,
 
-            self.out_of_bounds_penalty,
-            self.collision_penalty,
-            self.discounted_collision_penalty,
-            self.grass_penalty,
-            self.discounted_grass_penalty,
+            # collisions
+            self.outOfBoundsPenalty,
+            self.collisionPenalty,
+            self.grassPenalty,
 
-            self.team_distance,
-            self.lap_time,
-            self.discounted_lap_time,
-            self.team_lap_time,
-            self.discounted_team_lap_time,
-            self.placement,
-            self.discounted_placement,
-            self.team_placement,
-            self.discounted_team_placement,
+            # game state
+            self.teamDistancePenalty,
+            self.lapTimePenalty,
+            self.teamLapTimePenalty,
+            self.finalPlacementReward,
+            self.currentPlacementReward,
+            self.teamFinalPlacementReward,
+            self.currentTeamPlacementReward,
+            self.tickPenalty,
 
-            self.speed,
-            self.acceleration,
-            self.distance,
-            self.discounted_distance,
+            # car controller
+            self.speedReward,
+            self.accelerationReward,
+            self.distanceReward,
 
-            self.speedI,
-            self.speedII,
-            self.speedIII,
-            self.speedIV,
-            self.speedV,
+            # segments
+            self.speedRewardI,
+            self.speedRewardII,
+            self.speedRewardIII,
+            self.speedRewardIV,
+            self.speedRewardV,
 
-            self.accelerationI,
-            self.accelerationII,
-            self.accelerationIII,
-            self.accelerationIV,
-            self.accelerationV,
+            self.accelerationRewardI,
+            self.accelerationRewardII,
+            self.accelerationRewardIII,
+            self.accelerationRewardIV,
+            self.accelerationRewardV,
 
-            self.angleI,
-            self.angleII,
-            self.angleIII,
-            self.angleIV,
-            self.angleV,
+            self.anglePenaltyI,
+            self.anglePenaltyII,
+            self.anglePenaltyIII,
+            self.anglePenaltyIV,
+            self.anglePenaltyV,
+            
+            #I and II are not used right now
+            self.distancePenaltyI,
+            self.distancePenaltyII,
+            self.distancePenaltyIII,
 
-            self.distanceI,
-            self.distanceII,
-            self.distanceIII,
             self.progressReward,
-            self.survivalReward,
 
-            # reserved for later use
+            # reserved for later use to make 50 items
+            0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         ], dtype=np.float32)
 
@@ -115,56 +119,50 @@ class Rewards:
     def defaultWeights() -> "Rewards":
         """Return a Rewards instance representing the default weights."""
         return Rewards(
-            steering_smoothness = -0.1,
-            throttle_smoothness = -0.1,
+            steeringSmoothnessPenalty = 0.0,
+            throttleSmoothnessPenalty = 0.0,
 
-            out_of_bounds_penalty = -0.0,
-            collision_penalty = -20.0,
-            discounted_collision_penalty= -0.0,
-            grass_penalty = -1.0,
-            discounted_grass_penalty= -0.0,
+            outOfBoundsPenalty = 0.0,
+            collisionPenalty = 30.0,
+            grassPenalty = 1.0,
 
-            team_distance = -0.0,
-            lap_time = -0.0,
-            discounted_lap_time= -0.0,
-            team_lap_time = -0.0,
-            discounted_team_lap_time= -0.0,
-            placement = 0.0,
-            discounted_placement= 0.0,
-            team_placement = 0.0,
-            discounted_team_placement= 0.0,
+            teamDistancePenalty = 0.0,
+            lapTimePenalty = 0.0,
+            teamLapTimePenalty = 0.0,
+            finalPlacementReward = 0.0,
+            currentPlacementReward = 0.0,
+            teamFinalPlacementReward = 0.0,
+            currentTeamPlacementReward = 0.0,
+            tickPenalty = 0.0,
 
-            speed = 0.0,
-            acceleration = 0.0,
-            distance = 0.0,
-            discounted_distance = 0.0,
+            speedReward = 0.0,
+            accelerationReward = 0.0,
+            distanceReward = 0.0,
 
-            speedI = 0.0,
-            speedII = 0.0,
-            speedIII = 0.0,
-            speedIV = 0.0,
-            speedV = 0.1,
+            speedRewardI = 0.0,
+            speedRewardII = 0.0,
+            speedRewardIII = 0.0,
+            speedRewardIV = 0.0,
+            speedRewardV = 0.1,
 
-            accelerationI = 0.0,
-            accelerationII = 0.0,
-            accelerationIII = 0.0,
-            accelerationIV = 0.0,
-            accelerationV = 0.0,
+            accelerationRewardI = 0.0,
+            accelerationRewardII = 0.0,
+            accelerationRewardIII = 0.0,
+            accelerationRewardIV = 0.0,
+            accelerationRewardV = 0.0,
 
-            angleI = -0.0,
-            angleII = -0.0,
-            angleIII = -0.0,
-            angleIV = -0.0,
-            angleV = -0.5,
+            anglePenaltyI = 0.0,
+            anglePenaltyII = 0.0,
+            anglePenaltyIII = 0.0,
+            anglePenaltyIV = 0.0,
+            anglePenaltyV = 0.5,
 
-            distanceI = -0.0,
-            distanceII = -0.0,
-            distanceIII = -0.0,
-            progressReward = 3.0,
-            survivalReward= -0.0
+            distancePenaltyI = 0.0,
+            distancePenaltyII = 0.0,
+            distancePenaltyIII = 0.0,
+            
+            progressReward = 3.0
         )
-
-
 
 def calculate_total_reward(rewards: Rewards, weights: Rewards) -> float:
     return float(np.dot(rewards.as_vector(), weights.as_vector()))

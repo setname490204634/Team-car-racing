@@ -169,7 +169,7 @@ class UnityCarEnv(gym.Env):
         
         rgb = obs_packet.image
         
-        
+        # observation check
         # bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
         # bgr = cv2.flip(bgr, 0)
         # bgr = cv2.resize(
@@ -186,7 +186,6 @@ class UnityCarEnv(gym.Env):
         self._update_frame_stack(rgb)
 
         reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.defaultWeights().as_vector()))
-        #print(obs_packet.rewards)
         # Update the per-category sums (unweighted)
         for field in vars(obs_packet.rewards):
             current_value = getattr(obs_packet.rewards, field)
@@ -203,7 +202,7 @@ class UnityCarEnv(gym.Env):
             truncated = True
             
         #bug prevention
-        if obs_packet.rewards.out_of_bounds_penalty > 0.5 or obs_packet.rewards.acceleration > 100:
+        if obs_packet.rewards.out_of_bounds_penalty < -0.5:
             terminated = True
             reward = 0
             

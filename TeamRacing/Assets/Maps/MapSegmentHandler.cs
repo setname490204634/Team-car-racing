@@ -263,7 +263,7 @@ public class MapSegmentHandler : MonoBehaviour
 
         (Vector2 center, float radius) = MakeCircle(road[index], road[index1], road[index2]);
         if (float.Equals(radius, 0f)) return 0f;
-        else return (Vector2.Distance(pos, center) - radius)/radius;
+        else return (Vector2.Distance(pos, center) - radius);
     }
 
 #if UNITY_EDITOR

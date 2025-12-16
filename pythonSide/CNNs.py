@@ -13,9 +13,12 @@ class SmallCNN(BaseFeaturesExtractor):
         n_channels = observation_space.shape[0]
         h = observation_space.shape[1]
         w = observation_space.shape[2]
+        
+        resized_h, resized_w = 64, 64
 
         self.cnn = nn.Sequential(
-            nn.Upsample(size=(h, 64), mode="bilinear", align_corners=False),
+            #upsample here actually reduces from 128x64 to 64x64
+            nn.Upsample(size=( resized_h, resized_w), mode="bilinear", align_corners=False),
 
             nn.Conv2d(n_channels, 12, kernel_size=3, stride=2),
             nn.ReLU(),
@@ -30,7 +33,7 @@ class SmallCNN(BaseFeaturesExtractor):
         )
 
         with torch.no_grad():
-            sample = torch.zeros(1, n_channels, h, w)
+            sample = torch.zeros(1, n_channels, resized_h, resized_w)
             n_flatten = self.cnn(sample).shape[1]
 
         self.linear = nn.Sequential(
@@ -52,18 +55,18 @@ class SmallCNN2(BaseFeaturesExtractor):
             nn.Conv2d(n_channels, 32, kernel_size=8, stride=4),
             nn.ReLU(), nn.Conv2d(32, 64, kernel_size=4, stride=2),
             nn.ReLU(), nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            #liche 
             nn.ReLU(), nn.Flatten(), )
         # compute output size
         with torch.no_grad():
             sample = torch.zeros(1, n_channels, h, w)
             n_flatten = self.cnn(sample).shape[1]
-            self.linear = nn.Sequential(
-                nn.Linear(n_flatten, features_dim),
-                nn.ReLU() )
+            
+        self.linear = nn.Sequential(
+            nn.Linear(n_flatten, features_dim),
+            nn.ReLU() )
     def forward(self, x):
         return self.linear(self.cnn(x))
-
-
 
 class VGG16StackedFramesExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):

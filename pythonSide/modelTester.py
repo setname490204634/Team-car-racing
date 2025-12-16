@@ -21,8 +21,8 @@ TOTAL_TIMESTEPS = 5_000_000
 
 
 # Paths
-MODEL_PATH = "./pythonSide/models/blackMirrorsDecent.zip"
-VECNORM_PATH = "./pythonSide/models/vecnormalizeBlackMirrorsDecent.pkl"
+MODEL_PATH = "./pythonSide/models/model_460000.zip"
+VECNORM_PATH = "./pythonSide/models/vecnormalize_460000.pkl"
 LOG_DIR = "./pythonSide/logs/"
 
 def make_env():
@@ -68,7 +68,7 @@ if CONTINUE_TRAINING:
     print("Continuing training...")
 
     callbacks = [
-        SaveVecNormalizeCallback("./pythonSide/models/", save_freq=20000),
+        SaveVecNormalizeCallback("./pythonSide/models/", save_freq=50000),
         FreezeCarDuringPPO(),
         RewardLogCallback(),
     ]
