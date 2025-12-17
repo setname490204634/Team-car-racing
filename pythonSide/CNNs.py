@@ -52,8 +52,8 @@ class SmallCNN2(BaseFeaturesExtractor):
         h = observation_space.shape[1]
         w = observation_space.shape[2]
         self.cnn = nn.Sequential(
-            nn.Conv2d(n_channels, 32, kernel_size=8, stride=4),
-            nn.ReLU(), nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.Conv2d(n_channels, 32, kernel_size=7, stride=4),
+            nn.ReLU(), nn.Conv2d(32, 64, kernel_size=3, stride=2),
             nn.ReLU(), nn.Conv2d(64, 64, kernel_size=3, stride=1),
             #liche 
             nn.ReLU(), nn.Flatten(), )

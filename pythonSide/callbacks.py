@@ -1,6 +1,7 @@
 import os
 from stable_baselines3.common.callbacks import  BaseCallback
 import sender
+from CommandConstants import CommandCode
 
 class SaveVecNormalizeCallback(BaseCallback):
     def __init__(self, save_path, save_freq):
@@ -31,7 +32,7 @@ class FreezeCarDuringPPO(BaseCallback):
     def _on_rollout_end(self):
         env = self.model.env.envs[0]
         print("Pausing Unity simulation...")
-        sender.send_command(11, 0, env.control_port)  # PAUSE
+        sender.send_command(CommandCode.StopSimulation, 0, env.control_port)
         self.paused = True
         return True
 
@@ -39,7 +40,7 @@ class FreezeCarDuringPPO(BaseCallback):
         if self.paused:
             env = self.model.env.envs[0]
             print("Unpausing Unity simulation...")
-            sender.send_command(12, 0, env.control_port)  # UNPAUSE
+            sender.send_command(CommandCode.ContinueSimulation, 0, env.control_port)
             self.paused = False
         return True
     

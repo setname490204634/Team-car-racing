@@ -9,6 +9,7 @@ import socket
 import os
 from rewards import *
 import cv2
+from CommandConstants import CommandCode
 
 def wait_for_port(host: str, port: int, timeout=20):
     """Wait until a TCP port is open."""
@@ -76,9 +77,9 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver = ObservationReceiver(host="0.0.0.0", port=self.obs_port)
         self.obs_receiver.start()
 
-        sender.send_command(3, 4, self.control_port)  # set first map
-        sender.send_command(31, 0, self.control_port)  # simulation speed: unlimited
-        sender.send_command(22, 6, self.control_port)  # set max steering change
+        sender.send_command(CommandCode.ChangeMap, 4, self.control_port)  # set first map (4)
+        sender.send_command(CommandCode.UnlimitedSpeed, 0, self.control_port)
+        sender.send_command(CommandCode.SetMaxSteeringChange, 6, self.control_port)  # set max steering change to 6/256
 
         
     def _update_frame_stack(self, new_frame):
@@ -130,13 +131,13 @@ class UnityCarEnv(gym.Env):
     def reset(self, **kwargs):
         """Reset Unity and return initial observation."""
         self.mapSwitchCount += 1
-        sender.send_command(11, 0, self.control_port)  # stop
+        sender.send_command(CommandCode.StopSimulation, 0, self.control_port)
         
         if (self.mapSwitchCount % self.changeMapEvery == 0):
-            sender.send_command(4, 0, self.control_port)   # random map
+            sender.send_command(CommandCode.ChangeMapRandom, 0, self.control_port)
             
-        sender.send_command(0, 0, self.control_port)   # reset cars
-        sender.send_command(10, 0, self.control_port)  # start
+        sender.send_command(CommandCode.Reset, 0, self.control_port)
+        sender.send_command(CommandCode.StartSimulation, 0, self.control_port)
 
         while not self.obs_receiver.has_min_observations(1):
             time.sleep(0.0001)
@@ -170,17 +171,17 @@ class UnityCarEnv(gym.Env):
         rgb = obs_packet.image
         
         # observation check
-        # bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        # bgr = cv2.flip(bgr, 0)
-        # bgr = cv2.resize(
-        #     bgr,
-        #     None,
-        #     fx=4,
-        #     fy=4,
-        #     interpolation=cv2.INTER_LINEAR
-        # )
-        # cv2.imshow("Unity Observation", bgr)
-        # cv2.waitKey(1)
+        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        bgr = cv2.flip(bgr, 0)
+        bgr = cv2.resize(
+            bgr,
+            None,
+            fx=4,
+            fy=4,
+            interpolation=cv2.INTER_LINEAR
+        )
+        cv2.imshow("Unity Observation", bgr)
+        cv2.waitKey(1)
         
                 
         self._update_frame_stack(rgb)
@@ -202,7 +203,7 @@ class UnityCarEnv(gym.Env):
             truncated = True
             
         #bug prevention
-        if obs_packet.rewards.out_of_bounds_penalty < -0.5:
+        if obs_packet.rewards.outOfBoundsPenalty < -0.5:
             terminated = True
             reward = 0
             

@@ -162,7 +162,7 @@ public class CarController : MonoBehaviour
         Vector3 curPos = rb.position;
         this.discountedDistance *= discountFactor;
         this.discountedDistance += (curPos - lastPos).magnitude;
-        this.distance += (curPos - lastPos).magnitude;
+        this.distance = (curPos - lastPos).magnitude;
         lastPos = curPos;
 
         Vector3 curSpeed = rb.linearVelocity;

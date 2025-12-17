@@ -18,6 +18,11 @@ public class CarAppearance : MonoBehaviour
         ApplyMaterial();
     }
 
+    public void SetMaterial(Material material)
+    {
+        this.bodyMaterial = material;
+    }
+
     public void ApplyMaterial()
     {
         if (bodyMaterial == null) return;

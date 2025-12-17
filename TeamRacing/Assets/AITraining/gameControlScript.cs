@@ -5,49 +5,6 @@ using System.Net.Sockets;
 using System.Threading;
 using UnityEngine;
 
-public class CarRaceState
-{
-    public int lapCount = 0;
-    public float currentLapTime = 0f;
-    public float lastLapTotalTime = 0f;
-    public float bestLapTime = float.MaxValue;
-
-    public bool passedHalfway = false;
-    public bool crossedFinish = true;
-
-    public bool finished = false;
-
-    public void Reset()
-    {
-        lapCount = 0;
-        currentLapTime = 0f;
-        lastLapTotalTime = 0f;
-        bestLapTime = float.MaxValue;
-        passedHalfway = false;
-        crossedFinish = true;
-        finished = false;
-    }
-}
-public class CarEntry
-{
-    public GameObject carObject;
-    public CarAgent agent; //can be null
-    public ICarInputProvider inputProvider;
-    public RewardsCalculator rewards;
-    public CarRaceState raceState;
-    public CarController controller;
-    public int segmentIndex;
-
-    public void Reset()
-    {
-        inputProvider.SetInput(CarInput.Default);
-        rewards.Reset();
-        raceState.Reset();
-        controller.ResetCar();
-        segmentIndex = 0;
-    }
-}
-
 public class gameControlScript : MonoBehaviour
 {
     public struct TransformEntry
@@ -58,6 +15,9 @@ public class gameControlScript : MonoBehaviour
 
     [Header("Assign cars in Inspector")]
     public List<GameObject> assignedCarObjects;  // inspector list only
+
+    [Header("car body materials")]
+    public List<Material> bodyMaterials; // assign in inspector
 
     private List<CarEntry> cars = new List<CarEntry>(); //never change order of cars! (it is used as index)
     private List<TransformEntry> startTransforms = new List<TransformEntry>(); //starting locations, this can be permutated
@@ -282,7 +242,8 @@ public class gameControlScript : MonoBehaviour
                 inputProvider = obj.GetComponent<ICarInputProvider>(),
                 controller = obj.GetComponent<CarController>(),
                 raceState = new CarRaceState(),
-                segmentIndex = 1 // always start from the 1, that coresponds to the middle of start tile
+                segmentIndex = 1, // always start from the 1, that coresponds to the middle of start tile
+                carAppearance = obj.GetComponent<CarAppearance>()
             };
 
             List<int> teammatesID = new List<int>();
@@ -378,7 +339,6 @@ public class gameControlScript : MonoBehaviour
             cars[carIndex].inputProvider.SetInput(input);
         }
     }
-
     private void StartGame()
     {
         state = State.Running;
@@ -388,7 +348,6 @@ public class gameControlScript : MonoBehaviour
         transmitter.Connect();
         observationsSent = false;
     }
-
     private void StopGame()
     {
         state = State.Stopped;
@@ -399,19 +358,16 @@ public class gameControlScript : MonoBehaviour
         state = State.Running;
         Debug.Log("Game unpaused.");
     }
-
     void SetRealtimeMode()
     {
         QualitySettings.vSyncCount = 1;
         Application.targetFrameRate = 60;
     }
-
     void SetUnlimitedSimulationSpeed()
     {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = -1;
     }
-
     void SetMaxSteeringChange(byte value)
     {
         for (int i = 0; i < cars.Count; i++)
@@ -420,59 +376,133 @@ public class gameControlScript : MonoBehaviour
             entry.controller.maxSteeringChange = value;
         }
     }
+    void ChangeCarColoursRandomly()
+    {
+        for (int i = 0; i < cars.Count; i++)
+        {
+            var entry = cars[i];
+            entry.carAppearance.SetMaterial(bodyMaterials[UnityEngine.Random.Range(0, bodyMaterials.Count)]);
+            entry.carAppearance.ApplyMaterial();
+        }
+    }
+    void ResetCarToRandomStartLocation()
+    {
+        // works similar to reset only it makes the car start at random location
+        if (cars.Count > currentSegmentHandler.road.Count)
+        {
+            Debug.LogError("Not enough road segments for unique car placement");
+            return;
+        }
 
+        List<int> segmentIndices = new List<int>();
+
+        for (int i = 0; i < currentSegmentHandler.road.Count; i++)
+        {
+            segmentIndices.Add(i);
+        }
+
+        for (int i = segmentIndices.Count - 1; i > 0; i--)
+        {
+            int j = UnityEngine.Random.Range(0, i + 1);
+            (segmentIndices[i], segmentIndices[j]) = (segmentIndices[j], segmentIndices[i]);
+        }
+
+        for (int i = 0; i < cars.Count; i++)
+        {
+            var entry = cars[i];
+            int segmentIndex = segmentIndices[i];
+
+            Vector2 segmentPos = currentSegmentHandler.road[segmentIndex];
+
+            Rigidbody rb = entry.carObject.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.position = new Vector3(segmentPos.x, rb.position.y, segmentPos.y);
+
+                Vector2 dir2D = currentSegmentHandler.GetVectorI(segmentIndex, segmentPos);
+                Vector3 forward = new Vector3(dir2D.x, 0f, dir2D.y);
+
+                rb.rotation = Quaternion.LookRotation(forward, Vector3.up);
+                rb.Sleep();
+            }
+
+            // Must be after movement
+            entry.Reset();
+            entry.segmentIndex = segmentIndex;
+        }
+    }
     private void ProcessCommand(byte command, byte value)
     {
-        switch (command)
+        switch ((CommandCode)command)
         {
-            case 0: // reset
+            case CommandCode.Reset:
                 UnityMainThreadDispatcher.Instance().Enqueue(() => ResetCars());
                 break;
-            case 1: // shuffle cars
+
+            case CommandCode.ShuffleCars:
                 UnityMainThreadDispatcher.Instance().Enqueue(() => ShuffleStartTransforms());
                 break;
-            case 2: // set lap count
+
+            case CommandCode.SetLapCount:
                 this.lapCount = value;
                 break;
-            case 3: // change map
+
+            case CommandCode.ChangeMap:
                 mapManager.LoadMap(value);
                 this.currentSegmentHandler = mapManager.currentSegmentHandler;
                 break;
-            case 4: // change map randomly
+
+            case CommandCode.ChangeMapRandom:
                 mapManager.LoadRandomMap();
                 this.currentSegmentHandler = mapManager.currentSegmentHandler;
                 break;
-            case 10: // start the simulation
+
+            case CommandCode.ChangeCarColoursRandomly:
+                ChangeCarColoursRandomly();
+                break;
+
+            case CommandCode.ResetCarToRandomStartLocation:
+                ResetCarToRandomStartLocation();
+                break;
+
+            case CommandCode.StartSimulation:
                 StartGame();
                 break;
-            case 11: // stop the simulation
+
+            case CommandCode.StopSimulation:
                 StopGame();
                 break;
-            case 12:
+
+            case CommandCode.ContinueSimulation:
                 ContinueGame();
                 break;
-            case 20: // update delta time for simulation
+
+            case CommandCode.UpdateDeltaTime:
                 this.fixedHz = value;
                 UpdateSimulationDeltaTime();
                 break;
-            case 21: // set how often to send observations
+
+            case CommandCode.SetFramesPerObservation:
                 this.framesPerObservation = value;
                 break;
-            case 22:
+
+            case CommandCode.SetMaxSteeringChange:
                 SetMaxSteeringChange(value);
                 break;
-            case 30: // normal speed of the simulation
+
+            case CommandCode.RealtimeSpeed:
                 SetRealtimeMode();
                 break;
-            case 31: // speed it up as fast as it goes
+
+            case CommandCode.UnlimitedSpeed:
                 SetUnlimitedSimulationSpeed();
                 break;
+
             default:
                 Debug.LogWarning("Unknown command byte: " + command);
                 break;
         }
     }
-
     private void ListenForControlCommands()
     {
         try
@@ -502,7 +532,6 @@ public class gameControlScript : MonoBehaviour
             Debug.Log("Socket exception: " + e);
         }
     }
-
     private void ListenForCarInstructions()
     {
         try
