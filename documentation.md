@@ -14,12 +14,15 @@
 - MainScene.unity, used to run enviroment
 
 #### /Roads
+- TilePoints.cs, script to asign checkpoints to a single road tile
 - contains road tiles prefabs
 - grass, road, wall, finish line materials
 - wall prefabs
 - halfway hitbox (as checkpoint)
 
 #### /Maps
+- MapManager.cs, holds a list of map prefabs and has functions to replace current map
+- MapSegmentHandler.cs, from tiles with checkpoints creates list of checkpoints in order of the track direction. It also provides functions to get directions based on the checkpoints. For example if i am at checkpoint A and next is B, the functions will create vector in direction from A to B. There are more options.
 - contains maps prefabs
 
 #### /Cars
@@ -43,21 +46,35 @@
 - CarFollowCamera.cs, used to move camera with car
 
 #### /AITraining
-- CarAgentHandler.cs, represents unity instance of agent, connects cameras to output and agent input to car controller
-- CarObservationSerializer.cs, packs observation into byte array
-- CarObservationTransmitter.cs, sends packed observation via network
-- FreeCameraController.cs, used to move camera with wsad and mouse to observe how the cars behave from 3rd person
-- GameControlScript.cs, manages enviroment input/output, handles restarting and the game, game loop, rewards
+- CarAgentHandler.cs, represents unity instance of agent, connects cameras to output and agent input to car controller.
+- CarObservationSerializer.cs, packs observation into byte array.
+- CarObservationTransmitter.cs, sends packed observation via network.
+- CarEntry.cs, holds information about 1 car that is taking place in the race.
+- CarRaceState.cs, holds information about car laps and lap times.
+- CommandConstants.cs,  conatains enum with command constants that inmplement communication protocol.
+- FreeCameraController.cs, used to move camera with wsad and mouse to observe how the cars behave from 3rd person.
+- GameControlScript.cs, manages enviroment input/output, handles restarting and the game, game loop.
+- Rewards.cs, class that holds reward states and calcualtes them for a car. It is part of CarEntry class.
 - UnityMainThreadDispatcher.cs, used to execute tasks on main thread.
-- Buffers.cs, used to buffer packets from communication
+- Buffers.cs, used to buffer packets from communication.
 
 ### /pythonSide
 
-- main.py, runs comumnication
-- sender.py, sends car driving instructions to unity
-- reciever.py, recievs and unpacks observation from unity
+- callbacks.py, use to add extra behaviour during the training. Namely logging, pausing and unpausing the simulation.
+- CNNs.py, contains used CNN networks.
+- CommandConstants.py, conatains enum with command constants that inmplement communication protocol.
+- modleTester.py, used to check what the model is doing on the track as well as to continue training for a saved model.
+- trainingStarter.py, used to create the model with callbacks and CNN. It will start trainging.
+- sender.py, sends car driving instructions to unity.
+- reciever.py, recievs and unpacks observation from unity.
+- rewards.py, python equivalent of Rewards.cs it data class that holds rewards. It also has reward weights that are used in the training.
+- UnitySingleCarEnv.py, gym like enviroment that uses unity.
 
 ### Important files in depth
+
+### /pythonSide/rewards.py and /TeamRacing/Assets/AITraining/Rewards.cs
+
+- rewards are in depth descrived in folder /extraRewardInfo
 
 #### TeamRacing/Assets/AITraining/GameControlScript.cs + TeamRacing/pythonSide/main.py + recievers
 - Here is the main loop that controls the simulation and connects everything together
@@ -230,14 +247,14 @@ void FixedUpdate()
 
 2. Manual (WSAD) Control
    - Add the `PlayerCarInput.cs` script.
-   - This allows you to drive the car using keyboard.
+   - This allows the car to be driven using keyboard.
    - Optionally, enable speed sensitive steering in the inspector.
 
 3. AI Agent Integration
    - To make the car controllable by the AI system:
      - Add `AgentInputProvider.cs`.
      - Add `CarAgentHandler.cs`.
-   - Assign cameras in the CarAgentHandler.
+   - Assign camera in the CarAgentHandler.
    - Configure any additional parameters such as camera resolution.
 
 
@@ -251,7 +268,7 @@ Unity side is used as simulation for cars, it can take driving input from networ
 
   * `send_car_instruction(car_id: int, steering: int, throttle: int)` — sends 32-bit car ID + 1-byte steering + 1-byte throttle.
   * `send_command(command_byte: int)` — sends single-byte commands for control like reset or shuffle.
-* **reciever.py**: Receives merged RGB24 camera observations from Unity and extracts header information (speed, steering, car ID, reward). Returns a NumPy array representing the merged image.
+* **reciever.py**: Receives RGB24 camera observations from Unity and extracts header information (speed, steering, car ID, reward). Returns a NumPy array representing the image.
 
 ### Communication Protocol
 
@@ -263,7 +280,7 @@ Unity side is used as simulation for cars, it can take driving input from networ
     * 1 byte steering
     * 4 bytes car ID (int32, little-endian)
     * 50 bytes reward (float, little-endian)
-  * RGB24 camera image
+  * RGB24 camera image 128x64
 
 - Driving Instruction Packet (Python -> Unity)
 
@@ -274,8 +291,7 @@ Unity side is used as simulation for cars, it can take driving input from networ
 - Game Control Packet (Python -> Unity)
 
    * 1 byte command number
-   * 1 byte extra value (if command does not have options number is ignored)
-
+   * 1 byte extra value (if command does not have options value is ignored)
 
 
 ### Example Usage
@@ -287,7 +303,7 @@ import sender
 import reciever
 
 # Send command to Unity
-sender.send_command(0)  # Reset Cars
+sender.send_command(0, 0)  # Reset Cars
 
 # Send driving instructions
 sender.send_car_instruction(car_id=3, steering=120, throttle=200)
@@ -298,7 +314,9 @@ header, image = reciever.receive_observations()
 
 ### Unity Game Commands
 
-- after every command the game has to be reset
+- after every command the game has to be reset, except pause and unpause
+- `0` and `6` work both as reset
+- commands are defined by protocol:
 
 | **First Byte** | **Second Byte** | **Description** |
 |-----------------|------------------|-----------------|
@@ -307,15 +325,20 @@ header, image = reciever.receive_observations()
 | `2` | `x` | set lap count to x |
 | `3` | `x` | Swap map to maps[x] |
 | `4` | `x` | Swap map randomly |
+| `5` | `-` | Change car colours randomly |
+| `6` | `-` | Reset all cars to random locations on the map |
 | `10` | `-` | Start the game |
-| `11` | `-` | Stop the game |
+| `11` | `-` | Pause the game |
+| `12` | `-` | Unpause the game |
 | `20` | `x` | Set the simulation refresh rate (that translates to delta time) |
 | `21` | `x` | Send car observations every x frames |
+| `22` | `x` | Set max steer change per tick (max change is 256) |
 | `30` | `-` | Set the simulation speed to normal speed|
 | `31` | `-` | Speed up the simulation to maximum |
 
+- CommandConstants.cs and CommandConstants.py implement this protocol but the files are technically independent so the programmer must ensure the values match.
+
 ### Notes
 
-* Merged image simplifies Python side by combining left/right cameras.
 * RGB24 format ensures 8 bits per channel with no transparency.
-* Unity and Python ports must match for successful communication.
+* When picking porst the python loops through ports untill it finds 3 free ports

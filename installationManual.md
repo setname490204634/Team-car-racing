@@ -50,15 +50,13 @@ This mode runs the simulation and communicates with a Python script — sending 
    - Open the cloned project folder.
 
 4. **Load the Main Scene**
-   - In Unity, navigate to `Assets/Scenes/`.
-   - Open the **`mainScene`** scene.
+   - In Unity, build the main scene to folder ./teamRacing/builds
 
 5. **Run the Simulation**
-   - Click **Play** ▶️ in Unity.
    - In a terminal, run:
      ```
-     python pythonSide/main.py
+     python pythonSide/trainingStarter.py
      ```
 
 6. **Stop the Simulation**
-   - Click **Stop** ■ in Unity.
+   - Ctrl+C in the terminal closes the python proces together with unity

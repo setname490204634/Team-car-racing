@@ -134,7 +134,8 @@ public class RewardsCalculator : ICarRewardProvider
     private bool outOfBounds = false;
 
     //game state
-    const float idealDistance = 10f; //for closeness reward
+    private const float idealDistance = 10f; //for closeness reward
+    private const float defaultLapTimePenalty = -1000f;
     //placement reward scaling starts from index 1 and not 0!
     private static readonly int[] placementPoints = new int[]
     {
@@ -142,7 +143,7 @@ public class RewardsCalculator : ICarRewardProvider
     };
 
     private float lastLapTime = 0f;
-    private float lapTimeReward = 0f;
+    private float lapTimePenalty = 0f;
 
     private int finalPlacement = 0; // 0 means not registered
     private float placementReward = 0f;
@@ -223,7 +224,7 @@ public class RewardsCalculator : ICarRewardProvider
 
             //game state
             teamDistancePenalty = TeamDistancePenalty(),
-            lapTimePenalty = lapTimeReward,
+            lapTimePenalty = lapTimePenalty,
             teamLapTimePenalty = teammateLapPenalty,
             finalPlacementReward = placementReward,
             currentPlacementReward = currentPlacementReward,
@@ -277,7 +278,9 @@ public class RewardsCalculator : ICarRewardProvider
         onGrassPenalty = onGrass ? -1.0f : 0.0f;
         onGrass = false;
 
-        lapTimeReward = -lastLapTime;
+        lapTimePenalty = -lastLapTime;
+        if (lapTimePenalty == 0f)
+            lapTimePenalty = defaultLapTimePenalty;
         lastLapTime = 0f;
 
         if (finalPlacement < placementPoints.Length)
@@ -311,6 +314,9 @@ public class RewardsCalculator : ICarRewardProvider
         teammateLapPenalty = 0f;
         foreach (float t in teammateLapTimes)
             teammateLapPenalty -= t;
+        if (teammateLapPenalty == 0f)
+            teammateLapPenalty = defaultLapTimePenalty;
+
         teammateLapTimes.Clear();
 
         segmentProgressReward = segmentProgress;

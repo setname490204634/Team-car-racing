@@ -2438,6 +2438,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   assignedCarObjects:
   - {fileID: 6542625109337443810}
+  bodyMaterials:
+  - {fileID: 2100000, guid: e634d3417b6ddfb4e8c551cc642a6aa7, type: 2}
+  - {fileID: 2100000, guid: 07da59a395289da4b880666978fb4b82, type: 2}
+  - {fileID: 2100000, guid: 2dfcd5bce3476a74588edf70dfe33222, type: 2}
+  - {fileID: 2100000, guid: 55aaa05add7ec324dabe67e631cbccb0, type: 2}
   winners: 
   controlPort: 5005
   carInstructionsPort: 5006

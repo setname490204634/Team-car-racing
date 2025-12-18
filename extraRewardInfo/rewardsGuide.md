@@ -5,13 +5,13 @@ throttleSmoothnessPenalty     | -1 – 0     | No         | None                
 outOfBoundsPenalty            | -1 - 0     | No         | None                 | 0 = normal, -1 = car under map or too far away
 collisionPenalty              | -1 - 0     | No         | None                 | 0 = normal, -1 = car collided
 grassPenalty                  | -1 - 0     | No         | None                 | 0 = on track, -1 = car on grass
-teamDistancePenalty           | 0 – ∞      | Yes        | m                    | Sum of differences of teammates position from "optimal" distance (10m)
-lapTimePenalty                | 0 – ∞      | No         | seconds              | 0 = lap was not completed, Lap time in seconds
-teamLapTimePenalty            | 0 – ∞      | Yes        | seconds              | 0 = lap was not completed, sum of teammates lap times in seconds
-finalPlacementReward          | 0 – 25     | No         | points               | Points according to F1 rating
-currentPlacementReward        | 0 – 25     | No         | points               | Points according to F1 rating at current tick
-teamFinalPlacementReward      | 0 – 25     | Yes        | points               | Sum of teammates points according to F1 rating
-currentTeamPlacementReward    | 0 – 25     | Yes        | points               | Sum of teammates points according to F1 rating at current tick
+teamDistancePenalty           | -∞ – 0     | Yes        | m                    | Sum of differences of teammates position from "optimal" distance (10m)
+lapTimePenalty                | -∞ – 0     | No         | seconds              | 0 = lap was not completed, Lap time in seconds
+teamLapTimePenalty            | -∞ – 0     | Yes        | seconds              | 0 = lap was not completed, sum of teammates lap times in seconds
+finalPlacementReward          | 0 – 25     | Yes        | points               | Points according to F1 rating
+currentPlacementReward        | 0 – 25     | Yes        | points               | Points according to F1 rating at current tick
+teamFinalPlacementReward      | 0 – 25*n   | Yes        | points               | Sum of teammates points according to F1 rating, n = number of teammates
+currentTeamPlacementReward    | 0 – 25*n   | Yes        | points               | Sum of teammates points according to F1 rating at current tick, n = number of teammates
 tickPenalty                   | -1         | No         | None                 | Penalty per step/tick
 speedReward                   | –∞ – ∞     | No         | m/s                  | Forward speed, what would car tochometer show
 accelerationReward            | –∞ – ∞     | No         | m/s²                 | Forward acceleration in m/s²
