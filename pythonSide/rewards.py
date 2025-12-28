@@ -133,7 +133,7 @@ class Rewards:
             currentPlacementReward = 0.0,
             teamFinalPlacementReward = 0.0,
             currentTeamPlacementReward = 0.0,
-            tickPenalty = 1.0,
+            tickPenalty = 0.0,
 
             speedReward = 0.0,
             accelerationReward = 0.0,
@@ -143,7 +143,7 @@ class Rewards:
             speedRewardII = 0.0,
             speedRewardIII = 0.0,
             speedRewardIV = 0.0,
-            speedRewardV = 0.0,
+            speedRewardV = 0.1,
 
             accelerationRewardI = 0.0,
             accelerationRewardII = 0.0,
@@ -155,13 +155,13 @@ class Rewards:
             anglePenaltyII = 0.0,
             anglePenaltyIII = 0.0,
             anglePenaltyIV = 0.0,
-            anglePenaltyV = 0.0,
+            anglePenaltyV = 0.3,
 
             distancePenaltyI = 0.0,
             distancePenaltyII = 0.0,
             distancePenaltyIII = 0.0,
             
-            progressReward = 1.0
+            progressReward = 5.0
         )
 
 def calculate_total_reward(rewards: Rewards, weights: Rewards) -> float:
