@@ -77,7 +77,6 @@ class VGG16StackedFramesExtractor(BaseFeaturesExtractor):
 
         vgg = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_FEATURES)
         
-        #for 12 layers
         original_conv = vgg.features[0]
         self.vgg_features = vgg.features
         self.vgg_features[0] = nn.Conv2d(
@@ -88,10 +87,29 @@ class VGG16StackedFramesExtractor(BaseFeaturesExtractor):
             padding=original_conv.padding
         )
 
+        old_weight = original_conv.weight.data
+        new_conv = self.vgg_features[0]
+
+        with torch.no_grad():
+            new_conv.weight[:, :3] = old_weight
+            for i in range(3, n_channels):
+                new_conv.weight[:, i] = old_weight[:, i % 3]
+
+            if original_conv.bias is not None:
+                new_conv.bias.copy_(original_conv.bias)
+
         self.avgpool = nn.AdaptiveAvgPool2d((7,7))
+        
+        self.linear = nn.Sequential(
+            nn.Linear(512 * 7 * 7, features_dim),
+            nn.ReLU()
+        )
+        for param in self.vgg_features[:10].parameters():
+            param.requires_grad = False
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         x = observations.float() / 255.0
         x = self.vgg_features(x)
         x = self.avgpool(x)
-        return torch.flatten(x, 1)
+        x = torch.flatten(x, 1)
+        return self.linear(x)
