@@ -248,7 +248,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2319
+  m_VersionIndex: 2325
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -600,7 +600,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2286
+  m_VersionIndex: 2292
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -1059,7 +1059,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 9156
+  m_VersionIndex: 9162
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -2490,7 +2490,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2840
+  m_VersionIndex: 2846
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -2845,7 +2845,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2334
+  m_VersionIndex: 2340
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -3197,7 +3197,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2286
+  m_VersionIndex: 2292
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -3549,7 +3549,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2293
+  m_VersionIndex: 2299
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -3901,7 +3901,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2293
+  m_VersionIndex: 2299
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -4059,11 +4059,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   localPoints:
   - {x: -20, y: 0, z: 5}
+  - {x: -15, y: 0, z: 7.5}
   - {x: -10, y: 0, z: 10}
+  - {x: -5, y: 0, z: 13.5}
   - {x: 0, y: 0, z: 15}
+  - {x: 5, y: 0, z: 13}
   - {x: 10, y: 0, z: 10}
-  - {x: 15, y: 0, z: 0}
+  - {x: 12.5, y: 0, z: 5}
+  - {x: 13.5, y: 0, z: 0}
+  - {x: 12.5, y: 0, z: -5}
   - {x: 10, y: 0, z: -10}
+  - {x: 5, y: 0, z: -13}
   - {x: 0, y: 0, z: -15}
+  - {x: -5, y: 0, z: -13.5}
   - {x: -10, y: 0, z: -10}
+  - {x: -15, y: 0, z: -7.5}
   - {x: -20, y: 0, z: -5}

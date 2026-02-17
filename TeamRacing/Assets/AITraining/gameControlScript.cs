@@ -462,7 +462,7 @@ public class gameControlScript : MonoBehaviour
                 break;
 
             case CommandCode.ResetCarToRandomStartLocation:
-                ResetCarToRandomStartLocation();
+                UnityMainThreadDispatcher.Instance().Enqueue(() => ResetCarToRandomStartLocation());
                 break;
 
             case CommandCode.StartSimulation:

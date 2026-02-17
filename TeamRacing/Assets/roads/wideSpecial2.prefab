@@ -248,7 +248,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2259
+  m_VersionIndex: 2265
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -600,7 +600,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2285
+  m_VersionIndex: 2291
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -1029,7 +1029,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 8377
+  m_VersionIndex: 8383
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -1312,7 +1312,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2285
+  m_VersionIndex: 2291
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -1468,9 +1468,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   localPoints:
   - {x: -30, y: 0, z: 15}
-  - {x: -15, y: 0, z: -2}
+  - {x: -25, y: 0, z: 10}
+  - {x: -20, y: 0, z: 5}
+  - {x: -15, y: 0, z: 0}
+  - {x: -10, y: 0, z: -5}
+  - {x: -5, y: 0, z: -9}
   - {x: 0, y: 0, z: -10}
-  - {x: 15, y: 0, z: -2}
+  - {x: 5, y: 0, z: -9}
+  - {x: 10, y: 0, z: -5}
+  - {x: 15, y: 0, z: 0}
+  - {x: 20, y: 0, z: 5}
+  - {x: 25, y: 0, z: 10}
   - {x: 30, y: 0, z: 15}
 --- !u!1 &8741425876076471692
 GameObject:
@@ -1720,7 +1728,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2281
+  m_VersionIndex: 2287
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -2072,7 +2080,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2259
+  m_VersionIndex: 2265
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []

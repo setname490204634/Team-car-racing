@@ -136,13 +136,14 @@ class UnityCarEnv(gym.Env):
         if (self.mapSwitchCount % self.changeMapEvery == 0):
             sender.send_command(CommandCode.ChangeMapRandom, 0, self.control_port)
             
-        sender.send_command(CommandCode.Reset, 0, self.control_port)
+        sender.send_command(CommandCode.ResetCarToRandomStartLocation, 0, self.control_port)
+        sender.send_command(CommandCode.ChangeCarColoursRandomly, 0, self.control_port)
         sender.send_command(CommandCode.StartSimulation, 0, self.control_port)
 
         while not self.obs_receiver.has_min_observations(1):
             time.sleep(0.0001)
 
-        self.episode_rewards_per_category = Rewards()  # reset at start of episode
+        self.episode_rewards_per_category = Rewards()  # reset at the start of the episode
         
         obs_packet = self.obs_receiver.collect_observations()[-1]
         self.current_step = 0

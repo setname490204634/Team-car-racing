@@ -56,7 +56,6 @@ class SmallCNN2(BaseFeaturesExtractor):
             nn.Conv2d(n_channels, 32, kernel_size=7, stride=4),
             nn.ReLU(), nn.Conv2d(32, 64, kernel_size=3, stride=2),
             nn.ReLU(), nn.Conv2d(64, 64, kernel_size=3, stride=1),
-            #liche 
             nn.ReLU(), nn.Flatten(), )
         # compute output size
         with torch.no_grad():

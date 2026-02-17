@@ -10,8 +10,8 @@ from CNNs import SmallCNN, VGG16StackedFramesExtractor, SmallCNN2
 os.makedirs("./pythonSide/models", exist_ok=True)
 os.makedirs("./pythonSide/logs", exist_ok=True)
 
-FEATURE_EXTRACTOR = VGG16StackedFramesExtractor
-#FEATURE_EXTRACTOR = SmallCNN2
+# FEATURE_EXTRACTOR = VGG16StackedFramesExtractor
+FEATURE_EXTRACTOR = SmallCNN2
 
 def make_env():
     return UnityCarEnv(run_headless=True)
@@ -22,6 +22,10 @@ env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0)
 policy_kwargs = dict(
     features_extractor_class=FEATURE_EXTRACTOR,
     features_extractor_kwargs=dict(features_dim=256),
+    net_arch=dict(
+        pi=[256, 256],
+        vf=[256, 256]
+    ),
 )
 
 model = PPO(

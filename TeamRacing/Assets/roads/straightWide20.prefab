@@ -49,6 +49,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   localPoints:
   - {x: -10, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
   - {x: 10, y: 0, z: 0}
 --- !u!1 &3633638358469044741
 GameObject:
@@ -298,7 +299,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2024
+  m_VersionIndex: 2030
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -650,7 +651,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 2024
+  m_VersionIndex: 2030
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -945,7 +946,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 1493
+  m_VersionIndex: 1499
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []

@@ -5,7 +5,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 from UnitySingleCarEnv import UnityCarEnv
-from CNNs import SmallCNN, VGG16StackedFramesExtractor
+from CNNs import SmallCNN2, VGG16StackedFramesExtractor
 from callbacks import SaveVecNormalizeCallback, FreezeCarDuringPPO, RewardLogCallback
 
 CONTINUE_TRAINING = False
@@ -16,13 +16,13 @@ HEADLESS_MODE = False
 
 
 
-FEATURE_EXTRACTOR = SmallCNN  # must match training
+FEATURE_EXTRACTOR = SmallCNN2  # must match training
 TOTAL_TIMESTEPS = 5_000_000
 
 
 # Paths
-MODEL_PATH = "./pythonSide/models/model5.zip"
-VECNORM_PATH = "./pythonSide/models/vecnormalize5.pkl"
+MODEL_PATH = "./pythonSide/models/model7.zip"
+VECNORM_PATH = "./pythonSide/models/vecnormalize7.pkl"
 LOG_DIR = "./pythonSide/logs/"
 
 def make_env():
