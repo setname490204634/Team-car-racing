@@ -133,7 +133,7 @@ class Rewards:
             currentPlacementReward = 0.0,
             teamFinalPlacementReward = 0.0,
             currentTeamPlacementReward = 0.0,
-            tickPenalty = 0.01,
+            tickPenalty = 0.0,
 
             speedReward = 0.0,
             accelerationReward = 0.0,
@@ -143,7 +143,7 @@ class Rewards:
             speedRewardII = 0.0,
             speedRewardIII = 0.0,
             speedRewardIV = 0.0,
-            speedRewardV = 0.0,
+            speedRewardV = 0.1,
 
             accelerationRewardI = 0.0,
             accelerationRewardII = 0.0,

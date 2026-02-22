@@ -172,17 +172,17 @@ class UnityCarEnv(gym.Env):
         rgb = obs_packet.image
         
         # observation check
-        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        bgr = cv2.flip(bgr, 0)
-        bgr = cv2.resize(
-            bgr,
-            None,
-            fx=4,
-            fy=4,
-            interpolation=cv2.INTER_LINEAR
-        )
-        cv2.imshow("Unity Observation", bgr)
-        cv2.waitKey(1)
+        # bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        # bgr = cv2.flip(bgr, 0)
+        # bgr = cv2.resize(
+        #     bgr,
+        #     None,
+        #     fx=4,
+        #     fy=4,
+        #     interpolation=cv2.INTER_LINEAR
+        # )
+        # cv2.imshow("Unity Observation", bgr)
+        # cv2.waitKey(1)
         
                 
         self._update_frame_stack(rgb)

@@ -21,8 +21,8 @@ TOTAL_TIMESTEPS = 5_000_000
 
 
 # Paths
-MODEL_PATH = "./pythonSide/models/model7.zip"
-VECNORM_PATH = "./pythonSide/models/vecnormalize7.pkl"
+MODEL_PATH = "./pythonSide/models/model12.zip"
+VECNORM_PATH = "./pythonSide/models/vecnormalize12.pkl"
 LOG_DIR = "./pythonSide/logs/"
 
 def make_env():
