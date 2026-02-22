@@ -59,7 +59,7 @@ class UnityCarEnv(gym.Env):
         
         self.episode_rewards_per_category = Rewards()
         self.mapSwitchCount = 0
-        self.changeMapEvery = 10000000000
+        self.changeMapEvery = 10
         
         self.stack_size = 4
         self.frame_buffer = np.zeros((self.stack_size, 64, 128, 3), dtype=np.uint8)
@@ -135,6 +135,7 @@ class UnityCarEnv(gym.Env):
         
         if (self.mapSwitchCount % self.changeMapEvery == 0):
             sender.send_command(CommandCode.ChangeMapRandom, 0, self.control_port)
+        time.sleep(0.03)
             
         sender.send_command(CommandCode.ResetCarToRandomStartLocation, 0, self.control_port)
         sender.send_command(CommandCode.ChangeCarColoursRandomly, 0, self.control_port)
@@ -207,6 +208,10 @@ class UnityCarEnv(gym.Env):
         if obs_packet.rewards.outOfBoundsPenalty < -0.5:
             terminated = True
             reward = 0
+            
+        if obs_packet.rewards.collisionPenalty < -0.5:
+            print("collision")
+            terminated = True
             
         self.episode_reward += reward
 

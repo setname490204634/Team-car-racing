@@ -124,7 +124,7 @@ class Rewards:
 
             outOfBoundsPenalty = 0.0,
             collisionPenalty = 5.0,
-            grassPenalty = 0.0,
+            grassPenalty = 0.03,
 
             teamDistancePenalty = 0.0,
             lapTimePenalty = 0.0,

@@ -417,7 +417,7 @@ public class gameControlScript : MonoBehaviour
             Rigidbody rb = entry.carObject.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.position = new Vector3(segmentPos.x, rb.position.y, segmentPos.y);
+                rb.position = new Vector3(segmentPos.x, 0.2f, segmentPos.y);
 
                 Vector2 dir2D = currentSegmentHandler.GetVectorI(segmentIndex, segmentPos);
                 Vector3 forward = new Vector3(dir2D.x, 0f, dir2D.y);
