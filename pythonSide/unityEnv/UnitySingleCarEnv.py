@@ -2,15 +2,15 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import time
-import sender
-from reciever import ObservationReceiver
+from . import sender
+from .reciever import ObservationReceiver
 import subprocess
 import socket
 import os
-from rewards import *
+from .rewards import *
 import cv2
 import random
-from CommandConstants import CommandCode
+from .CommandConstants import CommandCode
 
 def wait_for_port(host: str, port: int, timeout=20):
     """Wait until a TCP port is open."""
@@ -255,8 +255,9 @@ class UnityCarEnv(gym.Env):
                 self.unity_process.kill()
             self.unity_process = None
 
-        if self.obs_receiver:
-            self.obs_receiver.stop()
+        obs_receiver = getattr(self, "obs_receiver", None)
+        if obs_receiver:
+            obs_receiver.stop()
             self.obs_receiver = None
             
     def __del__(self):

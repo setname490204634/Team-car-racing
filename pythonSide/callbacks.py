@@ -1,7 +1,7 @@
 import os
 from stable_baselines3.common.callbacks import  BaseCallback
-import sender
-from CommandConstants import CommandCode
+from unityEnv import sender
+from unityEnv.CommandConstants import CommandCode
 
 class SaveVecNormalizeCallback(BaseCallback):
     def __init__(self, save_path, save_freq):

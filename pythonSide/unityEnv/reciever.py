@@ -3,7 +3,7 @@ import struct
 import numpy as np
 import threading
 from collections import deque
-from rewards import Rewards
+from .rewards import Rewards
 
 class Observation:
     """Represents a single car observation packet."""

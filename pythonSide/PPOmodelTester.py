@@ -4,7 +4,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-from UnitySingleCarEnv import UnityCarEnv
+from unityEnv.UnitySingleCarEnv import UnityCarEnv
 from CNNs import SmallCNN2, VGG16StackedFramesExtractor
 from callbacks import SaveVecNormalizeCallback, FreezeCarDuringPPO, RewardLogCallback
 
@@ -21,8 +21,8 @@ TOTAL_TIMESTEPS = 5_000_000
 
 
 # Paths
-MODEL_PATH = "./pythonSide/models/model_600000.zip"
-VECNORM_PATH = "./pythonSide/models/vecnormalize_600000.pkl"
+MODEL_PATH = "./pythonSide/models/model20.zip"
+VECNORM_PATH = "./pythonSide/models/vecnormalize20.pkl"
 LOG_DIR = "./pythonSide/logs/"
 
 def make_env():
