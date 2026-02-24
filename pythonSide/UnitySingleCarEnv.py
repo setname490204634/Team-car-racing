@@ -9,6 +9,7 @@ import socket
 import os
 from rewards import *
 import cv2
+import random
 from CommandConstants import CommandCode
 
 def wait_for_port(host: str, port: int, timeout=20):
@@ -44,7 +45,11 @@ class UnityCarEnv(gym.Env):
                  run_headless: bool = False):
         super().__init__()
 
-        self.observation_space = spaces.Box(low=0, high=255, shape=(12, 64, 128), dtype=np.uint8)
+        self.observation_space = spaces.Box(
+            low=0.0, high=1.0,
+            shape=(12, 64, 128),
+            dtype=np.float32
+        )
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
@@ -59,7 +64,10 @@ class UnityCarEnv(gym.Env):
         
         self.episode_rewards_per_category = Rewards()
         self.mapSwitchCount = 0
+        #will change map every x resets
         self.changeMapEvery = 10
+        #limits the pool of maps. easy maps have lower index
+        self.maxMapIndex = 6
         
         self.stack_size = 4
         self.frame_buffer = np.zeros((self.stack_size, 64, 128, 3), dtype=np.uint8)
@@ -125,7 +133,7 @@ class UnityCarEnv(gym.Env):
     def _build_observation(self, obs_packet):
         stacked = self.frame_buffer.reshape(64, 128, 12)
         stacked = np.transpose(stacked, (2, 0, 1))
-        obs = stacked.astype(np.uint8)
+        obs = stacked.astype(np.float32) / 255.0
         return obs
 
     def reset(self, **kwargs):
@@ -134,7 +142,8 @@ class UnityCarEnv(gym.Env):
         sender.send_command(CommandCode.StopSimulation, 0, self.control_port)
         
         if (self.mapSwitchCount % self.changeMapEvery == 0):
-            sender.send_command(CommandCode.ChangeMapRandom, 0, self.control_port)
+            sender.send_command(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex), self.control_port)
+            #sender.send_command(CommandCode.ChangeMapRandom, 0, self.control_port)
         time.sleep(0.03)
             
         sender.send_command(CommandCode.ResetCarToRandomStartLocation, 0, self.control_port)
@@ -151,6 +160,7 @@ class UnityCarEnv(gym.Env):
         self.episode_reward = 0.0
         
         rgb = obs_packet.image  # shape (64,128,3)
+        rgb = cv2.flip(rgb, 0)
 
         # fill stack with the first frame
         for i in range(self.stack_size):
@@ -210,7 +220,6 @@ class UnityCarEnv(gym.Env):
             reward = 0
             
         if obs_packet.rewards.collisionPenalty < -0.5:
-            print("collision")
             terminated = True
             
         self.episode_reward += reward

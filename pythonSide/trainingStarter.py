@@ -17,7 +17,7 @@ def make_env():
     return UnityCarEnv(run_headless=True)
 
 env = DummyVecEnv([make_env])
-env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0)
+env = VecNormalize(env, norm_obs=False, norm_reward=False)
 
 policy_kwargs = dict(
     features_extractor_class=FEATURE_EXTRACTOR,
