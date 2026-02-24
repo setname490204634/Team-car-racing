@@ -85,14 +85,18 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver = ObservationReceiver(host="0.0.0.0", port=self.obs_port)
         self.obs_receiver.start()
 
-        sender.send_command(CommandCode.ChangeMap, 4, self.control_port)  # set first map (4)
-        sender.send_command(CommandCode.UnlimitedSpeed, 0, self.control_port)
-        sender.send_command(CommandCode.SetMaxSteeringChange, 6, self.control_port)  # set max steering change to 6/256
+        self.sendCommandToUnity(CommandCode.ChangeMap)
+        if run_headless:
+            self.sendCommandToUnity(CommandCode.UnlimitedSpeed)
+        self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 6)
 
         
     def _update_frame_stack(self, new_frame):
         self.frame_buffer[:-1] = self.frame_buffer[1:]
         self.frame_buffer[-1] = new_frame
+        
+    def sendCommandToUnity(self, command, value =0 ):
+        sender.send_command(command, value, self.control_port)
 
     def _launch_unity(self):
         #return #uncomment for manual unity launch, then default ports are expected
@@ -139,16 +143,15 @@ class UnityCarEnv(gym.Env):
     def reset(self, **kwargs):
         """Reset Unity and return initial observation."""
         self.mapSwitchCount += 1
-        sender.send_command(CommandCode.StopSimulation, 0, self.control_port)
-        
-        if (self.mapSwitchCount % self.changeMapEvery == 0):
-            sender.send_command(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex), self.control_port)
-            #sender.send_command(CommandCode.ChangeMapRandom, 0, self.control_port)
+        self.sendCommandToUnity(CommandCode.StopSimulation)
+
+        if self.mapSwitchCount % self.changeMapEvery == 0:
+            self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
+
         time.sleep(0.03)
-            
-        sender.send_command(CommandCode.ResetCarToRandomStartLocation, 0, self.control_port)
-        sender.send_command(CommandCode.ChangeCarColoursRandomly, 0, self.control_port)
-        sender.send_command(CommandCode.StartSimulation, 0, self.control_port)
+        self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
+        self.sendCommandToUnity(CommandCode.ChangeCarColoursRandomly)
+        self.sendCommandToUnity(CommandCode.StartSimulation)
 
         while not self.obs_receiver.has_min_observations(1):
             time.sleep(0.0001)
