@@ -65,7 +65,7 @@ class UnityCarEnv(gym.Env):
         self.episode_rewards_per_category = Rewards()
         self.mapSwitchCount = 0
         #will change map every x resets
-        self.changeMapEvery = 10
+        self.changeMapEvery = 100000000
         #limits the pool of maps. easy maps have lower index
         self.maxMapIndex = 6
         
@@ -74,7 +74,7 @@ class UnityCarEnv(gym.Env):
         
         self.episodeCount = 0
         self.current_step = 0
-        self.max_steps = 400
+        self.max_steps = 400 
         self.episode_reward = 0.0
 
         self._launch_unity()
@@ -85,7 +85,7 @@ class UnityCarEnv(gym.Env):
         self.obs_receiver = ObservationReceiver(host="0.0.0.0", port=self.obs_port)
         self.obs_receiver.start()
 
-        self.sendCommandToUnity(CommandCode.ChangeMap)
+        self.sendCommandToUnity(CommandCode.ChangeMap, 4)
         if run_headless:
             self.sendCommandToUnity(CommandCode.UnlimitedSpeed)
         self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 6)
