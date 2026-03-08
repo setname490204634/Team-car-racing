@@ -14,22 +14,8 @@ from ray.rllib.algorithms.ppo import PPOConfig
 from unityEnv.UnitySingleCarEnv import UnityCarEnv
 from ray.rllib.core.rl_module.default_model_config import DefaultModelConfig
 
-from ray.rllib.algorithms.callbacks import DefaultCallbacks
-
-class EpisodeInfoCallback(DefaultCallbacks):
-    def on_episode_end(self, *, episode, **kwargs):
-        # Get last info from env
-        last_info = episode.last_info_for()
-        if last_info and "episode" in last_info:
-            episode_data = last_info["episode"]
-
-            # Print total reward and length
-            print(f"Episode {episode.episode_id} | reward={episode_data['r']:.2f} | length={episode_data['l']}")
-
-            # Print detailed rewards per category
-            if "rewards" in episode_data:
-                for k, v in episode_data["rewards"].items():
-                    print(f"  {k}: {v}")
+MODEL_DIR = os.path.abspath("./pythonSide/models")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 def make_env(config):
     return UnityCarEnv(run_headless=True)
@@ -51,7 +37,7 @@ config = (
         )
     .training(
         lr=3e-4,
-        train_batch_size=128,
+        train_batch_size=1024,
         gamma=0.99,
         use_gae=True,
         lambda_=0.95,
@@ -72,11 +58,20 @@ config = (
             head_fcnet_hiddens=[256],
         )
     )
-    .callbacks(EpisodeInfoCallback)
 )
 
-algo = config.build()
+algo = config.build_algo()
 
-for i in range(10):
+for i in range(1000000):
+
     result = algo.train()
-    print(f"Iter {i} | num_env_steps_sampled={result['env_runners']['num_env_steps_sampled']}")
+
+    print(
+        f"Iter {i} | "
+        f"reward={result['env_runners']['episode_return_mean']:.2f} | "
+        f"len={result['env_runners']['episode_len_mean']:.1f}"
+    )
+
+    if i % 50 == 0:
+        path = algo.save(MODEL_DIR)
+        print(f"Checkpoint saved to {path}")

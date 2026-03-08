@@ -11,6 +11,8 @@ from .rewards import *
 import cv2
 import random
 from .CommandConstants import CommandCode
+from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
 
 def wait_for_port(host: str, port: int, timeout=20):
     """Wait until a TCP port is open."""
@@ -39,6 +41,7 @@ def is_port_free(port: int) -> bool:
 class UnityCarEnv(gym.Env):
     def __init__(self,
                  unity_exe_path: str = r"TeamRacing\builds\TeamRacing.exe",
+                 log_dir: str = r"pythonSide\env_logs",
                  control_port: int = 5005,
                  car_instr_port: int = 5006,
                  obs_port: int = 5007,
@@ -76,6 +79,14 @@ class UnityCarEnv(gym.Env):
         self.current_step = 0
         self.max_steps = 400 
         self.episode_reward = 0.0
+        
+        #logging
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.tb_writer = SummaryWriter(
+            log_dir=os.path.join(log_dir, f"env_{timestamp}")
+        )
+        self.step_start_time = time.time()
+        self.episode_start_time = time.time()
 
         self._launch_unity()
 
@@ -239,14 +250,78 @@ class UnityCarEnv(gym.Env):
                     "rewards": vars(self.episode_rewards_per_category).copy()
                 }
             }
+            
 
+            self.episodeCount += 1
+            self._tensorboard_log_episode(info)
             self.current_step = 0
             self.episode_reward = 0.0
             self.episode_rewards_per_category = Rewards()
-            self.episodeCount += 1
 
         obs = self._build_observation(obs_packet)
         return obs, reward, terminated, truncated, info
+    
+    def _tensorboard_log_episode(self, info):
+
+        ep = info["episode"]
+
+        reward = ep["r"]
+        length = ep["l"]
+        rewards = ep["rewards"]
+
+        step = self.episodeCount
+
+        self.tb_writer.add_scalar(
+            "episode/reward_total",
+            reward,
+            step
+        )
+
+        self.tb_writer.add_scalar(
+            "episode/length",
+            length,
+            step
+        )
+
+        duration = time.time() - self.episode_start_time
+
+        self.tb_writer.add_scalar(
+            "episode/duration_seconds",
+            duration,
+            step
+        )
+
+        if duration > 0:
+            fps = length / duration
+            self.tb_writer.add_scalar(
+                "performance/fps",
+                fps,
+                step
+            )
+
+        for k, v in rewards.items():
+
+            self.tb_writer.add_scalar(
+                f"reward_components/{k}",
+                v,
+                step
+            )
+
+        weights = Rewards.defaultWeights()
+
+        for field, raw in rewards.items():
+            raw = rewards[field]
+            weight = getattr(weights, field)
+
+            weighted = raw * weight
+
+            self.tb_writer.add_scalar(
+                f"reward_weighted/{field}",
+                weighted,
+                step
+            )
+
+        self.episode_start_time = time.time()
 
     def close(self):
         if self.unity_process:
@@ -262,6 +337,10 @@ class UnityCarEnv(gym.Env):
         if obs_receiver:
             obs_receiver.stop()
             self.obs_receiver = None
+        
+        if hasattr(self, "tb_writer"):
+            self.tb_writer.flush()
+            self.tb_writer.close()
             
     def __del__(self):
         self.close()

@@ -52,8 +52,7 @@ model = PPO(
 
 callbacks = [
     SaveVecNormalizeCallback("./pythonSide/models/", 50000),
-    FreezeCarDuringPPO(),
-    RewardLogCallback()
+    FreezeCarDuringPPO()
 ]
 
 total_timesteps = 5_000_000
