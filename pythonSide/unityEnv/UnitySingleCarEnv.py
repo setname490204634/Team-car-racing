@@ -42,6 +42,7 @@ class UnityCarEnv(gym.Env):
     def __init__(self,
                  unity_exe_path: str = r"TeamRacing\builds\TeamRacing.exe",
                  log_dir: str = r"pythonSide\env_logs",
+                 debug: bool = False,
                  control_port: int = 5005,
                  car_instr_port: int = 5006,
                  obs_port: int = 5007,
@@ -87,6 +88,8 @@ class UnityCarEnv(gym.Env):
         )
         self.step_start_time = time.time()
         self.episode_start_time = time.time()
+        
+        self.debug = debug
 
         self._launch_unity()
 
@@ -196,18 +199,21 @@ class UnityCarEnv(gym.Env):
         
         rgb = obs_packet.image
         
-        # observation check
-        # bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        # bgr = cv2.flip(bgr, 0)
-        # bgr = cv2.resize(
-        #     bgr,
-        #     None,
-        #     fx=4,
-        #     fy=4,
-        #     interpolation=cv2.INTER_LINEAR
-        # )
-        # cv2.imshow("Unity Observation", bgr)
-        # cv2.waitKey(1)
+        
+        
+        #observation check
+        if self.debug:
+            bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            bgr = cv2.flip(bgr, 0)
+            bgr = cv2.resize(
+                bgr,
+                None,
+                fx=4,
+                fy=4,
+                interpolation=cv2.INTER_LINEAR
+            )
+            cv2.imshow("Unity Observation", bgr)
+            cv2.waitKey(1)
         
                 
         self._update_frame_stack(rgb)

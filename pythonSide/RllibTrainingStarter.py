@@ -73,5 +73,5 @@ for i in range(1000000):
     )
 
     if i % 50 == 0:
-        path = algo.save(MODEL_DIR)
+        path = algo.save(f"{MODEL_DIR}/checkpoint_{i}")
         print(f"Checkpoint saved to {path}")
