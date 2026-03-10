@@ -27,15 +27,11 @@ def wait_for_port(host: str, port: int, timeout=20):
     print(f"Timeout: Unity did not open port {port} in {timeout} seconds.")
     return False
 
-def is_port_free(port: int) -> bool:
-    """Check if a TCP port is available."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            s.bind(("127.0.0.1", port))
-        except OSError:
-            return False
-    return True
+def get_os_assigned_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    return s, port
 
 
 class UnityCarEnv(gym.Env):
@@ -43,9 +39,6 @@ class UnityCarEnv(gym.Env):
                  unity_exe_path: str = r"TeamRacing\builds\TeamRacing.exe",
                  log_dir: str = r"pythonSide\env_logs",
                  debug: bool = False,
-                 control_port: int = 5005,
-                 car_instr_port: int = 5006,
-                 obs_port: int = 5007,
                  run_headless: bool = False):
         super().__init__()
 
@@ -58,9 +51,9 @@ class UnityCarEnv(gym.Env):
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
         #ports
-        self.control_port = control_port
-        self.car_instr_port = car_instr_port
-        self.obs_port = obs_port
+        self._control_sock, self.control_port = get_os_assigned_port()
+        self._car_sock, self.car_instr_port = get_os_assigned_port()
+        self._obs_sock, self.obs_port = get_os_assigned_port()
         #unity
         self.unity_exe_path = unity_exe_path
         self.unity_process = None
@@ -106,7 +99,7 @@ class UnityCarEnv(gym.Env):
 
         
     def _update_frame_stack(self, new_frame):
-        self.frame_buffer[:-1] = self.frame_buffer[1:]
+        np.roll(self.frame_buffer, -1, axis=0)
         self.frame_buffer[-1] = new_frame
         
     def sendCommandToUnity(self, command, value =0 ):
@@ -116,27 +109,12 @@ class UnityCarEnv(gym.Env):
         #return #uncomment for manual unity launch, then default ports are expected
         if not os.path.exists(self.unity_exe_path):
             raise FileNotFoundError(f"Unity executable not found: {self.unity_exe_path}")
-
-        while True:
-            free_control = is_port_free(self.control_port)
-            free_car_instr = is_port_free(self.car_instr_port)
-            free_obs = is_port_free(self.obs_port)
- 
-            if free_control and free_car_instr and free_obs:
-                break  # all good
-
-            print(f"Ports [{self.control_port}, {self.car_instr_port}, {self.obs_port}] "
-                f"in use. Shifting +3 and retrying...")
-
-            self.control_port += 3
-            self.car_instr_port += 3
-            self.obs_port += 3
             
         args = [
             self.unity_exe_path,
-            str(self.control_port),
-            str(self.car_instr_port),
-            str(self.obs_port)
+            "--controlPort", str(self.control_port),
+            "--carInstructionsPort", str(self.car_instr_port),
+            "--observationPort", str(self.obs_port)
         ]
         if (self.run_headless):
             args.append("-batchmode")

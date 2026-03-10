@@ -18,7 +18,13 @@ MODEL_DIR = os.path.abspath("./pythonSide/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 def make_env(config):
-    return UnityCarEnv(run_headless=True)
+    worker_idx = config.worker_index
+    port_offset = (worker_idx -1) * 10
+
+    return UnityCarEnv(
+        run_headless=True,
+        debug=True
+    )
 
 register_env("UnityCarEnv-v0", make_env)
 
@@ -33,11 +39,11 @@ config = (
         env_config={},
     )
     .env_runners(
-        num_env_runners=1
+        num_env_runners=2
         )
     .training(
-        lr=3e-4,
-        train_batch_size=1024,
+        lr=1e-4,
+        train_batch_size=2000,
         gamma=0.99,
         use_gae=True,
         lambda_=0.95,

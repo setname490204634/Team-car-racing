@@ -123,8 +123,8 @@ class Rewards:
             throttleSmoothnessPenalty = 0.0,
 
             outOfBoundsPenalty = 0.0,
-            collisionPenalty = 10.0,
-            grassPenalty = 0.03,
+            collisionPenalty = 3.0,
+            grassPenalty = 0.1,
 
             teamDistancePenalty = 0.0,
             lapTimePenalty = 0.0,
@@ -161,7 +161,7 @@ class Rewards:
             distancePenaltyII = 0.0,
             distancePenaltyIII = 0.0,
             
-            progressReward = 0.0
+            progressReward = 1.0
         )
 
 def calculate_total_reward(rewards: Rewards, weights: Rewards) -> float:

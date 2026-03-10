@@ -13,6 +13,8 @@
 /runScriptsShortcuts.md
 /denik.md
 /storage
+models/
+env_logs/
 
 ##############################
 # Unity (C#) Project
