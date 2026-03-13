@@ -54353,7 +54353,7 @@ GameObject:
   - component: {fileID: 774455846}
   - component: {fileID: 774455845}
   m_Layer: 10
-  m_Name: AICar1 (5)
+  m_Name: AICar6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -55544,6 +55544,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   assignedCarObjects:
   - {fileID: 6542625109337443810}
+  - {fileID: 2108457855}
+  - {fileID: 1821382072}
+  - {fileID: 880258823}
+  - {fileID: 1944516414}
+  - {fileID: 774455844}
+  - {fileID: 1396433569}
+  - {fileID: 1822070045}
   bodyMaterials:
   - {fileID: 2100000, guid: e634d3417b6ddfb4e8c551cc642a6aa7, type: 2}
   - {fileID: 2100000, guid: 07da59a395289da4b880666978fb4b82, type: 2}
@@ -60165,7 +60172,7 @@ GameObject:
   - component: {fileID: 880258825}
   - component: {fileID: 880258824}
   m_Layer: 10
-  m_Name: AICar1 (3)
+  m_Name: AICar4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -92848,7 +92855,7 @@ GameObject:
   - component: {fileID: 1396433571}
   - component: {fileID: 1396433570}
   m_Layer: 10
-  m_Name: AICar1 (6)
+  m_Name: AICar7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -121730,7 +121737,7 @@ GameObject:
   - component: {fileID: 1821382074}
   - component: {fileID: 1821382073}
   m_Layer: 10
-  m_Name: AICar1 (2)
+  m_Name: AICar3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -121918,7 +121925,7 @@ GameObject:
   - component: {fileID: 1822070047}
   - component: {fileID: 1822070046}
   m_Layer: 10
-  m_Name: AICar1 (7)
+  m_Name: AICar8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -128090,7 +128097,7 @@ GameObject:
   - component: {fileID: 1944516416}
   - component: {fileID: 1944516415}
   m_Layer: 10
-  m_Name: AICar1 (4)
+  m_Name: AICar5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -138594,7 +138601,7 @@ GameObject:
   - component: {fileID: 2108457857}
   - component: {fileID: 2108457856}
   m_Layer: 10
-  m_Name: AICar1 (1)
+  m_Name: AICar2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

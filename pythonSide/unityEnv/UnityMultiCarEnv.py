@@ -5,117 +5,115 @@ import time
 from . import sender
 from .reciever import ObservationReceiver
 import subprocess
-import socket
 import os
 from .rewards import *
 import cv2
 import random
 from .CommandConstants import CommandCode
 from torch.utils.tensorboard import SummaryWriter
-from datetime import datetime
+from .envUtils import wait_for_port, get_os_assigned_port, get_next_env_folder
+from .agent import *
 
+class UnityMultiCarEnv(gym.Env):
 
-def wait_for_port(host: str, port: int, timeout=20):
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            with socket.create_connection((host, port), timeout=1):
-                print(f"Unity is ready on port {port}")
-                return True
-        except (ConnectionRefusedError, OSError):
-            time.sleep(0.5)
-    print(f"Timeout: Unity did not open port {port} in {timeout} seconds.")
-    return False
+    def __init__(
+        self,
+        number_of_agents: int,
+        unity_exe_path: str = r"TeamRacing\builds\TeamRacing.exe",
+        log_dir: str = r"pythonSide\env_logs",
+        debug: bool = False,
+        run_headless: bool = False
+    ):
 
-
-def get_os_assigned_port():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("127.0.0.1", 0))
-    port = s.getsockname()[1]
-    return s, port
-
-
-class MultiAgentUnityCarEnv(gym.Env):
-    metadata = {"render_modes": ["human"]}
-
-    def __init__(self, num_agents=2,
-                 unity_exe_path=r"TeamRacing\builds\TeamRacing.exe",
-                 log_dir=r"pythonSide\env_logs",
-                 debug=False,
-                 run_headless=False):
         super().__init__()
 
-        self.num_agents = num_agents
-        self.agents = [f"agent_{i}" for i in range(num_agents)]
+        self.agent_ids = [f"agent_{i}" for i in range(number_of_agents)]
+        self.agentCount = number_of_agents
 
-        # Each agent observation and action
-        self.observation_space = spaces.Box(
-            low=0.0, high=1.0,
-            shape=(12, 64, 128),
-            dtype=np.float32
-        )
-        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
+        self.agents = {
+            aid: agent.agent(
+                id=aid,
+                unity_car_id=i,
+                debug=debug
+            )
+            for i, aid in enumerate(self.agent_ids)
+        }
 
-        # Ports for Unity communication
+        self.observation_space = spaces.Dict({
+            aid: spaces.Box(
+                low=0.0,
+                high=1.0,
+                shape=(12, 64, 128),
+                dtype=np.float32
+            )
+            for aid in self.agent_ids
+        })
+
+        self.action_space = spaces.Dict({
+            aid: spaces.Box(
+                low=-1.0,
+                high=1.0,
+                shape=(2,),
+                dtype=np.float32
+            )
+            for aid in self.agent_ids
+        })
+
+        # networking
         self._control_sock, self.control_port = get_os_assigned_port()
         self._car_sock, self.car_instr_port = get_os_assigned_port()
         self._obs_sock, self.obs_port = get_os_assigned_port()
 
-        # Unity process
         self.unity_exe_path = unity_exe_path
         self.unity_process = None
         self.run_headless = run_headless
 
-        # Multi-agent state
-        self.stack_size = 4
-        self.frame_buffer = {agent: np.zeros((self.stack_size, 64, 128, 3), dtype=np.uint8) 
-                             for agent in self.agents}
-        self.episode_rewards_per_agent = {agent: Rewards() for agent in self.agents}
-        self.current_step_per_agent = {agent: 0 for agent in self.agents}
-        self.episode_reward_per_agent = {agent: 0.0 for agent in self.agents}
-        self.max_steps = 400
+        self.max_steps = 1024
         self.episodeCount = 0
 
-        # Logging
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        env_folder = get_next_env_folder(log_dir)
+
         self.tb_writer = SummaryWriter(
-            log_dir=os.path.join(log_dir, f"env_{timestamp}")
+            log_dir=os.path.join(log_dir, env_folder)
         )
 
         self.debug = debug
 
         self._launch_unity()
+
         wait_for_port("127.0.0.1", self.control_port)
         wait_for_port("127.0.0.1", self.car_instr_port)
 
-        self.obs_receiver = ObservationReceiver(host="0.0.0.0", port=self.obs_port)
+        self.obs_receiver = ObservationReceiver(
+            host="0.0.0.0",
+            port=self.obs_port
+        )
         self.obs_receiver.start()
 
         self.sendCommandToUnity(CommandCode.ChangeMap, 4)
+
         if run_headless:
             self.sendCommandToUnity(CommandCode.UnlimitedSpeed)
+
         self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 6)
-
-    def _update_frame_stack(self, agent, new_frame):
-        np.roll(self.frame_buffer[agent], -1, axis=0)
-        self.frame_buffer[agent][-1] = new_frame
-
-    def sendCommandToUnity(self, command, value=0):
+        
+    def sendCommandToUnity(self, command, value =0 ):
         sender.send_command(command, value, self.control_port)
 
     def _launch_unity(self):
+        #return #uncomment for manual unity launch, then default ports are expected
         if not os.path.exists(self.unity_exe_path):
             raise FileNotFoundError(f"Unity executable not found: {self.unity_exe_path}")
-
+            
         args = [
             self.unity_exe_path,
             "--controlPort", str(self.control_port),
             "--carInstructionsPort", str(self.car_instr_port),
-            "--observationPort", str(self.obs_port)
+            "--observationPort", str(self.obs_port),
+            "--carCount", str(self.agentCount)
         ]
-        if self.run_headless:
+        if (self.run_headless):
             args.append("-batchmode")
-
         print(f"Launching Unity: {' '.join(args)}")
         self.unity_process = subprocess.Popen(
             args,
@@ -124,95 +122,91 @@ class MultiAgentUnityCarEnv(gym.Env):
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
         )
 
-    def _build_observation(self, agent):
-        stacked = self.frame_buffer[agent].reshape(64, 128, 12)
-        stacked = np.transpose(stacked, (2, 0, 1))
-        obs = stacked.astype(np.float32) / 255.0
-        return obs
 
     def reset(self, **kwargs):
+        self.mapSwitchCount += 1
         self.sendCommandToUnity(CommandCode.StopSimulation)
-        time.sleep(0.03)
-        self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
-        self.sendCommandToUnity(CommandCode.ChangeCarColoursRandomly)
+
+        if self.mapSwitchCount % self.changeMapEvery == 0:
+            self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
+        time.sleep(0.03) #magic wait to let the map load before cars
+        
+        self.sendCommandToUnity(CommandCode.ShuffleCars)
+        self.sendCommandToUnity(CommandCode.Reset)
         self.sendCommandToUnity(CommandCode.StartSimulation)
 
-        # Wait for at least 1 observation per agent
-        while not self.obs_receiver.has_min_observations(self.num_agents):
-            time.sleep(0.001)
+        while not self.obs_receiver.has_min_observations(self.agentCount):
+            time.sleep(0.0001)
 
-        obs_packets = self.obs_receiver.collect_observations()[-self.num_agents:]
-
-        obs_dict = {}
-        for i, agent in enumerate(self.agents):
-            rgb = obs_packets[i].image
+        self.episode_rewards_per_category = Rewards()  # reset at the start of the episode
+        
+        packets = self.obs_receiver.collect_observations()
+        
+        observations = {}
+        
+        for packet in packets:
+            carID = packet.car_id
+            aID = self.agent_ids[carID]
+            
+            agent = self.agents[aID]
+            
+            rgb = packet.image
             rgb = cv2.flip(rgb, 0)
-            # fill stack
-            for j in range(self.stack_size):
-                self.frame_buffer[agent][j] = rgb
-            obs_dict[agent] = self._build_observation(agent)
-            self.episode_rewards_per_agent[agent] = Rewards()
-            self.current_step_per_agent[agent] = 0
-            self.episode_reward_per_agent[agent] = 0.0
+            agent.initFrameStack(rgb)
+            
+            observations[aID] = agent.get_observation()
+            
+        return observations, {}
 
-        return obs_dict, {}
+    def step(self, action):
+        for aid, action in actions.items():
 
-    def step(self, action_dict):
-        obs_dict, rewards, dones, infos = {}, {}, {}, {}
+            ag = self.agents[aid]
 
-        # send actions to Unity
-        for i, agent in enumerate(self.agents):
-            action = action_dict[agent]
-            steer_cmd = int((np.clip(action[0], -1, 1) + 1) * 127.5)
-            throttle_cmd = int((np.clip(action[1], -1, 1) + 1) * 127.5)
-            sender.send_car_instruction(i, steer_cmd, throttle_cmd, self.car_instr_port)
+            steer, throttle = ag.encode_action(action)
 
-        # Wait for observation
-        while not self.obs_receiver.has_min_observations(self.num_agents):
-            time.sleep(0.001)
+            sender.send_car_instruction(
+                ag.unity_car_id,
+                steer,
+                throttle,
+                self.car_instr_port
+            )
 
-        obs_packets = self.obs_receiver.collect_observations()[-self.num_agents:]
+        while not self.obs_receiver.has_min_observations(len(self.agent_ids)):
+            time.sleep(0.0001)
 
-        for i, agent in enumerate(self.agents):
-            obs_packet = obs_packets[i]
-            rgb = obs_packet.image
+        packets = self.obs_receiver.collect_observations()
 
-            if self.debug:
-                bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-                bgr = cv2.flip(bgr, 0)
-                bgr = cv2.resize(bgr, None, fx=4, fy=4, interpolation=cv2.INTER_LINEAR)
-                cv2.imshow(f"Unity Observation {agent}", bgr)
-                cv2.waitKey(1)
+        obs = {}
+        rewards = {}
+        terminated = {}
+        truncated = {}
+        info = {}
+        
+        for packet in packets:
 
-            self._update_frame_stack(agent, rgb)
+            car_id = packet.car_id
+            aid = self.agent_ids[car_id]
 
-            reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.defaultWeights().as_vector()))
-            # Update per-agent sums
-            for field in vars(obs_packet.rewards):
-                current_value = getattr(obs_packet.rewards, field)
-                prev_sum = getattr(self.episode_rewards_per_agent[agent], field)
-                setattr(self.episode_rewards_per_agent[agent], field, prev_sum + current_value)
+            ag = self.agents[aid]
 
-            self.current_step_per_agent[agent] += 1
-            self.episode_reward_per_agent[agent] += reward
+            o, r, term, trunc = ag.update_from_packet(packet)
 
-            truncated = self.current_step_per_agent[agent] >= self.max_steps
-            terminated = obs_packet.rewards.outOfBoundsPenalty < -0.5 or obs_packet.rewards.collisionPenalty < -0.5
+            obs[aid] = o
+            rewards[aid] = r
+            terminated[aid] = term
+            truncated[aid] = trunc
 
-            obs_dict[agent] = self._build_observation(agent)
-            rewards[agent] = reward
-            dones[agent] = terminated or truncated
-            infos[agent] = {"episode": {
-                "r": self.episode_reward_per_agent[agent],
-                "l": self.current_step_per_agent[agent],
-                "rewards": vars(self.episode_rewards_per_agent[agent]).copy()
-            }} if dones[agent] else {}
+        if any(terminated.values()) or any(truncated.values()):
+            ...
+            #some logging
 
-        dones["__all__"] = all(dones.values())
-        return obs_dict, rewards, dones, infos
+        return obs, rewards, terminated, truncated, info
+    
 
     def close(self):
         if self.unity_process:
+            print("Closing Unity process...")
             self.unity_process.terminate()
             try:
                 self.unity_process.wait(timeout=5)
@@ -220,13 +214,14 @@ class MultiAgentUnityCarEnv(gym.Env):
                 self.unity_process.kill()
             self.unity_process = None
 
-        if hasattr(self, "obs_receiver") and self.obs_receiver:
-            self.obs_receiver.stop()
+        obs_receiver = getattr(self, "obs_receiver", None)
+        if obs_receiver:
+            obs_receiver.stop()
             self.obs_receiver = None
-
+        
         if hasattr(self, "tb_writer"):
             self.tb_writer.flush()
             self.tb_writer.close()
-
+            
     def __del__(self):
         self.close()
