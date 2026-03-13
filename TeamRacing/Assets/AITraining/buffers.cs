@@ -17,7 +17,7 @@ public class InstructionBuffer
     }
 
     // Called from network thread to submit/update instruction for a car
-    public void SetInstruction(int carIndex, CarInput input)
+    public void AddInstruction(int carIndex, CarInput input)
     {
         lock (lockObj)
         {
@@ -39,11 +39,16 @@ public class InstructionBuffer
     }
 
     // Check whether we have instructions for all cars
-    public bool HasAll()
+    public bool HasAllInstructions()
     {
         lock (lockObj)
         {
-            return latest.Count >= expectedCount;
+            for (int i = 0; i < expectedCount; i++)
+            {
+                if (!latest.ContainsKey(i))
+                    return false;
+            }
+            return true;
         }
     }
 }

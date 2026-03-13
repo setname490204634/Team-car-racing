@@ -23,6 +23,7 @@ public class gameControlScript : MonoBehaviour
     private List<TransformEntry> startTransforms = new List<TransformEntry>(); //starting locations, this can be permutated
     private int lapCount = 5;
     public List<int> winners = new List<int>();
+    private int carCount = 1;
 
     private TcpListener controlServer;
     private TcpListener instructionsServer;
@@ -56,7 +57,7 @@ public class gameControlScript : MonoBehaviour
 
     void Start()
     {
-        InitializePortsFromArgs(Environment.GetCommandLineArgs());
+        InitializeParamsFromArgs(Environment.GetCommandLineArgs());
 
         mapManager = GetComponent<MapManager>();
         this.currentSegmentHandler = mapManager.currentSegmentHandler;
@@ -69,7 +70,6 @@ public class gameControlScript : MonoBehaviour
 
         InitializeCars();
         ResetCars();
-        SetMaxSteeringChange(38);
 
         InitializeNetworking();
 
@@ -95,7 +95,7 @@ public class gameControlScript : MonoBehaviour
                     observationsSent = true;
                 }
                 // Wait until we have full instruction set
-                while (instructionBuffer.HasAll() != true)
+                while (instructionBuffer.HasAllInstructions() != true)
                 {
                     return; //wait
                 }
@@ -182,7 +182,7 @@ public class gameControlScript : MonoBehaviour
         return cars[id].carObject;
     }
 
-    private void InitializePortsFromArgs(string[] args)
+    private void InitializeParamsFromArgs(string[] args)
     {
         for (int i = 0; i < args.Length; i++)
         {
@@ -201,6 +201,10 @@ public class gameControlScript : MonoBehaviour
                 case "--observationPort":
                     if (i + 1 < args.Length && int.TryParse(args[i + 1], out int obsPort))
                         observationTransmitterPort = obsPort;
+                    break;
+                case "--carCount":
+                    if (i + 1 < args.Length && int.TryParse(args[i + 1], out int carCount))
+                        this.carCount = carCount;
                     break;
             }
         }
@@ -230,6 +234,7 @@ public class gameControlScript : MonoBehaviour
     //will fill the carEntry list "cars"
     private void InitializeCars()
     {
+        RemoveExtraCars();
         int index = 0;
         foreach (var obj in assignedCarObjects)
         {
@@ -332,6 +337,14 @@ public class gameControlScript : MonoBehaviour
     }
 
     // Apply inputs directly to car inputProviders by car index
+    private void RemoveExtraCars()
+    {
+        for (int i = assignedCarObjects.Count - 1; i >= carCount; i--)
+        {
+            Destroy(assignedCarObjects[i]);
+            assignedCarObjects.RemoveAt(i);
+        }
+    }
     public void ApplyCarInputs(List<(CarInput input, int carIndex)> inputs)
     {
         foreach (var (input, carIndex) in inputs)
@@ -567,7 +580,7 @@ public class gameControlScript : MonoBehaviour
                         UseSpeedSteering = true
                     };
 
-                    instructionBuffer.SetInstruction(carIndex, input);
+                    instructionBuffer.AddInstruction(carIndex, input);
                 }
             }
         }

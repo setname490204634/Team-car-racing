@@ -70,9 +70,6 @@ public class CarObservationTransmitter
         }
     }
 
-    /// <summary>
-    /// Send last collected observations.
-    /// </summary>
     public void SendObservations()
     {
         if (!connected || stream == null)
