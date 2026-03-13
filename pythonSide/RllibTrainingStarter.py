@@ -4,7 +4,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["RAY_DEDUP_LOGS"] = "1"
 os.environ["RAY_DISABLE_IMPORT_WARNING"] = "1"
 os.environ["RAY_SILENCE_LOGS"] = "1"
-PYTHONWARNINGS="ignore::DeprecationWarning"
+os.environ["PYTHONWARNINGS"] = "ignore::DeprecationWarning"
 warnings.filterwarnings("ignore")
 
 import gymnasium as gym
@@ -18,9 +18,6 @@ MODEL_DIR = os.path.abspath("./pythonSide/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 def make_env(config):
-    worker_idx = config.worker_index
-    port_offset = (worker_idx -1) * 10
-
     return UnityCarEnv(
         run_headless=True,
         debug=True
@@ -39,11 +36,11 @@ config = (
         env_config={},
     )
     .env_runners(
-        num_env_runners=2
+        num_env_runners=1
         )
     .training(
         lr=1e-4,
-        train_batch_size=2000,
+        train_batch_size=4096,
         gamma=0.99,
         use_gae=True,
         lambda_=0.95,

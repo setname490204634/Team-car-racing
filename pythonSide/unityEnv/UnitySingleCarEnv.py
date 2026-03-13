@@ -13,6 +13,7 @@ import random
 from .CommandConstants import CommandCode
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
+import re
 
 def wait_for_port(host: str, port: int, timeout=20):
     """Wait until a TCP port is open."""
@@ -32,6 +33,19 @@ def get_os_assigned_port():
     s.bind(("127.0.0.1", 0))
     port = s.getsockname()[1]
     return s, port
+
+def get_next_env_folder(log_dir):
+    os.makedirs(log_dir, exist_ok=True)
+
+    env_numbers = []
+
+    for name in os.listdir(log_dir):
+        match = re.match(r"env_(\d+)", name)
+        if match:
+            env_numbers.append(int(match.group(1)))
+
+    next_number = max(env_numbers) + 1 if env_numbers else 1
+    return f"env_{next_number}"
 
 
 class UnityCarEnv(gym.Env):
@@ -71,13 +85,14 @@ class UnityCarEnv(gym.Env):
         
         self.episodeCount = 0
         self.current_step = 0
-        self.max_steps = 400 
+        self.max_steps = 1024 
         self.episode_reward = 0.0
         
         #logging
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        env_folder = get_next_env_folder(log_dir)
+        
         self.tb_writer = SummaryWriter(
-            log_dir=os.path.join(log_dir, f"env_{timestamp}")
+            log_dir=os.path.join(log_dir, env_folder)
         )
         self.step_start_time = time.time()
         self.episode_start_time = time.time()
@@ -195,6 +210,8 @@ class UnityCarEnv(gym.Env):
         
                 
         self._update_frame_stack(rgb)
+        speed = obs_packet.rewards.speedReward
+        obs_packet.rewards.collisionPenalty *= speed
 
         reward = float(np.dot(obs_packet.rewards.as_vector(), Rewards.defaultWeights().as_vector()))
         # Update the per-category sums (unweighted)
@@ -217,7 +234,7 @@ class UnityCarEnv(gym.Env):
             terminated = True
             reward = 0
             
-        if obs_packet.rewards.collisionPenalty < -0.5:
+        if obs_packet.rewards.collisionPenalty != 0.0:
             terminated = True
             
         self.episode_reward += reward
