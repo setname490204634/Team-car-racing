@@ -34,6 +34,8 @@ class UnityMultiCarEnv(gym.Env):
             aid: agent.agent(
                 id=aid,
                 unity_car_id=i,
+                maxSteps=1024,
+                logdir=log_dir,
                 debug=debug
             )
             for i, aid in enumerate(self.agent_ids)
@@ -67,8 +69,12 @@ class UnityMultiCarEnv(gym.Env):
         self.unity_exe_path = unity_exe_path
         self.unity_process = None
         self.run_headless = run_headless
+        
+        self.maxMapIndex = 6
+        self.changeMapEvery = 1000000
 
         self.max_steps = 1024
+        self.stepCount = 0
         self.episodeCount = 0
 
         env_folder = get_next_env_folder(log_dir)
@@ -91,11 +97,11 @@ class UnityMultiCarEnv(gym.Env):
         self.obs_receiver.start()
 
         self.sendCommandToUnity(CommandCode.ChangeMap, 4)
+        self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 6)
 
         if run_headless:
             self.sendCommandToUnity(CommandCode.UnlimitedSpeed)
 
-        self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 6)
         
     def sendCommandToUnity(self, command, value =0 ):
         sender.send_command(command, value, self.control_port)
@@ -124,12 +130,13 @@ class UnityMultiCarEnv(gym.Env):
 
 
     def reset(self, **kwargs):
+        self.stepCount += 1
         self.mapSwitchCount += 1
         self.sendCommandToUnity(CommandCode.StopSimulation)
 
         if self.mapSwitchCount % self.changeMapEvery == 0:
             self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
-        time.sleep(0.03) #magic wait to let the map load before cars
+            time.sleep(0.03) #magic wait to let the map load before cars
         
         self.sendCommandToUnity(CommandCode.ShuffleCars)
         self.sendCommandToUnity(CommandCode.Reset)
@@ -159,7 +166,7 @@ class UnityMultiCarEnv(gym.Env):
         return observations, {}
 
     def step(self, action):
-        for aid, action in actions.items():
+        for aid, action in action.items():
 
             ag = self.agents[aid]
 
@@ -176,7 +183,21 @@ class UnityMultiCarEnv(gym.Env):
             time.sleep(0.0001)
 
         packets = self.obs_receiver.collect_observations()
+        
+        obs, rewards, terminated, truncated = self.processPackets(packets)
 
+        if any(terminated.values()) or any(truncated.values()):
+            self.logAllAgents()
+            
+        info = {}
+
+        return obs, rewards, terminated, truncated, info
+    
+    def logAllAgents(self):
+        for agent in self.agents:
+            agent.logEpisode(self.stepCount)
+            
+    def processPackets(self, packets):
         obs = {}
         rewards = {}
         terminated = {}
@@ -196,13 +217,7 @@ class UnityMultiCarEnv(gym.Env):
             rewards[aid] = r
             terminated[aid] = term
             truncated[aid] = trunc
-
-        if any(terminated.values()) or any(truncated.values()):
-            ...
-            #some logging
-
-        return obs, rewards, terminated, truncated, info
-    
+        return obs, rewards, terminated, truncated
 
     def close(self):
         if self.unity_process:
@@ -219,9 +234,8 @@ class UnityMultiCarEnv(gym.Env):
             obs_receiver.stop()
             self.obs_receiver = None
         
-        if hasattr(self, "tb_writer"):
-            self.tb_writer.flush()
-            self.tb_writer.close()
+        for agent_obj in self.agents.values():
+            agent_obj.close()
             
     def __del__(self):
         self.close()
