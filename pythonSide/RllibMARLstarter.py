@@ -1,0 +1,96 @@
+import os
+import warnings
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["RAY_DEDUP_LOGS"] = "1"
+os.environ["RAY_DISABLE_IMPORT_WARNING"] = "1"
+os.environ["RAY_SILENCE_LOGS"] = "1"
+os.environ["PYTHONWARNINGS"] = "ignore::DeprecationWarning"
+warnings.filterwarnings("ignore")
+import gymnasium as gym
+import numpy as np
+from ray.tune.registry import register_env
+from ray.rllib.algorithms.ppo import PPOConfig
+from ray.rllib.core.rl_module.default_model_config import DefaultModelConfig
+from unityEnv.UnityMultiCarEnv import UnityMultiCarEnv
+
+MODEL_DIR = os.path.abspath("./pythonSide/models")
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+NUM_AGENTS = 8
+
+
+def make_env(config):
+    return UnityMultiCarEnv(
+        number_of_agents=NUM_AGENTS,
+        run_headless=True,
+        debug=True
+    )
+
+register_env("UnityMultiCarEnv-v0", make_env)
+
+obs_space = gym.spaces.Box(low=0.0, high=1.0, shape=(12, 64, 128), dtype=np.float32)
+act_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
+
+
+policies = {
+    f"policy_{i}": (
+        None,
+        obs_space,
+        act_space,
+        {}
+    )
+    for i in range(NUM_AGENTS)
+}
+
+def policy_mapping_fn(agent_id, *args, **kwargs):
+    idx = int(agent_id.split("_")[1])
+    return f"policy_{idx}"
+
+config = (
+    PPOConfig()
+    .framework("torch")
+    .environment(
+        "UnityMultiCarEnv-v0",
+        env_config={}
+    )
+    .env_runners(
+        num_env_runners=1
+    )
+    .training(
+        lr=1e-4,
+        train_batch_size=2096,
+        gamma=0.99,
+        use_gae=True,
+        lambda_=0.95,
+        clip_param=0.2,
+        vf_clip_param=10.0,
+        grad_clip=0.5,
+        vf_loss_coeff=0.5,
+        entropy_coeff=0.01,
+    )
+    .rl_module(
+        model_config=DefaultModelConfig(
+            conv_filters=[
+                [32, 5, 2],
+                [64, 3, 2],
+                [64, 3, 1],
+            ],
+            conv_activation="relu",
+            head_fcnet_hiddens=[256],
+        )
+    )
+    .multi_agent(
+        policies=policies,
+        policy_mapping_fn=policy_mapping_fn,
+    )
+)
+
+algo = config.build_algo()
+
+for i in range(1000000):
+    result = algo.train()
+    print(f"Iter {i}")
+    if i % 50 == 0:
+        path = algo.save(f"{MODEL_DIR}/checkpoint_{i}")
+        print(f"Checkpoint saved to {path}")

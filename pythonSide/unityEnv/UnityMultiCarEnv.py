@@ -1,4 +1,5 @@
 import gymnasium as gym
+from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from gymnasium import spaces
 import numpy as np
 import time
@@ -14,34 +15,37 @@ from torch.utils.tensorboard import SummaryWriter
 from .envUtils import wait_for_port, get_os_assigned_port, get_next_env_folder
 from .agent import *
 
-class UnityMultiCarEnv(gym.Env):
+class UnityMultiCarEnv(MultiAgentEnv):
 
     def __init__(
         self,
         number_of_agents: int,
         unity_exe_path: str = r"TeamRacing\builds\TeamRacing.exe",
-        log_dir: str = r"pythonSide\env_logs",
+        base_log_dir: str = r"pythonSide\env_logs",
         debug: bool = False,
-        run_headless: bool = False
+        run_headless: bool = False,
+        maxSteps: int = 1024
     ):
 
         super().__init__()
-
         self.agent_ids = [f"agent_{i}" for i in range(number_of_agents)]
+        self.possible_agents = self.agent_ids
         self.agentCount = number_of_agents
+        
+        log_dir = get_next_env_folder(base_log_dir)
 
         self.agents = {
-            aid: agent.agent(
+            aid: agent(
                 id=aid,
                 unity_car_id=i,
-                maxSteps=1024,
+                maxSteps=maxSteps,
                 logdir=log_dir,
                 debug=debug
             )
             for i, aid in enumerate(self.agent_ids)
         }
 
-        self.observation_space = spaces.Dict({
+        self.observation_spaces = {
             aid: spaces.Box(
                 low=0.0,
                 high=1.0,
@@ -49,9 +53,9 @@ class UnityMultiCarEnv(gym.Env):
                 dtype=np.float32
             )
             for aid in self.agent_ids
-        })
+        }
 
-        self.action_space = spaces.Dict({
+        self.action_spaces = {
             aid: spaces.Box(
                 low=-1.0,
                 high=1.0,
@@ -59,7 +63,7 @@ class UnityMultiCarEnv(gym.Env):
                 dtype=np.float32
             )
             for aid in self.agent_ids
-        })
+        }
 
         # networking
         self._control_sock, self.control_port = get_os_assigned_port()
@@ -72,16 +76,12 @@ class UnityMultiCarEnv(gym.Env):
         
         self.maxMapIndex = 6
         self.changeMapEvery = 1000000
+        self.mapSwitchCount = 0
 
-        self.max_steps = 1024
+        self.max_steps = 16
         self.stepCount = 0
         self.episodeCount = 0
 
-        env_folder = get_next_env_folder(log_dir)
-
-        self.tb_writer = SummaryWriter(
-            log_dir=os.path.join(log_dir, env_folder)
-        )
 
         self.debug = debug
 
@@ -186,15 +186,24 @@ class UnityMultiCarEnv(gym.Env):
         
         obs, rewards, terminated, truncated = self.processPackets(packets)
 
-        if any(terminated.values()) or any(truncated.values()):
+        if any(terminated.values()):
             self.logAllAgents()
+            terminated["__all__"] = True
+        else:
+            terminated["__all__"] = False
+            
+        if any(truncated.values()):
+            self.logAllAgents()
+            truncated["__all__"] = True
+        else:
+            truncated["__all__"] = False
             
         info = {}
 
         return obs, rewards, terminated, truncated, info
     
     def logAllAgents(self):
-        for agent in self.agents:
+        for agent in self.agents.values():
             agent.logEpisode(self.stepCount)
             
     def processPackets(self, packets):

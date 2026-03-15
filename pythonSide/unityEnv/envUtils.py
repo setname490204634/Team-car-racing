@@ -33,4 +33,6 @@ def get_next_env_folder(log_dir):
             env_numbers.append(int(match.group(1)))
 
     next_number = max(env_numbers) + 1 if env_numbers else 1
-    return f"env_{next_number}"
+    next_env_dir = os.path.join(log_dir, f"env_{next_number}")
+    os.makedirs(next_env_dir, exist_ok=True)
+    return next_env_dir

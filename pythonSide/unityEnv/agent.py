@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from .rewards import Rewards
 from torch.utils.tensorboard import SummaryWriter
+import os
 
 class agent:
     def __init__(
@@ -18,8 +19,8 @@ class agent:
         # names
         self.agent_id = id
         self.unity_car_id = unity_car_id
-        self.logdir = logdir
         self.log_file_name = f"carLog_{unity_car_id}"
+        self.logdir = os.path.join(logdir, self.log_file_name)
 
         # config
         self.stack_size = stack_size
@@ -158,8 +159,8 @@ class agent:
         info = {
             "episode_reward": self.episode_reward,
             "episode_length": self.current_step,
-            "raw_rewards": vars(self.episode_rewards_per_category).copy(),
-            "weighted_rewards": vars(self.weighted_rewards).copy()
+            "raw_rewards": self.episode_rewards_per_category,
+            "weighted_rewards": self.weighted_rewards
         }
         return info
         
@@ -170,23 +171,24 @@ class agent:
         if not hasattr(self, "tb_writer"):
             self.tb_writer = SummaryWriter(log_dir=self.logdir)
 
-        # log total episode reward
+        # Log total episode reward
         self.tb_writer.add_scalar("episode/total_reward", info["episode_reward"], step)
-        # log episode length
+        # Log episode length
         self.tb_writer.add_scalar("episode/length", info["episode_length"], step)
 
-        # log raw rewards
-        for k, v in info["raw_rewards"].items():
-            self.tb_writer.add_scalar(f"reward/raw/{k}", v, step)
+        # Log weighted rewards
+        for field in vars(info["weighted_rewards"]):
+            value = getattr(info["weighted_rewards"], field)
+            if getattr(self.rewardMul, field) != 0:
+                self.tb_writer.add_scalar(f"rewardWeighted/{field}", value, step)
+                
+        # Log raw rewards
+        for field in vars(info["raw_rewards"]):
+            value = getattr(info["raw_rewards"], field)
+            self.tb_writer.add_scalar(f"rewardRaw/{field}", value, step)
 
-        # log weighted rewards if weight != 0
-        for k, raw_value in info["raw_rewards"].items():
-            weight = getattr(self.rewardMul, k)
-            if weight != 0:
-                weighted_value = getattr(info["weighted_rewards"], k)
-                self.tb_writer.add_scalar(f"reward/weighted/{k}", weighted_value, step)
 
-        # reset counters for next episode
+        # Reset counters for next episode
         self.episode_reward = 0.0
         self.episode_rewards_per_category = Rewards()
         self.weighted_rewards = Rewards()
