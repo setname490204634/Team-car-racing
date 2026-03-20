@@ -39,8 +39,6 @@ public class CarController : MonoBehaviour
 
     // Collision tracking
     private bool collided = false; //crash
-    private bool crossedFinish = false;
-    private bool crossedHalfway = false;
     private bool onGrass = false;
     private bool outOfBounds = false;
 
@@ -74,8 +72,6 @@ public class CarController : MonoBehaviour
         lastInput = CarInput.Default;
 
         collided = false;
-        crossedFinish = false;
-        crossedHalfway = false;
         onGrass = false;
         outOfBounds = false;
     }
@@ -288,26 +284,10 @@ public class CarController : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    public (bool collided, bool onGrass, bool outOfBounds) ConsumeCollisionFlags()
     {
-        if (other.CompareTag("finishLine"))
-        {
-            crossedFinish = true;
-            // Debug.Log($"{name} crossed the finish line");
-        }
-        else if (other.CompareTag("halfway"))
-        {
-            crossedHalfway = true;
-            // Debug.Log($"{name} crossed the halfway point");
-        }
-    }
-
-    public (bool collided, bool finish, bool halfway, bool onGrass, bool outOfBounds) ConsumeCollisionFlags()
-    {
-        var result = (collided, crossedFinish, crossedHalfway, onGrass, outOfBounds);
+        var result = (collided, onGrass, outOfBounds);
         collided = false;
-        crossedFinish = false;
-        crossedHalfway = false;
         onGrass = false;
         outOfBounds = false;
         return result;

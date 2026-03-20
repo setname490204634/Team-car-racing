@@ -7,9 +7,6 @@ public class CarRaceState
     public float lastLapTotalTime = 0f;
     public float bestLapTime = float.MaxValue;
 
-    public bool passedHalfway = false;
-    public bool crossedFinish = true;
-
     public bool finished = false;
 
     public void Reset()
@@ -18,8 +15,7 @@ public class CarRaceState
         currentLapTime = 0f;
         lastLapTotalTime = 0f;
         bestLapTime = float.MaxValue;
-        passedHalfway = false;
-        crossedFinish = true;
+
         finished = false;
     }
 }

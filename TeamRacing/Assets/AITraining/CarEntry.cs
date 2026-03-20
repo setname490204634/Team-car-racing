@@ -9,6 +9,7 @@ public class CarEntry
     public CarRaceState raceState;
     public CarController controller;
     public int segmentIndex;
+    public int segmentProgress;
     public CarAppearance carAppearance;
 
     public void Reset()
@@ -18,5 +19,6 @@ public class CarEntry
         raceState.Reset();
         controller.ResetCar();
         segmentIndex = 0;
+        segmentProgress = 0;
     }
 }

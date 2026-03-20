@@ -21,7 +21,7 @@ public class gameControlScript : MonoBehaviour
 
     private List<CarEntry> cars = new List<CarEntry>(); //never change order of cars! (it is used as index)
     private List<TransformEntry> startTransforms = new List<TransformEntry>(); //starting locations, this can be permutated
-    private int lapCount = 5;
+    private int lapCount = 1;
     public List<int> winners = new List<int>();
     private int carCount = 1;
 
@@ -54,6 +54,8 @@ public class gameControlScript : MonoBehaviour
 
     public MapSegmentHandler currentSegmentHandler;
     public MapManager mapManager;
+    //the fifth checkpoint is finish line
+    private int _finishLineSegmentIndex = 5;
 
     void Start()
     {
@@ -106,21 +108,25 @@ public class gameControlScript : MonoBehaviour
             Physics.Simulate(fixedDt);
             tickCount++;
             UpdateCarSegmentPos();
-            HandleCarCollisions();
+            HandleCarCollisionsAndPlacement();
         }
     }
 
-    //checks car collisions with objects and lap track finish and halfway point
-    private void HandleCarCollisions()
+    //also does placement for legacy reasons (lap was done based on colliders before now its based on segment index)
+    private void HandleCarCollisionsAndPlacement()
     {
+        int[] positions = new int[cars.Count];
         for (int i = 0; i < cars.Count; i++)
         {
             CarEntry car = cars[i];
-            (bool collided, bool finish, bool halfway, bool onGrass, bool outOfBounds) = car.controller.ConsumeCollisionFlags();
+            positions[i] = car.segmentProgress;
+
+            (bool collided, bool onGrass, bool outOfBounds) = car.controller.ConsumeCollisionFlags();
             if (collided)
             {
                 car.rewards.RegisterCollision();
             }
+
             if (onGrass)
             {
                 car.rewards.RegisterOnGrass();
@@ -130,38 +136,45 @@ public class gameControlScript : MonoBehaviour
                 car.rewards.RegisterOutOfBounds();
             }
 
-            //halfway to stop incomplete loops
-            if (halfway && car.raceState.crossedFinish)
+            if (car.segmentIndex == _finishLineSegmentIndex &&
+                car.segmentProgress >= (car.raceState.lapCount + 1) * this.currentSegmentHandler.road.Count)
             {
-                car.raceState.passedHalfway = true;
-                car.raceState.crossedFinish = false;
-            }
-            //finished lap
-            if (finish && car.raceState.passedHalfway)
-            {
-                car.raceState.passedHalfway = false;
-                car.raceState.crossedFinish = true;
-
-                car.raceState.lapCount++;
-                float lapTime = this.tickCount * fixedDt - car.raceState.lastLapTotalTime;
-                car.raceState.bestLapTime = Math.Max(car.raceState.bestLapTime, lapTime);
-                car.raceState.lastLapTotalTime = this.tickCount * fixedDt;
-                car.raceState.currentLapTime = lapTime;
-
-                if (this.lapCount == car.raceState.lapCount)
+                car.raceState.lapCount ++;
+                if (this.lapCount == car.raceState.lapCount && !car.raceState.finished)
                 {
                     this.winners.Add(i);
                     car.rewards.RegisterFinalPlacement(winners.Count);
+                    car.raceState.finished = true;
                     foreach (int ID in car.rewards.teammatesID)
                     {
                         cars[ID].rewards.RegisterFinalTeammatePlacement(winners.Count);
                     }
                 }
-                foreach (int ID in car.rewards.teammatesID)
-                {
-                    cars[ID].rewards.RegisterTeammateLapTime(lapTime);
-                }
-                car.rewards.RegisterLapTime(lapTime);
+            }
+        }
+
+        var sorted = new List<(int index, int progress)>();
+
+        for (int i = 0; i < positions.Length; i++)
+        {
+            sorted.Add((i, positions[i]));
+        }
+
+        // Sort descending (highest progress = best position)
+        sorted.Sort((a, b) => b.progress.CompareTo(a.progress));
+
+        // Assign placements
+        for (int place = 0; place < sorted.Count; place++)
+        {
+            int carIndex = sorted[place].index;
+            int placement = place + 1; // 1-based placement
+
+            cars[carIndex].rewards.RegisterCurrentPlacement(placement);
+
+            // Teammates
+            foreach (int teammateID in cars[carIndex].rewards.teammatesID)
+            {
+                cars[teammateID].rewards.RegisterCurrentTeammatePlacement(placement);
             }
         }
     }
@@ -251,6 +264,8 @@ public class gameControlScript : MonoBehaviour
                 carAppearance = obj.GetComponent<CarAppearance>()
             };
 
+            //0 and 1, 2 and 3...
+            //pairs teammates using modulo magic
             List<int> teammatesID = new List<int>();
             if (assignedCarObjects.Count > index + 1)
             {
@@ -280,20 +295,29 @@ public class gameControlScript : MonoBehaviour
 
     public void UpdateCarSegmentPos()
     {
+        //the refresh rate should be fast enough so the car does not skip a segment, but even if it does so it would only delay the update
         for (int i = 0; i < cars.Count; i++)
         {
             var entry = cars[i];
             int oldIndex = entry.segmentIndex;
             int newIndex = this.currentSegmentHandler.GetClosestIndex(oldIndex, entry.controller.position2D);
-            entry.segmentIndex = newIndex;
             if ((oldIndex + 1) % this.currentSegmentHandler.road.Count == newIndex)//moved forward
             {
+                entry.segmentProgress ++;
                 entry.rewards.RegisterProgressReward(1.0f);
             }
             else if ((oldIndex - 1 + this.currentSegmentHandler.road.Count) % this.currentSegmentHandler.road.Count == newIndex)//moved back
             {
+                entry.segmentProgress --;
                 entry.rewards.RegisterProgressReward(-1.0f);
             }
+            //when passing start line for the first time reset the segment progress to match other cars (now matter how many checkpoins the car passed it will be newIndex after passing start)
+            //it does not affect progress reward
+            if (newIndex == _finishLineSegmentIndex && entry.segmentProgress < (this.currentSegmentHandler.road.Count >> 1))
+            {
+                entry.segmentProgress = newIndex;
+            }
+            entry.segmentIndex = newIndex;
         }
         return;
     }
@@ -301,6 +325,7 @@ public class gameControlScript : MonoBehaviour
     // Reset all cars to their start transforms
     public void ResetCars()
     {
+        this.winners.Clear();
         for (int i = 0; i < cars.Count; i++)
         {
             var entry = cars[i];

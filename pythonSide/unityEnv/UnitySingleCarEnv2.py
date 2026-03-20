@@ -66,6 +66,7 @@ class UnityCarEnv(MultiAgentEnv):
         self.obs_receiver.start()
 
         self.sendCommandToUnity(CommandCode.ChangeMap, 4)
+        self.sendCommandToUnity(CommandCode.SetLapCount, 1)
         self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 16)
 
         if run_headless:
@@ -107,8 +108,8 @@ class UnityCarEnv(MultiAgentEnv):
             self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
             time.sleep(0.03) #magic wait to let the map load before cars
         
-        self.sendCommandToUnity(CommandCode.ShuffleCars)
-        self.sendCommandToUnity(CommandCode.Reset)
+        self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
+        self.sendCommandToUnity(CommandCode.ChangeCarColoursRandomly)
         self.sendCommandToUnity(CommandCode.StartSimulation)
 
         while not self.obs_receiver.has_min_observations(1):
@@ -138,7 +139,7 @@ class UnityCarEnv(MultiAgentEnv):
         packet = self.obs_receiver.collect_observations()[-1]
         
         obs, rewards, terminated, truncated = self.processPacket(packet)
-
+        
         if terminated:
             self.agent.logEpisode(self.stepCount)
 
