@@ -14,7 +14,7 @@ os.makedirs("./pythonSide/logs", exist_ok=True)
 FEATURE_EXTRACTOR = SmallCNN2
 
 def make_env():
-    return UnityCarEnv(run_headless=True)
+    return UnityCarEnv(run_headless=True,  debug=True)
 
 env = DummyVecEnv([make_env])
 env = VecNormalize(env, norm_obs=False, norm_reward=False)

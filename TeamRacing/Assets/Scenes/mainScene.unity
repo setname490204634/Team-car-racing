@@ -52125,7 +52125,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 705736784}
   LRWheelMesh: {fileID: 1310306341}
   RRWheelMesh: {fileID: 1495975530}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -57449,7 +57449,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 66312589}
   LRWheelMesh: {fileID: 1809896805}
   RRWheelMesh: {fileID: 162531402}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -87794,7 +87794,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 333586793}
   LRWheelMesh: {fileID: 1582362019}
   RRWheelMesh: {fileID: 1287608405}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -115191,7 +115191,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 880869444}
   LRWheelMesh: {fileID: 39291826}
   RRWheelMesh: {fileID: 959591176}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -115379,7 +115379,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 540211714}
   LRWheelMesh: {fileID: 773244250}
   RRWheelMesh: {fileID: 55482556}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -120726,7 +120726,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 1767049064}
   LRWheelMesh: {fileID: 102089727}
   RRWheelMesh: {fileID: 1310459870}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -130900,7 +130900,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 1186580790}
   LRWheelMesh: {fileID: 1061588162}
   RRWheelMesh: {fileID: 2137386645}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -143780,7 +143780,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 98882015336291168}
   LRWheelMesh: {fileID: 2772111883996338974}
   RRWheelMesh: {fileID: 1882875695973266193}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3

@@ -168,11 +168,12 @@ class UnityCarEnv(gym.Env):
             bgr = cv2.resize(
                 bgr,
                 None,
-                fx=4,
-                fy=4,
+                fx=16,
+                fy=16,
                 interpolation=cv2.INTER_LINEAR
             )
             cv2.imshow("Unity Observation", bgr)
+            cv2.imwrite("observation.png", bgr)
             cv2.waitKey(1)
         
                 

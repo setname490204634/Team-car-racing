@@ -59048,7 +59048,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 5485596578330878701}
   LRWheelMesh: {fileID: 4870218335488634759}
   RRWheelMesh: {fileID: 4281800569881344187}
-  driveSpeed: 1000
+  driveSpeed: 500
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
