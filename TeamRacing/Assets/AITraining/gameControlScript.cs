@@ -43,8 +43,8 @@ public class gameControlScript : MonoBehaviour
     public int observationTransmitterPort = 5007;
 
     [Header("Simulation Settings (can be changed with commands)")]
-    public int fixedHz = 48;           // physics frequency
-    public int framesPerObservation = 6;  // send obs every N frames
+    public int fixedHz = 60;           // physics frequency
+    public int framesPerObservation = 5;  // send obs every N frames
     private float fixedDt;
     private long tickCount = 0;
 

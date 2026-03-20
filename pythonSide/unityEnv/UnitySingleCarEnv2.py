@@ -15,72 +15,44 @@ from torch.utils.tensorboard import SummaryWriter
 from .envUtils import wait_for_port, get_os_assigned_port, get_next_env_folder
 from .agent import *
 
-class UnityMultiCarEnv(MultiAgentEnv):
+class UnityCarEnv(MultiAgentEnv):
 
     def __init__(
         self,
-        number_of_agents: int,
         unity_exe_path: str = r"TeamRacing\builds\TeamRacing.exe",
         base_log_dir: str = r"pythonSide\env_logs",
         debug: bool = False,
         run_headless: bool = False,
         maxSteps: int = 1024
     ):
-
         super().__init__()
-        self.agent_ids = [f"agent_{i}" for i in range(number_of_agents)]
-        self.possible_agents = self.agent_ids
-        self.agentCount = number_of_agents
-        
+
         log_dir = get_next_env_folder(base_log_dir)
-
-        self.agents = {
-            aid: agent(
-                id=aid,
-                unity_car_id=i,
-                maxSteps=maxSteps,
-                logdir=log_dir,
-                debug=debug
-            )
-            for i, aid in enumerate(self.agent_ids)
-        }
-
-        self.observation_spaces = {
-            aid: spaces.Box(
-                low=0.0,
-                high=1.0,
-                shape=(12, 64, 128),
-                dtype=np.float32
-            )
-            for aid in self.agent_ids
-        }
-
-        self.action_spaces = {
-            aid: spaces.Box(
-                low=-1.0,
-                high=1.0,
-                shape=(2,),
-                dtype=np.float32
-            )
-            for aid in self.agent_ids
-        }
+        self.agent = agent(id="agent_0", unity_car_id=0, maxSteps=maxSteps, logdir=log_dir, debug=debug, fatalCollision=True)
+        
+        self.observation_space = spaces.Box(
+            low=0.0, high=1.0,
+            shape=(12, 64, 128),
+            dtype=np.float32
+        )
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
         # networking
         self._control_sock, self.control_port = get_os_assigned_port()
         self._car_sock, self.car_instr_port = get_os_assigned_port()
         self._obs_sock, self.obs_port = get_os_assigned_port()
 
-        # unity
         self.unity_exe_path = unity_exe_path
         self.unity_process = None
         self.run_headless = run_headless
         self.debug = debug
         
-        # between episode env state
         self.maxMapIndex = 6
         self.changeMapEvery = 1000000
         self.mapSwitchCount = 0
+
         self.stepCount = 0
+
 
         self._launch_unity()
 
@@ -113,7 +85,7 @@ class UnityMultiCarEnv(MultiAgentEnv):
             "--controlPort", str(self.control_port),
             "--carInstructionsPort", str(self.car_instr_port),
             "--observationPort", str(self.obs_port),
-            "--carCount", str(self.agentCount)
+            "--carCount", str(1)
         ]
         if (self.run_headless):
             args.append("-batchmode")
@@ -139,87 +111,47 @@ class UnityMultiCarEnv(MultiAgentEnv):
         self.sendCommandToUnity(CommandCode.Reset)
         self.sendCommandToUnity(CommandCode.StartSimulation)
 
-        while not self.obs_receiver.has_min_observations(self.agentCount):
+        while not self.obs_receiver.has_min_observations(1):
             time.sleep(0.0001)
         
-        packets = self.obs_receiver.collect_observations()
+        packet = self.obs_receiver.collect_observations()[-1]
         
-        observations = {}
-        
-        for packet in packets:
-            carID = packet.car_id
-            aID = self.agent_ids[carID]
-            
-            agent = self.agents[aID]
-            
-            rgb = packet.image
-            rgb = cv2.flip(rgb, 0)
-            agent.initFrameStack(rgb)
-            
-            observations[aID] = agent.get_observation()
-            
-        return observations, {}
+        rgb = packet.image
+        rgb = cv2.flip(rgb, 0)
+        self.agent.initFrameStack(rgb)
+     
+        return self.agent.get_observation(), {}
 
     def step(self, action):
-        for aid, action in action.items():
+        steer, throttle = self.agent.encode_action(action)
 
-            ag = self.agents[aid]
+        sender.send_car_instruction(
+            self.agent.unity_car_id,
+            steer,
+            throttle,
+            self.car_instr_port
+        )
 
-            steer, throttle = ag.encode_action(action)
-
-            sender.send_car_instruction(
-                ag.unity_car_id,
-                steer,
-                throttle,
-                self.car_instr_port
-            )
-
-        while not self.obs_receiver.has_min_observations(len(self.agent_ids)):
+        while not self.obs_receiver.has_min_observations(1):
             time.sleep(0.0001)
 
-        packets = self.obs_receiver.collect_observations()
+        packet = self.obs_receiver.collect_observations()[-1]
         
-        obs, rewards, terminated, truncated = self.processPackets(packets)
+        obs, rewards, terminated, truncated = self.processPacket(packet)
 
-        if any(terminated.values()):
-            self.logAllAgents()
-            terminated["__all__"] = True
-        else:
-            terminated["__all__"] = False
+        if terminated:
+            self.agent.logEpisode(self.stepCount)
+
             
-        if any(truncated.values()):
-            self.logAllAgents()
-            truncated["__all__"] = True
-        else:
-            truncated["__all__"] = False
+        if truncated:
+            self.agent.logEpisode(self.stepCount)
             
         info = {}
 
         return obs, rewards, terminated, truncated, info
-    
-    def logAllAgents(self):
-        for agent in self.agents.values():
-            agent.logEpisode(self.stepCount)
             
-    def processPackets(self, packets):
-        obs = {}
-        rewards = {}
-        terminated = {}
-        truncated = {}
-        
-        for packet in packets:
-
-            car_id = packet.car_id
-            aid = self.agent_ids[car_id]
-
-            ag = self.agents[aid]
-
-            o, r, term, trunc = ag.update_from_packet(packet)
-
-            obs[aid] = o
-            rewards[aid] = r
-            terminated[aid] = term
-            truncated[aid] = trunc
+    def processPacket(self, packet):
+        obs, rewards, terminated, truncated = self.agent.update_from_packet(packet)
         return obs, rewards, terminated, truncated
 
     def close(self):
@@ -237,8 +169,8 @@ class UnityMultiCarEnv(MultiAgentEnv):
             obs_receiver.stop()
             self.obs_receiver = None
         
-        for agent_obj in self.agents.values():
-            agent_obj.close()
+        self.agent.close()
+
             
     def __del__(self):
         self.close()

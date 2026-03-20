@@ -14,7 +14,8 @@ class agent:
         stack_size: int = 4,
         img_shape = (64, 128, 3),
         debug: bool = False,
-        rewardMul: Rewards = Rewards.defaultWeights()
+        rewardMul: Rewards = Rewards.defaultWeights(),
+        fatalCollision: bool = False
     ):
         # names
         self.agent_id = id
@@ -44,6 +45,7 @@ class agent:
         self.max_steps = maxSteps
 
         # termination state
+        self.fatalCollision = fatalCollision
         self.terminated = False
         self.truncated = False
         
@@ -121,9 +123,8 @@ class agent:
         if rewards_packet.outOfBoundsPenalty < -0.5:
             self.terminated = True
 
-        if rewards_packet.collisionPenalty != 0.0:
-            ...
-            # self.terminated = True
+        if rewards_packet.collisionPenalty != 0.0 and self.fatalCollision:
+            self.terminated = True
 
         return self.terminated, self.truncated
     

@@ -77,7 +77,7 @@ class UnityCarEnv(gym.Env):
         self.sendCommandToUnity(CommandCode.ChangeMap, 4)
         if run_headless:
             self.sendCommandToUnity(CommandCode.UnlimitedSpeed)
-        self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 6)
+        self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 16)
 
         
     def _update_frame_stack(self, new_frame):

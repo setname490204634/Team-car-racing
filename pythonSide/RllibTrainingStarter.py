@@ -11,17 +11,19 @@ import gymnasium as gym
 import numpy as np
 from ray.tune.registry import register_env
 from ray.rllib.algorithms.ppo import PPOConfig
-from unityEnv.UnitySingleCarEnv import UnityCarEnv
+from unityEnv.UnitySingleCarEnv2 import UnityCarEnv
 from ray.rllib.core.rl_module.default_model_config import DefaultModelConfig
+
 
 MODEL_DIR = os.path.abspath("./pythonSide/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 def make_env(config):
-    return UnityCarEnv(
+    env = UnityCarEnv(
         run_headless=True,
         debug=True
     )
+    return env
 
 register_env("UnityCarEnv-v0", make_env)
 
@@ -36,11 +38,11 @@ config = (
         env_config={},
     )
     .env_runners(
-        num_env_runners=1
+        num_env_runners=2
         )
     .training(
         lr=1e-4,
-        train_batch_size=4096,
+        train_batch_size=2048,
         gamma=0.99,
         use_gae=True,
         lambda_=0.95,
@@ -69,11 +71,7 @@ for i in range(1000000):
 
     result = algo.train()
 
-    print(
-        f"Iter {i} | "
-        f"reward={result['env_runners']['episode_return_mean']:.2f} | "
-        f"len={result['env_runners']['episode_len_mean']:.1f}"
-    )
+    print(f"Iter {i}")
 
     if i % 50 == 0:
         path = algo.save(f"{MODEL_DIR}/checkpoint_{i}")
