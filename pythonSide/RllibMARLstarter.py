@@ -32,25 +32,33 @@ register_env("UnityMultiCarEnv-v0", make_env)
 obs_space = gym.spaces.Box(low=0.0, high=1.0, shape=(12, 64, 128), dtype=np.float32)
 act_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
-
+#one policy to rule them all
 policies = {
-    "team_0_policy": (None, obs_space, act_space, {}),
-    "team_1_policy": (None, obs_space, act_space, {}),
-    "team_2_policy": (None, obs_space, act_space, {}),
-    "team_3_policy": (None, obs_space, act_space, {}),
+    "shared_policy": (None, obs_space, act_space, {})
 }
 
-# Mapping agents to team policies
 def policy_mapping_fn(agent_id, *args, **kwargs):
-    idx = int(agent_id.split("_")[1])
-    if idx in [0,1]:
-        return "team_0_policy"
-    elif idx in [2,3]:
-        return "team_1_policy"
-    elif idx in [4,5]:
-        return "team_2_policy"
-    else:  # idx in [6,7]
-        return "team_3_policy"
+    return "shared_policy"
+
+#per team policy
+# policies = {
+#     "team_0_policy": (None, obs_space, act_space, {}),
+#     "team_1_policy": (None, obs_space, act_space, {}),
+#     "team_2_policy": (None, obs_space, act_space, {}),
+#     "team_3_policy": (None, obs_space, act_space, {}),
+# }
+
+# # Mapping agents to team policies
+# def policy_mapping_fn(agent_id, *args, **kwargs):
+#     idx = int(agent_id.split("_")[1])
+#     if idx in [0,1]:
+#         return "team_0_policy"
+#     elif idx in [2,3]:
+#         return "team_1_policy"
+#     elif idx in [4,5]:
+#         return "team_2_policy"
+#     else:  # idx in [6,7]
+#         return "team_3_policy"
 
 config = (
     PPOConfig()
