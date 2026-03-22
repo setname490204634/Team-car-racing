@@ -132,7 +132,7 @@ class agent:
 
         rgb = obs_packet.image
 
-        if self.debug:
+        if self.debug and self.agent_id == "agent_0":
             bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
             bgr = cv2.flip(bgr, 0)
             bgr = cv2.resize(

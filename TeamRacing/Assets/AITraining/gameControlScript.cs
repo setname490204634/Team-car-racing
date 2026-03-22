@@ -551,23 +551,49 @@ public class gameControlScript : MonoBehaviour
 
             while (running)
             {
-                using (TcpClient client = controlServer.AcceptTcpClient())
-                using (NetworkStream stream = client.GetStream())
-                {
-                    byte[] buffer = new byte[2]; // command byte + value byte
-                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead < 2 && bytesRead != 0)
-                    {
-                        Debug.LogWarning("Incomplete command packet received");
-                        continue;
-                    }
-                    commandBuffer.EnqueueCommand(buffer[0], buffer[1]);
-                }
+                TcpClient client = controlServer.AcceptTcpClient();
+                Debug.Log("Control client connected");
+
+                ThreadPool.QueueUserWorkItem(_ => HandleControlClient(client));
             }
         }
         catch (SocketException e)
         {
-            Debug.Log("Socket exception: " + e);
+            Debug.Log("Socket exception (control): " + e);
+        }
+    }
+    private void HandleControlClient(TcpClient client)
+    {
+        try
+        {
+            using (client)
+            using (NetworkStream stream = client.GetStream())
+            {
+                byte[] buffer = new byte[2];
+
+                while (running && client.Connected)
+                {
+                    int totalRead = 0;
+
+                    // Ensure full packet (2 bytes)
+                    while (totalRead < 2)
+                    {
+                        int bytesRead = stream.Read(buffer, totalRead, 2 - totalRead);
+                        if (bytesRead == 0)
+                        {
+                            Debug.Log("Control client disconnected");
+                            return;
+                        }
+                        totalRead += bytesRead;
+                    }
+
+                    commandBuffer.EnqueueCommand(buffer[0], buffer[1]);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Control client error: " + e);
         }
     }
     private void ListenForCarInstructions()
@@ -580,21 +606,43 @@ public class gameControlScript : MonoBehaviour
 
             while (running)
             {
-                using (TcpClient client = instructionsServer.AcceptTcpClient())
-                using (NetworkStream stream = client.GetStream())
+                TcpClient client = instructionsServer.AcceptTcpClient();
+                Debug.Log("Car client connected");
+
+                ThreadPool.QueueUserWorkItem(_ => HandleCarClient(client));
+            }
+        }
+        catch (SocketException e)
+        {
+            Debug.Log("Socket exception (instructions): " + e);
+        }
+    }
+    private void HandleCarClient(TcpClient client)
+    {
+        try
+        {
+            using (client)
+            using (NetworkStream stream = client.GetStream())
+            {
+                byte[] buffer = new byte[6];
+
+                while (running && client.Connected)
                 {
-                    byte[] buffer = new byte[6]; // 4 bytes car ID + 1 byte steering + 1 byte throttle
-                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead < 6)
+                    int totalRead = 0;
+
+                    // Ensure full packet (6 bytes)
+                    while (totalRead < 6)
                     {
-                        Debug.LogWarning("Incomplete input packet received");
-                        continue;
+                        int bytesRead = stream.Read(buffer, totalRead, 6 - totalRead);
+                        if (bytesRead == 0)
+                        {
+                            Debug.Log("Car client disconnected");
+                            return;
+                        }
+                        totalRead += bytesRead;
                     }
 
-                    // --- Extract car ID (32-bit integer, little-endian) ---
                     int carIndex = BitConverter.ToInt32(buffer, 0);
-
-                    // --- Steering and throttle ---
                     byte steeringByte = buffer[4];
                     byte throttleByte = buffer[5];
 
@@ -609,9 +657,9 @@ public class gameControlScript : MonoBehaviour
                 }
             }
         }
-        catch (SocketException e)
+        catch (Exception e)
         {
-            Debug.Log("Socket exception (instructions): " + e);
+            Debug.Log("Car client error: " + e);
         }
     }
 }

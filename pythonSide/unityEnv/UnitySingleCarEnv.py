@@ -70,6 +70,9 @@ class UnityCarEnv(gym.Env):
 
         wait_for_port("127.0.0.1", self.control_port)
         wait_for_port("127.0.0.1", self.car_instr_port)
+        
+        sender.init_control_socket(self.control_port)
+        sender.init_car_socket(self.car_instr_port)
 
         self.obs_receiver = ObservationReceiver(host="0.0.0.0", port=self.obs_port)
         self.obs_receiver.start()

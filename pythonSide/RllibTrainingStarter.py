@@ -21,7 +21,7 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 def make_env(config):
     env = UnityCarEnv(
         run_headless=True,
-        debug=True
+        debug=False
     )
     return env
 

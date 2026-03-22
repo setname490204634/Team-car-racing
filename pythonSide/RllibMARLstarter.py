@@ -34,18 +34,23 @@ act_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
 
 policies = {
-    f"policy_{i}": (
-        None,
-        obs_space,
-        act_space,
-        {}
-    )
-    for i in range(NUM_AGENTS)
+    "team_0_policy": (None, obs_space, act_space, {}),
+    "team_1_policy": (None, obs_space, act_space, {}),
+    "team_2_policy": (None, obs_space, act_space, {}),
+    "team_3_policy": (None, obs_space, act_space, {}),
 }
 
+# Mapping agents to team policies
 def policy_mapping_fn(agent_id, *args, **kwargs):
     idx = int(agent_id.split("_")[1])
-    return f"policy_{idx}"
+    if idx in [0,1]:
+        return "team_0_policy"
+    elif idx in [2,3]:
+        return "team_1_policy"
+    elif idx in [4,5]:
+        return "team_2_policy"
+    else:  # idx in [6,7]
+        return "team_3_policy"
 
 config = (
     PPOConfig()
