@@ -68,12 +68,12 @@ config = (
         env_config={}
     )
     .env_runners(
-        num_env_runners=1
+        num_env_runners=1, rollout_fragment_length=100
     )
     .training(
-        lr=1e-4,
-        train_batch_size=2096,
-        gamma=0.99,
+        lr=3e-4,
+        train_batch_size=512, #fore some reason unkown to mankind this is not a batch size but env steps, so for 8 cars the batch size is 8 times this number
+        gamma=0.97,
         use_gae=True,
         lambda_=0.95,
         clip_param=0.2,
