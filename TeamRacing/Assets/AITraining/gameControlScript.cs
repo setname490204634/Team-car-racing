@@ -86,6 +86,12 @@ public class gameControlScript : MonoBehaviour
 
         if (state == State.Running)
         {
+            if (!mapManager.IsMapReady)
+                return;
+            else
+            {
+                currentSegmentHandler = mapManager.currentSegmentHandler;
+            }
             //every framesPerObservation frame get instructions and send observations
             if (tickCount % framesPerObservation == 0)
             {
@@ -486,13 +492,11 @@ public class gameControlScript : MonoBehaviour
                 break;
 
             case CommandCode.ChangeMap:
-                mapManager.LoadMap(value);
-                this.currentSegmentHandler = mapManager.currentSegmentHandler;
+                StartCoroutine(mapManager.LoadMap(value));
                 break;
 
             case CommandCode.ChangeMapRandom:
                 mapManager.LoadRandomMap();
-                this.currentSegmentHandler = mapManager.currentSegmentHandler;
                 break;
 
             case CommandCode.ChangeCarColoursRandomly:

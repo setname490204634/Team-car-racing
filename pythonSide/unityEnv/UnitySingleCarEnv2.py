@@ -109,7 +109,6 @@ class UnityCarEnv(MultiAgentEnv):
 
         if self.mapSwitchCount % self.changeMapEvery == 0:
             self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
-            time.sleep(0.03) #magic wait to let the map load before cars
         
         self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
         self.sendCommandToUnity(CommandCode.ChangeCarColoursRandomly)

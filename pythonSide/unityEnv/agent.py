@@ -3,6 +3,10 @@ import cv2
 from .rewards import Rewards
 from torch.utils.tensorboard import SummaryWriter
 import os
+import matplotlib.pyplot as plt
+
+REWARDDEBUG = False
+REWARDDEBUGWEIGHTED = False
 
 class agent:
     def __init__(
@@ -48,6 +52,19 @@ class agent:
         self.fatalCollision = fatalCollision
         self.terminated = False
         self.truncated = False
+
+        # debug plotting
+        self.plot_rewards = [
+            "progressReward",
+            "speedRewardV",
+            "collisionPenalty",
+            "grassPenalty"
+        ]
+
+        self.reward_history = {name: [] for name in self.plot_rewards}
+        self.time_steps = []
+
+        self.plot_initialized = False
         
     def encode_action(self, action):
         steer_cmd = int((np.clip(action[0], -1, 1) + 1) * 127.5)
@@ -74,8 +91,7 @@ class agent:
         return self._build_observation()
     
     def compute_reward(self, rewards_packet):
-        speed = rewards_packet.speedReward
-        rewards_packet.collisionPenalty *= speed
+        rewards_packet.collisionPenalty
 
         reward = float(
             np.dot(
@@ -132,6 +148,11 @@ class agent:
 
         rgb = obs_packet.image
 
+        self.update_frame_stack(rgb)
+
+        reward = self.compute_reward(obs_packet.rewards)
+        
+        #debug
         if self.debug and self.agent_id == "agent_0":
             bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
             bgr = cv2.flip(bgr, 0)
@@ -145,10 +166,9 @@ class agent:
 
             cv2.imshow(f"Unity Observation {self.agent_id}", bgr)
             cv2.waitKey(1)
-
-        self.update_frame_stack(rgb)
-
-        reward = self.compute_reward(obs_packet.rewards)
+            
+            if REWARDDEBUG:
+                self._update_plot(obs_packet.rewards)
 
         terminated, truncated = self.update_termination(obs_packet.rewards)
 
@@ -194,6 +214,54 @@ class agent:
         self.episode_rewards_per_category = Rewards()
         self.weighted_rewards = Rewards()
         self.current_step = 0
+        
+        #reset plot
+        # self.reward_history = {name: [] for name in self.plot_rewards}
+        # self.time_steps = []
+
+        # if self.plot_initialized:
+        #     self.ax.cla()
+        #     self.plot_initialized = False
+        
+    def _init_plot(self):
+        plt.ion()  # interactive mode
+        self.fig, self.ax = plt.subplots()
+        self.lines = {}
+
+        for name in self.plot_rewards:
+            line, = self.ax.plot([], [], label=name)
+            self.lines[name] = line
+
+        self.ax.legend()
+        self.ax.set_title("Live Reward Components")
+        self.ax.set_xlabel("Step")
+        self.ax.set_ylabel("Value")
+
+        self.plot_initialized = True
+        
+    def _update_plot(self, rewards_packet):
+        if not self.plot_initialized:
+            self._init_plot()
+
+        self.time_steps.append(self.current_step)
+
+        for name in self.plot_rewards:
+            raw_value = getattr(rewards_packet, name)
+            weight = getattr(self.rewardMul, name)
+            
+            if REWARDDEBUGWEIGHTED:
+                value = raw_value * weight
+            else:
+                value = raw_value
+
+            self.reward_history[name].append(value)
+            self.lines[name].set_data(self.time_steps, self.reward_history[name])
+
+        self.ax.relim()
+        self.ax.autoscale_view()
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
         
     def close(self):
         if hasattr(self, "tb_writer") and self.tb_writer is not None:

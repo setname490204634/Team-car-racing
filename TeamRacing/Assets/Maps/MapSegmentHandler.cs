@@ -246,11 +246,17 @@ public class MapSegmentHandler : MonoBehaviour
     public float GetDistanceII(int index, Vector2 pos)
     {
         if (road == null || road.Count < 3) return 0f;
+
         int count = road.Count;
         int index1 = (index + 1) % count;
         int index2 = (index + 2) % count;
 
-        return Vector2.Distance(pos, road[index2]) / Vector2.Distance(road[index], road[index2]);
+        (Vector2 center, float radius) = MakeCircle(road[index], road[index1], road[index2]);
+        if (float.Equals(radius, 0f)) return 0f;
+
+        float output = (radius - Vector2.Distance(pos, center));
+        if (output < 0) output = -output;
+        return output;
     }
 
     public float GetDistanceIII(int index, Vector2 pos)
@@ -263,7 +269,10 @@ public class MapSegmentHandler : MonoBehaviour
 
         (Vector2 center, float radius) = MakeCircle(road[index], road[index1], road[index2]);
         if (float.Equals(radius, 0f)) return 0f;
-        else return (Vector2.Distance(pos, center) - radius);
+
+        float output = (Vector2.Distance(pos, center) - radius);
+        if (output < 0) output = -output;
+        return output;
     }
 
 #if UNITY_EDITOR

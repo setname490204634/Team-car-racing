@@ -140,7 +140,7 @@ class Rewards:
             distanceReward = 0.0,
 
             speedRewardI = 0.0,
-            speedRewardII = 0.0,
+            speedRewardII = 0.015,
             speedRewardIII = 0.0,
             speedRewardIV = 0.0,
             speedRewardV = 0.015,

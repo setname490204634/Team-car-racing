@@ -68,7 +68,7 @@ config = (
         env_config={}
     )
     .env_runners(
-        num_env_runners=1, rollout_fragment_length=100
+        num_env_runners=1, rollout_fragment_length=128
     )
     .training(
         lr=3e-4,

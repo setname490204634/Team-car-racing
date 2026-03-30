@@ -211,57 +211,105 @@ public class RewardsCalculator : ICarRewardProvider
     public Rewards CalculateReward()
     {
         UpdateLastRewards();
+        // Input change
+        var steeringSmoothnessPenalty = SteeringSmoothnessPenalty();
+        var throttleSmoothnessPenalty = ThrottleSmoothnessPenalty();
+
+        // Collisions
+        var outOfBoundsPenalty = OutOfBoundsPenalty();
+        var collisionPenaltyValue = collidedPenalty;
+        var grassPenaltyValue = onGrassPenalty;
+
+        // Game state
+        var teamDistancePenalty = TeamDistancePenalty();
+        var lapTimePenaltyValue = lapTimePenalty;
+        var teamLapTimePenaltyValue = teammateLapPenalty;
+        var finalPlacementRewardValue = placementReward;
+        var currentPlacementRewardValue = currentPlacementReward;
+        var teamFinalPlacementRewardValue = finalTeammatePlacementReward;
+        var currentTeamPlacementRewardValue = currentTeammatePlacementReward;
+        var tickPenaltyValue = -1;
+
+        // Car controller
+        var speedReward = SpeedReward();
+        var accelerationReward = AccelerationReward();
+        var distanceReward = DistanceReward();
+
+        // Segments - Speed
+        var speedRewardI = SpeedInDirectionReward(segmentHandler.GetVectorI);
+        var speedRewardII = SpeedInDirectionReward(segmentHandler.GetVectorII);
+        var speedRewardIII = SpeedInDirectionReward(segmentHandler.GetVectorIII);
+        var speedRewardIV = SpeedInDirectionReward(segmentHandler.GetVectorIV);
+        var speedRewardV = SpeedInDirectionReward(segmentHandler.GetVectorV);
+
+        // Segments - Acceleration
+        var accelerationRewardI = AccelerationInDirectionReward(segmentHandler.GetVectorI);
+        var accelerationRewardII = AccelerationInDirectionReward(segmentHandler.GetVectorII);
+        var accelerationRewardIII = AccelerationInDirectionReward(segmentHandler.GetVectorIII);
+        var accelerationRewardIV = AccelerationInDirectionReward(segmentHandler.GetVectorIV);
+        var accelerationRewardV = AccelerationInDirectionReward(segmentHandler.GetVectorV);
+
+        // Segments - Angle penalties
+        var anglePenaltyI = AngleInDirectionPenalty(segmentHandler.GetVectorI);
+        var anglePenaltyII = AngleInDirectionPenalty(segmentHandler.GetVectorII);
+        var anglePenaltyIII = AngleInDirectionPenalty(segmentHandler.GetVectorIII);
+        var anglePenaltyIV = AngleInDirectionPenalty(segmentHandler.GetVectorIV);
+        var anglePenaltyV = AngleInDirectionPenalty(segmentHandler.GetVectorV);
+
+        // Distance penalties
+        var distancePenaltyI = 0;
+        var distancePenaltyII = DistanceToPenalty(segmentHandler.GetDistanceII);
+        var distancePenaltyIII = DistanceToPenalty(segmentHandler.GetDistanceIII);
+
+        // Progress
+        var progressReward = segmentProgressReward;
+
+        // Create instance
         Rewards output = new Rewards()
         {
-            //input change
-            steeringSmoothnessPenalty = SteeringSmoothnessPenalty(),
-            throttleSmoothnessPenalty = ThrottleSmoothnessPenalty(),
+            steeringSmoothnessPenalty = steeringSmoothnessPenalty,
+            throttleSmoothnessPenalty = throttleSmoothnessPenalty,
 
-            //collisions
-            outOfBoundsPenalty = OutOfBoundsPenalty(),
-            collisionPenalty = collidedPenalty,
-            grassPenalty = onGrassPenalty,
+            outOfBoundsPenalty = outOfBoundsPenalty,
+            collisionPenalty = collisionPenaltyValue,
+            grassPenalty = grassPenaltyValue,
 
-            //game state
-            teamDistancePenalty = TeamDistancePenalty(),
-            lapTimePenalty = lapTimePenalty,
-            teamLapTimePenalty = teammateLapPenalty,
-            finalPlacementReward = placementReward,
-            currentPlacementReward = currentPlacementReward,
-            teamFinalPlacementReward = finalTeammatePlacementReward,
-            currentTeamPlacementReward = currentTeammatePlacementReward,
-            tickPenalty = -1,
+            teamDistancePenalty = teamDistancePenalty,
+            lapTimePenalty = lapTimePenaltyValue,
+            teamLapTimePenalty = teamLapTimePenaltyValue,
+            finalPlacementReward = finalPlacementRewardValue,
+            currentPlacementReward = currentPlacementRewardValue,
+            teamFinalPlacementReward = teamFinalPlacementRewardValue,
+            currentTeamPlacementReward = currentTeamPlacementRewardValue,
+            tickPenalty = tickPenaltyValue,
 
-            //car controller
-            speedReward = SpeedReward(),
-            accelerationReward = AccelerationReward(),
-            distanceReward = DistanceReward(),
+            speedReward = speedReward,
+            accelerationReward = accelerationReward,
+            distanceReward = distanceReward,
 
-            //segments
-            speedRewardI = SpeedInDirectionReward(segmentHandler.GetVectorI),
-            speedRewardII = SpeedInDirectionReward(segmentHandler.GetVectorII),
-            speedRewardIII = SpeedInDirectionReward(segmentHandler.GetVectorIII),
-            speedRewardIV = SpeedInDirectionReward(segmentHandler.GetVectorIV),
-            speedRewardV = SpeedInDirectionReward(segmentHandler.GetVectorV),
+            speedRewardI = speedRewardI,
+            speedRewardII = speedRewardII,
+            speedRewardIII = speedRewardIII,
+            speedRewardIV = speedRewardIV,
+            speedRewardV = speedRewardV,
 
-            accelerationRewardI = AccelerationInDirectionReward(segmentHandler.GetVectorI),
-            accelerationRewardII = AccelerationInDirectionReward(segmentHandler.GetVectorII),
-            accelerationRewardIII = AccelerationInDirectionReward(segmentHandler.GetVectorIII),
-            accelerationRewardIV = AccelerationInDirectionReward(segmentHandler.GetVectorIV),
-            accelerationRewardV = AccelerationInDirectionReward(segmentHandler.GetVectorV),
+            accelerationRewardI = accelerationRewardI,
+            accelerationRewardII = accelerationRewardII,
+            accelerationRewardIII = accelerationRewardIII,
+            accelerationRewardIV = accelerationRewardIV,
+            accelerationRewardV = accelerationRewardV,
 
-            anglePenaltyI = AngleInDirectionPenalty(segmentHandler.GetVectorI),
-            anglePenaltyII = AngleInDirectionPenalty(segmentHandler.GetVectorII),
-            anglePenaltyIII = AngleInDirectionPenalty(segmentHandler.GetVectorIII),
-            anglePenaltyIV = AngleInDirectionPenalty(segmentHandler.GetVectorIV),
-            anglePenaltyV = AngleInDirectionPenalty(segmentHandler.GetVectorV),
+            anglePenaltyI = anglePenaltyI,
+            anglePenaltyII = anglePenaltyII,
+            anglePenaltyIII = anglePenaltyIII,
+            anglePenaltyIV = anglePenaltyIV,
+            anglePenaltyV = anglePenaltyV,
 
-            //I and II are not used since the rewards are bad
-            distancePenaltyI = 0,
-            distancePenaltyII = 0,
-            distancePenaltyIII = DistanceToPenalty(segmentHandler.GetDistanceIII),
+            distancePenaltyI = distancePenaltyI,
+            distancePenaltyII = distancePenaltyII,
+            distancePenaltyIII = distancePenaltyIII,
 
-            progressReward = segmentProgressReward
+            progressReward = progressReward
         };
 
         // reset it here since its used at 2 places
@@ -272,6 +320,7 @@ public class RewardsCalculator : ICarRewardProvider
 
     public void UpdateLastRewards()
     {
+        this.segmentHandler = this.gameControl.currentSegmentHandler;
         collidedPenalty = collided ? -1.0f : 0.0f;
         collided = false;
 

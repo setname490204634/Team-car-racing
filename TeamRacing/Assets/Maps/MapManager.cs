@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using System.Collections;
 
 public class MapManager : MonoBehaviour
 {
@@ -10,6 +11,8 @@ public class MapManager : MonoBehaviour
     public GameObject currentMapInstance;
     public MapSegmentHandler currentSegmentHandler;
 
+    public bool IsMapReady { get; private set; } = false;
+
     private void Start()
     {
         if (mapPrefabs.Length > 0)
@@ -18,12 +21,13 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    public void LoadMap(int index)
+    public IEnumerator LoadMap(int index)
     {
+        IsMapReady = false;
         if (index < 0 || index >= mapPrefabs.Length)
         {
             Debug.LogError($"Invalid map index {index}");
-            return;
+            yield break;
         }
 
         // Remove old map
@@ -32,16 +36,18 @@ public class MapManager : MonoBehaviour
             Destroy(currentMapInstance);
             currentMapInstance = null;
             currentSegmentHandler = null;
+            yield return null;
         }
 
         // Instantiate new one
         currentMapInstance = Instantiate(mapPrefabs[index], Vector3.zero, Quaternion.identity);
+        yield return null;
         currentSegmentHandler = currentMapInstance.GetComponentInChildren<MapSegmentHandler>();
 
         if (currentSegmentHandler == null)
         {
             Debug.LogError($"Map {mapPrefabs[index].name} has no MapSegmentHandler component!");
-            return;
+            yield break;
         }
 
         // Build the road if needed
@@ -49,13 +55,17 @@ public class MapManager : MonoBehaviour
         {
             Debug.Log($"Building road for {mapPrefabs[index].name}...");
             currentSegmentHandler.BuildRoad();
+            yield return null;
         }
+        yield return new WaitForFixedUpdate();
+
+        IsMapReady = true;
 
         Debug.Log($"Loaded map: {mapPrefabs[index].name}");
     }
 
     public void LoadRandomMap()
     {
-        LoadMap(UnityEngine.Random.Range(0, mapPrefabs.Length));
+        StartCoroutine(LoadMap(UnityEngine.Random.Range(0, mapPrefabs.Length)));
     }
 }

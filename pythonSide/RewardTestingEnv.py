@@ -1,3 +1,13 @@
+import os
+import warnings
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["RAY_DEDUP_LOGS"] = "1"
+os.environ["RAY_DISABLE_IMPORT_WARNING"] = "1"
+os.environ["RAY_SILENCE_LOGS"] = "1"
+os.environ["PYTHONWARNINGS"] = "ignore::DeprecationWarning"
+warnings.filterwarnings("ignore")
+
 from unityEnv.UnitySingleCarEnv2 import UnityCarEnv
 import numpy as np
 import keyboard
