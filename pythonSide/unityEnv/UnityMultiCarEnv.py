@@ -39,7 +39,8 @@ class UnityMultiCarEnv(MultiAgentEnv):
                 unity_car_id=i,
                 maxSteps=maxSteps,
                 logdir=log_dir,
-                debug=debug
+                debug=debug,
+                fatalCollision=True
             )
             for i, aid in enumerate(self.agent_ids)
         }
@@ -136,8 +137,9 @@ class UnityMultiCarEnv(MultiAgentEnv):
         if self.mapSwitchCount % self.changeMapEvery == 0:
             self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
         
-        self.sendCommandToUnity(CommandCode.ShuffleCars)
-        self.sendCommandToUnity(CommandCode.Reset)
+        self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
+        # self.sendCommandToUnity(CommandCode.ShuffleCars)
+        # self.sendCommandToUnity(CommandCode.Reset)
         self.sendCommandToUnity(CommandCode.StartSimulation)
 
         while not self.obs_receiver.has_min_observations(self.agentCount):
@@ -221,6 +223,38 @@ class UnityMultiCarEnv(MultiAgentEnv):
             rewards[aid] = r
             terminated[aid] = term
             truncated[aid] = trunc
+            
+        # if "agent_0" in obs:
+        #     o = obs["agent_0"]   # shape (12, 64, 128)
+
+        #     # Convert back to uint8 image space
+        #     o = (o * 255.0).astype(np.uint8)
+
+        #     frames = []
+
+        #     for i in range(4):  # 4 stacked frames
+        #         frame = o[i*3:(i+1)*3, :, :]   # (3, H, W)
+
+        #         # Convert CHW -> HWC
+        #         frame = np.transpose(frame, (1, 2, 0))
+
+        #         # Convert RGB -> BGR for OpenCV
+        #         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+        #         # Optional: flip (since you flip earlier)
+        #         frame = cv2.flip(frame, 0)
+
+        #         # Enlarge for visibility
+        #         frame = cv2.resize(frame, None, fx=3, fy=3, interpolation=cv2.INTER_NEAREST)
+
+        #         frames.append(frame)
+
+        #     # Stack frames horizontally
+        #     combined = np.hstack(frames)
+
+        #     cv2.imshow("Stacked Observation agent_0", combined)
+        #     cv2.waitKey(1)
+            
         return obs, rewards, terminated, truncated
 
     def close(self):

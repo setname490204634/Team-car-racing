@@ -17,7 +17,7 @@ from unityEnv.UnityMultiCarEnv import UnityMultiCarEnv
 MODEL_DIR = os.path.abspath("./pythonSide/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-NUM_AGENTS = 8
+NUM_AGENTS = 2
 
 
 def make_env(config):
@@ -68,11 +68,11 @@ config = (
         env_config={}
     )
     .env_runners(
-        num_env_runners=1, rollout_fragment_length=128
+        num_env_runners=1, rollout_fragment_length=32
     )
     .training(
-        lr=3e-4,
-        train_batch_size=512, #fore some reason unkown to mankind this is not a batch size but env steps, so for 8 cars the batch size is 8 times this number
+        lr=1e-4,
+        train_batch_size=1024, #fore some reason unkown to mankind this is not a batch size but env steps, so for 8 cars the batch size is 8 times this number
         gamma=0.97,
         use_gae=True,
         lambda_=0.95,
@@ -96,6 +96,9 @@ config = (
     .multi_agent(
         policies=policies,
         policy_mapping_fn=policy_mapping_fn,
+    )
+    .resources(
+        num_gpus=1
     )
 )
 

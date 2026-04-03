@@ -81,7 +81,7 @@ class agent:
             self.frame_buffer[i] = rgb
         
     def _build_observation(self):
-        stacked = self.frame_buffer.reshape(64, 128, 12)
+        stacked = np.concatenate(self.frame_buffer, axis=2)
         stacked = np.transpose(stacked, (2, 0, 1))
         obs = stacked.astype(np.float32) / 255.0
 
