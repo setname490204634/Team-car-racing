@@ -63,6 +63,9 @@ config = (
             head_fcnet_hiddens=[256],
         )
     )
+    .resources(
+        num_gpus=1
+    )
 )
 
 algo = config.build_algo()

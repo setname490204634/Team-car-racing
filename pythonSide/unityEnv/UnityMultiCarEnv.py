@@ -39,7 +39,8 @@ class UnityMultiCarEnv(MultiAgentEnv):
                 unity_car_id=i,
                 maxSteps=maxSteps,
                 logdir=log_dir,
-                debug=debug
+                debug=debug,
+                fatalCollision=True
             )
             for i, aid in enumerate(self.agent_ids)
         }
@@ -136,9 +137,11 @@ class UnityMultiCarEnv(MultiAgentEnv):
         if self.mapSwitchCount % self.changeMapEvery == 0:
             self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
             time.sleep(0.03) #magic wait to let the map load before cars
+            
+        self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
         
-        self.sendCommandToUnity(CommandCode.ShuffleCars)
-        self.sendCommandToUnity(CommandCode.Reset)
+        # self.sendCommandToUnity(CommandCode.ShuffleCars)
+        # self.sendCommandToUnity(CommandCode.Reset)
         self.sendCommandToUnity(CommandCode.StartSimulation)
 
         while not self.obs_receiver.has_min_observations(self.agentCount):
