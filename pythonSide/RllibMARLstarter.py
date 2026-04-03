@@ -89,7 +89,7 @@ config = (
                 [64, 3, 2],
                 [64, 3, 1],
             ],
-            conv_activation="relu",
+            conv_activation="tanh",
             head_fcnet_hiddens=[256],
         )
     )
