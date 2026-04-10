@@ -18,18 +18,25 @@ MODEL_DIR = os.path.abspath("./pythonSide/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 NUM_AGENTS = 1
+GRAY_SCALE_OBS_HISTORY = True
 
 
 def make_env(config):
     return UnityMultiCarEnv(
         number_of_agents=NUM_AGENTS,
         run_headless=True,
-        debug=True
+        debug=True,
+        grayScaleHisotry=GRAY_SCALE_OBS_HISTORY
     )
 
 register_env("UnityMultiCarEnv-v0", make_env)
 
-obs_space = gym.spaces.Box(low=0.0, high=1.0, shape=(12, 64, 128), dtype=np.float32)
+if GRAY_SCALE_OBS_HISTORY:
+    obs_shape = (6, 64, 128)
+else:
+    obs_shape = (12, 64, 128)
+    
+obs_space = gym.spaces.Box(low=0.0, high=1.0, shape=obs_shape, dtype=np.float32)
 act_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
 #one policy to rule them all

@@ -23,7 +23,8 @@ class UnityMultiCarEnv(MultiAgentEnv):
         base_log_dir: str = r"pythonSide\env_logs",
         debug: bool = False,
         run_headless: bool = False,
-        maxSteps: int = 1024
+        maxSteps: int = 1024,
+        grayScaleHisotry: bool = True
     ):
 
         super().__init__()
@@ -40,16 +41,23 @@ class UnityMultiCarEnv(MultiAgentEnv):
                 maxSteps=maxSteps,
                 logdir=log_dir,
                 debug=debug,
-                fatalCollision=True
+                fatalCollision=True,
+                grayScaleHisotry=grayScaleHisotry
             )
             for i, aid in enumerate(self.agent_ids)
         }
+
+        #grayscale obs switch
+        if grayScaleHisotry:
+            obs_shape = (6, 64, 128)
+        else:
+            obs_shape = (12, 64, 128)
 
         self.observation_spaces = {
             aid: spaces.Box(
                 low=0.0,
                 high=1.0,
-                shape=(12, 64, 128),
+                shape=obs_shape,
                 dtype=np.float32
             )
             for aid in self.agent_ids

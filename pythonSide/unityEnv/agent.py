@@ -19,7 +19,8 @@ class agent:
         img_shape = (64, 128, 3),
         debug: bool = False,
         rewardMul: Rewards = Rewards.defaultWeights(),
-        fatalCollision: bool = False
+        fatalCollision: bool = False,
+        grayScaleHisotry: bool = True
     ):
         # names
         self.agent_id = id
@@ -31,6 +32,7 @@ class agent:
         self.stack_size = stack_size
         self.image_shape = img_shape
         self.debug = debug
+        self.grayScaleHisotry = grayScaleHisotry
 
         # frame stack
         self.frame_buffer = np.zeros(
@@ -87,8 +89,27 @@ class agent:
 
         return obs
     
+    def _buildObservationGrayscaleStack(self):
+        frames = []
+
+        # newest RGB
+        frames.append(self.frame_buffer[-1])
+
+        # grayscale
+        for i in range(self.stack_size - 2, -1, -1):
+            gray = cv2.cvtColor(self.frame_buffer[i], cv2.COLOR_RGB2GRAY)
+            gray = np.expand_dims(gray, axis=2)
+            frames.append(gray)
+
+        stacked = np.concatenate(frames, axis=2)
+        stacked = np.transpose(stacked, (2, 0, 1))
+        return stacked.astype(np.float32) / 255.0
+            
     def get_observation(self):
-        return self._build_observation()
+        if self.grayScaleHisotry:
+            return self._buildObservationGrayscaleStack()
+        else:
+            return self._build_observation()
     
     def compute_reward(self, rewards_packet):
         rewards_packet.collisionPenalty
