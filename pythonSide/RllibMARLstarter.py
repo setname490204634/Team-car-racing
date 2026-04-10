@@ -17,8 +17,13 @@ from unityEnv.UnityMultiCarEnv import UnityMultiCarEnv
 MODEL_DIR = os.path.abspath("./pythonSide/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-NUM_AGENTS = 1
+NUM_AGENTS = 4
 GRAY_SCALE_OBS_HISTORY = True
+
+import torch
+
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
 
 
 def make_env(config):
@@ -75,7 +80,7 @@ config = (
         env_config={}
     )
     .env_runners(
-        num_env_runners=1, rollout_fragment_length=128
+        num_env_runners=1, rollout_fragment_length=512
     )
     .training(
         lr=1e-4,

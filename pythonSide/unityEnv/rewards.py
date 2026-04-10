@@ -123,7 +123,7 @@ class Rewards:
             throttleSmoothnessPenalty = 0.0,
 
             outOfBoundsPenalty = 0.0,
-            collisionPenalty = 3.5,
+            collisionPenalty = 4.0,
             grassPenalty = 0.07,
 
             teamDistancePenalty = 0.0,
@@ -139,8 +139,8 @@ class Rewards:
             accelerationReward = 0.0,
             distanceReward = 0.0,
 
-            speedRewardI = 0.0,
-            speedRewardII = 0.007,
+            speedRewardI = 0.007,
+            speedRewardII = 0.0,
             speedRewardIII = 0.0,
             speedRewardIV = 0.0,
             speedRewardV = 0.007,

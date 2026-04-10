@@ -32,6 +32,7 @@ class agent:
         self.stack_size = stack_size
         self.image_shape = img_shape
         self.debug = debug
+        self.showCouter = 0
         self.grayScaleHisotry = grayScaleHisotry
 
         # frame stack
@@ -174,7 +175,9 @@ class agent:
         reward = self.compute_reward(obs_packet.rewards)
         
         #debug
-        if self.debug and self.agent_id == "agent_0":
+        self.showCouter += 1
+        self.showCouter %= 5
+        if self.debug and self.agent_id == "agent_0" and self.showCouter == 0:
             bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
             bgr = cv2.flip(bgr, 0)
             bgr = cv2.resize(
