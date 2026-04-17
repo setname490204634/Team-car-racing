@@ -84,7 +84,7 @@ config = (
     )
     .training(
         lr=1e-4,
-        train_batch_size=2048, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
+        train_batch_size=1024, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
         gamma=0.97,
         use_gae=True,
         lambda_=0.95,
