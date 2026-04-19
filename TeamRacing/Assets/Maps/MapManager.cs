@@ -42,6 +42,8 @@ public class MapManager : MonoBehaviour
         // Instantiate new one
         currentMapInstance = Instantiate(mapPrefabs[index], Vector3.zero, Quaternion.identity);
         yield return null;
+        yield return null; // Extra yield to allow Awake() to complete
+        
         currentSegmentHandler = currentMapInstance.GetComponentInChildren<MapSegmentHandler>();
 
         if (currentSegmentHandler == null)
@@ -50,13 +52,24 @@ public class MapManager : MonoBehaviour
             yield break;
         }
 
+        // Wait for MapSegmentHandler.Start() to run
+        yield return null;
+
         // Build the road if needed
-        if (currentSegmentHandler.road == null)
+        if (currentSegmentHandler.road == null || currentSegmentHandler.road.Count == 0)
         {
             Debug.Log($"Building road for {mapPrefabs[index].name}...");
             currentSegmentHandler.BuildRoad();
             yield return null;
         }
+        
+        // Validate road was built successfully
+        if (currentSegmentHandler.road == null || currentSegmentHandler.road.Count == 0)
+        {
+            Debug.LogError($"Failed to build road for map {mapPrefabs[index].name}");
+            yield break;
+        }
+
         yield return new WaitForFixedUpdate();
 
         IsMapReady = true;

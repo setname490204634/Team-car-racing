@@ -74,6 +74,10 @@ class UnityMultiCarEnv(MultiAgentEnv):
         }
 
         # networking
+        # self.control_port = 5005
+        # self.car_instr_port = 5006
+        # self.obs_port = 5007
+        
         self._control_sock, self.control_port = get_os_assigned_port()
         self._car_sock, self.car_instr_port = get_os_assigned_port()
         self._obs_sock, self.obs_port = get_os_assigned_port()
@@ -85,8 +89,8 @@ class UnityMultiCarEnv(MultiAgentEnv):
         self.debug = debug
         
         # between episode env state
-        self.maxMapIndex = 6
-        self.changeMapEvery = 1000000
+        self.maxMapIndex = 10
+        self.changeMapEvery = 5
         self.mapSwitchCount = 0
         self.stepCount = 0
 

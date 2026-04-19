@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -429,18 +430,31 @@ public class gameControlScript : MonoBehaviour
             entry.carAppearance.ApplyMaterial();
         }
     }
-    void ResetCarToRandomStartLocation()
+    IEnumerator ResetCarToRandomStartLocationCoroutine()
     {
+        // Wait for map to be fully loaded before attempting to reset cars
+        while (!mapManager.IsMapReady)
+        {
+            yield return null;
+        }
+
+        // Ensure currentSegmentHandler is valid
+        if (mapManager.currentSegmentHandler == null)
+        {
+            Debug.LogError("Map is ready but currentSegmentHandler is null");
+            yield break;
+        }
+
         // works similar to reset only it makes the car start at random location
-        if (cars.Count > currentSegmentHandler.road.Count)
+        if (cars.Count > mapManager.currentSegmentHandler.road.Count)
         {
             Debug.LogError("Not enough road segments for unique car placement");
-            return;
+            yield break;
         }
 
         List<int> segmentIndices = new List<int>();
 
-        for (int i = 0; i < currentSegmentHandler.road.Count; i++)
+        for (int i = 0; i < mapManager.currentSegmentHandler.road.Count; i++)
         {
             segmentIndices.Add(i);
         }
@@ -456,14 +470,14 @@ public class gameControlScript : MonoBehaviour
             var entry = cars[i];
             int segmentIndex = segmentIndices[i];
 
-            Vector2 segmentPos = currentSegmentHandler.road[segmentIndex];
+            Vector2 segmentPos = mapManager.currentSegmentHandler.road[segmentIndex];
 
             Rigidbody rb = entry.carObject.GetComponent<Rigidbody>();
             if (rb != null)
             {
                 rb.position = new Vector3(segmentPos.x, 0.2f, segmentPos.y);
 
-                Vector2 dir2D = currentSegmentHandler.GetVectorI(segmentIndex, segmentPos);
+                Vector2 dir2D = mapManager.currentSegmentHandler.GetVectorI(segmentIndex, segmentPos);
                 Vector3 forward = new Vector3(dir2D.x, 0f, dir2D.y);
 
                 rb.rotation = Quaternion.LookRotation(forward, Vector3.up);
@@ -504,7 +518,7 @@ public class gameControlScript : MonoBehaviour
                 break;
 
             case CommandCode.ResetCarToRandomStartLocation:
-                UnityMainThreadDispatcher.Instance().Enqueue(() => ResetCarToRandomStartLocation());
+                StartCoroutine(ResetCarToRandomStartLocationCoroutine());
                 break;
 
             case CommandCode.StartSimulation:
