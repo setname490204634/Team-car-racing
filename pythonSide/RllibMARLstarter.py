@@ -17,7 +17,7 @@ from unityEnv.UnityMultiCarEnv import UnityMultiCarEnv
 MODEL_DIR = os.path.abspath("./pythonSide/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-NUM_AGENTS = 4
+NUM_AGENTS = 1
 GRAY_SCALE_OBS_HISTORY = True
 
 import torch
@@ -80,12 +80,12 @@ config = (
         env_config={}
     )
     .env_runners(
-        num_env_runners=1, rollout_fragment_length=512
+        num_env_runners=2, rollout_fragment_length=512
     )
     .training(
-        lr=1e-4,
-        train_batch_size=1024, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
-        gamma=0.97,
+        lr=1.5e-4,
+        train_batch_size=4096, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
+        gamma=0.99,
         use_gae=True,
         lambda_=0.95,
         clip_param=0.2,
@@ -99,10 +99,11 @@ config = (
             conv_filters=[
                 [32, 5, 2],
                 [64, 3, 2],
-                [64, 3, 1],
+                [128, 3, 2],
+                [128, 3, 1]
             ],
             conv_activation="tanh",
-            head_fcnet_hiddens=[256],
+            head_fcnet_hiddens=[512],
         )
     )
     .multi_agent(

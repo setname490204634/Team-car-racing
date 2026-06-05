@@ -23,7 +23,7 @@ class UnityMultiCarEnv(MultiAgentEnv):
         base_log_dir: str = r"pythonSide\env_logs",
         debug: bool = False,
         run_headless: bool = False,
-        maxSteps: int = 256,
+        maxSteps: int = 512,
         grayScaleHisotry: bool = True
     ):
 
@@ -90,7 +90,7 @@ class UnityMultiCarEnv(MultiAgentEnv):
         
         # between episode env state
         self.maxMapIndex = 10
-        self.changeMapEvery = 5
+        self.changeMapEvery = 500000
         self.mapSwitchCount = 0
         self.stepCount = 0
 
@@ -108,7 +108,7 @@ class UnityMultiCarEnv(MultiAgentEnv):
         )
         self.obs_receiver.start()
 
-        self.sendCommandToUnity(CommandCode.ChangeMap, 4)
+        self.sendCommandToUnity(CommandCode.ChangeMap, 6)
         self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 16)
 
         if run_headless:
