@@ -41,7 +41,7 @@ class UnityMultiCarEnv(MultiAgentEnv):
                 maxSteps=maxSteps,
                 logdir=log_dir,
                 debug=debug,
-                fatalCollision=False,
+                fatalCollision=True,
                 grayScaleHisotry=grayScaleHisotry
             )
             for i, aid in enumerate(self.agent_ids)
@@ -49,9 +49,9 @@ class UnityMultiCarEnv(MultiAgentEnv):
 
         #grayscale obs switch
         if grayScaleHisotry:
-            obs_shape = (6, 64, 128)
+            obs_shape = (64, 128, 6)  # HWC format: Height, Width, Channels
         else:
-            obs_shape = (12, 64, 128)
+            obs_shape = (64, 128, 12)  # HWC format: Height, Width, Channels
 
         self.observation_spaces = {
             aid: spaces.Box(
@@ -169,7 +169,6 @@ class UnityMultiCarEnv(MultiAgentEnv):
             agent = self.agents[aID]
             
             rgb = packet.image
-            rgb = cv2.flip(rgb, 0)
             agent.initFrameStack(rgb)
             
             observations[aID] = agent.get_observation()
@@ -237,36 +236,34 @@ class UnityMultiCarEnv(MultiAgentEnv):
             terminated[aid] = term
             truncated[aid] = trunc
             
-        # if "agent_0" in obs:
-        #     o = obs["agent_0"]   # shape (12, 64, 128)
+        #observation sanity check
+        if "agent_0" in obs:
+            o = obs["agent_0"]  # (H, W, 6) in HWC format
 
-        #     # Convert back to uint8 image space
-        #     o = (o * 255.0).astype(np.uint8)
+            # Convert back to uint8 for display only
+            o = (o * 255.0).clip(0, 255).astype(np.uint8)
 
-        #     frames = []
+            # RGB image - channels 0-2 (already HWC, no transpose needed)
+            rgb = o[..., :3]
+            rgb = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
-        #     for i in range(4):  # 4 stacked frames
-        #         frame = o[i*3:(i+1)*3, :, :]   # (3, H, W)
+            # Individual grayscale channels
+            gray1 = cv2.cvtColor(o[..., 3], cv2.COLOR_GRAY2BGR)
+            gray2 = cv2.cvtColor(o[..., 4], cv2.COLOR_GRAY2BGR)
+            gray3 = cv2.cvtColor(o[..., 5], cv2.COLOR_GRAY2BGR)
 
-        #         # Convert CHW -> HWC
-        #         frame = np.transpose(frame, (1, 2, 0))
+            # Make larger for viewing
+            scale = 3
 
-        #         # Convert RGB -> BGR for OpenCV
-        #         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            rgb   = cv2.resize(rgb,   None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+            gray1 = cv2.resize(gray1, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+            gray2 = cv2.resize(gray2, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+            gray3 = cv2.resize(gray3, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
 
-        #         # Optional: flip (since you flip earlier)
-        #         frame = cv2.flip(frame, 0)
+            combined = np.hstack([rgb, gray1, gray2, gray3])
 
-        #         # Enlarge for visibility
-        #         frame = cv2.resize(frame, None, fx=3, fy=3, interpolation=cv2.INTER_NEAREST)
-
-        #         frames.append(frame)
-
-        #     # Stack frames horizontally
-        #     combined = np.hstack(frames)
-
-        #     cv2.imshow("Stacked Observation agent_0", combined)
-        #     cv2.waitKey(1)
+            cv2.imshow("Observation", combined)
+            cv2.waitKey(1)
             
         return obs, rewards, terminated, truncated
 

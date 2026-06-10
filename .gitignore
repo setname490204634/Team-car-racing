@@ -16,6 +16,7 @@
 models/
 metabuilds/
 env_logs/
+verify_obs.py
 
 ##############################
 # Unity (C#) Project

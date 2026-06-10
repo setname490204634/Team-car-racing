@@ -37,9 +37,9 @@ def make_env(config):
 register_env("UnityMultiCarEnv-v0", make_env)
 
 if GRAY_SCALE_OBS_HISTORY:
-    obs_shape = (6, 64, 128)
+    obs_shape = (64, 128, 6)
 else:
-    obs_shape = (12, 64, 128)
+    obs_shape = (64, 128, 12)
     
 obs_space = gym.spaces.Box(low=0.0, high=1.0, shape=obs_shape, dtype=np.float32)
 act_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
@@ -84,7 +84,7 @@ config = (
     )
     .training(
         lr=1.5e-4,
-        train_batch_size=4096, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
+        train_batch_size=8192, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
         gamma=0.99,
         use_gae=True,
         lambda_=0.95,
@@ -100,10 +100,10 @@ config = (
                 [32, 5, 2],
                 [64, 3, 2],
                 [128, 3, 2],
-                [128, 3, 1]
+                [128, 3, 2],
             ],
             conv_activation="tanh",
-            head_fcnet_hiddens=[512],
+            head_fcnet_hiddens=[256],
         )
     )
     .multi_agent(
@@ -116,6 +116,15 @@ config = (
 )
 
 algo = config.build_algo()
+
+#show param count
+module = algo.get_module("shared_policy")
+
+print("Total params:",
+      sum(p.numel() for p in module.parameters()))
+
+for name, p in module.named_parameters():
+    print(f"{name:70} {list(p.shape)} {p.numel():,}")
 
 for i in range(1000000):
     result = algo.train()

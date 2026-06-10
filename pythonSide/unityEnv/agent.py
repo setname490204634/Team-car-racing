@@ -85,7 +85,7 @@ class agent:
         
     def _build_observation(self):
         stacked = np.concatenate(self.frame_buffer, axis=2)
-        stacked = np.transpose(stacked, (2, 0, 1))
+        # Keep HWC format for RLlib compatibility
         obs = stacked.astype(np.float32) / 255.0
 
         return obs
@@ -102,15 +102,24 @@ class agent:
             gray = np.expand_dims(gray, axis=2)
             frames.append(gray)
 
+        # Keep HWC format for RLlib compatibility
         stacked = np.concatenate(frames, axis=2)
-        stacked = np.transpose(stacked, (2, 0, 1))
         return stacked.astype(np.float32) / 255.0
             
     def get_observation(self):
         if self.grayScaleHisotry:
-            return self._buildObservationGrayscaleStack()
+            obs = self._buildObservationGrayscaleStack()
         else:
-            return self._build_observation()
+            obs = self._build_observation()
+        
+        # Verification: Assert correct shape and format
+        expected_shape = (64, 128, 6) if self.grayScaleHisotry else (64, 128, 12)
+        assert obs.shape == expected_shape, f"Shape mismatch: got {obs.shape}, expected {expected_shape}"
+        assert obs.dtype == np.float32, f"Dtype mismatch: got {obs.dtype}, expected float32"
+        assert 0.0 <= obs.min() and obs.max() <= 1.0, f"Value range mismatch: min={obs.min()}, max={obs.max()}"
+        assert obs.flags['C_CONTIGUOUS'], "Observation not C-contiguous in memory"
+        
+        return obs
     
     def compute_reward(self, rewards_packet):
         rewards_packet.collisionPenalty
