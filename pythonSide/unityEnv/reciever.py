@@ -12,7 +12,32 @@ class Observation:
         self.speed = speed / 255.0
         self.steer = (steer / 255.0) * 2.0 - 1.0
         self.rewards = rewards
-        self.image = image
+
+        img = image.copy()
+        h, w, _ = img.shape
+
+        speed_rows = slice(h - 16, h - 8)
+
+        img[speed_rows, :, :] = 0
+
+        speed_width = int(self.speed * w)
+
+        if speed_width > 0:
+            img[speed_rows, :speed_width, 1] = 255  # green
+
+        steer_rows = slice(h - 8, h)
+
+        img[steer_rows, :, :] = 0
+
+        center = w // 2
+        steer_width = int(abs(self.steer) * (w // 2))
+
+        if self.steer >= 0:
+            img[steer_rows, center:center + steer_width, 0] = 255  # red
+        else:
+            img[steer_rows, center - steer_width:center, 0] = 255  # red
+
+        self.image = img
 
 
 class ObservationReceiver:

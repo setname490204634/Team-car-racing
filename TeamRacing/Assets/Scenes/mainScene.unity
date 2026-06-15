@@ -1073,13 +1073,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 22011121}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 25, z: 3}
+  m_LocalRotation: {x: 0.12186928, y: 0, z: 0, w: 0.9925462}
+  m_LocalPosition: {x: 0, y: 1.7, z: -0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1821382080}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: 14, y: 0, z: 0}
 --- !u!1 &32165621
 GameObject:
   m_ObjectHideFlags: 0
@@ -15210,13 +15210,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 234897127}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 25, z: 3}
+  m_LocalRotation: {x: 0.12186928, y: 0, z: 0, w: 0.9925462}
+  m_LocalPosition: {x: 0, y: 1.7, z: -0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 880258831}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: 14, y: 0, z: 0}
 --- !u!1 &239506138
 GameObject:
   m_ObjectHideFlags: 0
@@ -16359,13 +16359,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 253342267}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 25, z: 3}
+  m_LocalRotation: {x: 0.12186928, y: 0, z: 0, w: 0.9925462}
+  m_LocalPosition: {x: 0, y: 1.7, z: -0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2108457863}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: 14, y: 0, z: 0}
 --- !u!43 &259320552
 Mesh:
   m_ObjectHideFlags: 0
@@ -52125,7 +52125,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 705736784}
   LRWheelMesh: {fileID: 1310306341}
   RRWheelMesh: {fileID: 1495975530}
-  driveSpeed: 500
+  driveSpeed: 1000
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -52133,8 +52133,8 @@ MonoBehaviour:
   brakeForce: 50
   maxSteeringChange: 16
   roadGripMultiplier: 1
-  grassGripMultiplier: 0.3
-  grassSpeedMultiplier: 0.2
+  grassGripMultiplier: 0.6
+  grassSpeedMultiplier: 0.5
   distance: 0
   discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}
@@ -56863,13 +56863,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 872415152}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 25, z: 3}
+  m_LocalRotation: {x: 0.12186928, y: 0, z: 0, w: 0.9925462}
+  m_LocalPosition: {x: 0, y: 1.7, z: -0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 774455852}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: 14, y: 0, z: 0}
 --- !u!1 &873643951
 GameObject:
   m_ObjectHideFlags: 0
@@ -57449,7 +57449,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 66312589}
   LRWheelMesh: {fileID: 1809896805}
   RRWheelMesh: {fileID: 162531402}
-  driveSpeed: 500
+  driveSpeed: 1000
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -57457,8 +57457,8 @@ MonoBehaviour:
   brakeForce: 50
   maxSteeringChange: 16
   roadGripMultiplier: 1
-  grassGripMultiplier: 0.3
-  grassSpeedMultiplier: 0.2
+  grassGripMultiplier: 0.6
+  grassSpeedMultiplier: 0.5
   distance: 0
   discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}
@@ -60747,13 +60747,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 974743847}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 25, z: 3}
+  m_LocalRotation: {x: 0.12186928, y: 0, z: 0, w: 0.9925462}
+  m_LocalPosition: {x: 0, y: 1.7, z: -0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4785424696928855871}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: 14, y: 0, z: 0}
 --- !u!43 &976003861
 Mesh:
   m_ObjectHideFlags: 0
@@ -87070,13 +87070,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1374634364}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 25, z: 3}
+  m_LocalRotation: {x: 0.12186928, y: 0, z: 0, w: 0.9925462}
+  m_LocalPosition: {x: 0, y: 1.7, z: -0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1822070053}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: 14, y: 0, z: 0}
 --- !u!43 &1380198663
 Mesh:
   m_ObjectHideFlags: 0
@@ -87794,7 +87794,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 333586793}
   LRWheelMesh: {fileID: 1582362019}
   RRWheelMesh: {fileID: 1287608405}
-  driveSpeed: 500
+  driveSpeed: 1000
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -87802,8 +87802,8 @@ MonoBehaviour:
   brakeForce: 50
   maxSteeringChange: 16
   roadGripMultiplier: 1
-  grassGripMultiplier: 0.3
-  grassSpeedMultiplier: 0.2
+  grassGripMultiplier: 0.6
+  grassSpeedMultiplier: 0.5
   distance: 0
   discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}
@@ -99026,13 +99026,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1611717129}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 25, z: 3}
+  m_LocalRotation: {x: 0.12186928, y: 0, z: 0, w: 0.9925462}
+  m_LocalPosition: {x: 0, y: 1.7, z: -0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1396433577}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: 14, y: 0, z: 0}
 --- !u!1 &1619199588
 GameObject:
   m_ObjectHideFlags: 0
@@ -115191,7 +115191,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 880869444}
   LRWheelMesh: {fileID: 39291826}
   RRWheelMesh: {fileID: 959591176}
-  driveSpeed: 500
+  driveSpeed: 1000
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -115199,8 +115199,8 @@ MonoBehaviour:
   brakeForce: 50
   maxSteeringChange: 16
   roadGripMultiplier: 1
-  grassGripMultiplier: 0.3
-  grassSpeedMultiplier: 0.2
+  grassGripMultiplier: 0.6
+  grassSpeedMultiplier: 0.5
   distance: 0
   discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}
@@ -115379,7 +115379,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 540211714}
   LRWheelMesh: {fileID: 773244250}
   RRWheelMesh: {fileID: 55482556}
-  driveSpeed: 500
+  driveSpeed: 1000
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -115387,8 +115387,8 @@ MonoBehaviour:
   brakeForce: 50
   maxSteeringChange: 16
   roadGripMultiplier: 1
-  grassGripMultiplier: 0.3
-  grassSpeedMultiplier: 0.2
+  grassGripMultiplier: 0.6
+  grassSpeedMultiplier: 0.5
   distance: 0
   discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}
@@ -120620,13 +120620,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1941195690}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 25, z: 3}
+  m_LocalRotation: {x: 0.12186928, y: 0, z: 0, w: 0.9925462}
+  m_LocalPosition: {x: 0, y: 1.7, z: -0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1944516422}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: 14, y: 0, z: 0}
 --- !u!1 &1944516414
 GameObject:
   m_ObjectHideFlags: 0
@@ -120726,7 +120726,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 1767049064}
   LRWheelMesh: {fileID: 102089727}
   RRWheelMesh: {fileID: 1310459870}
-  driveSpeed: 500
+  driveSpeed: 1000
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -120734,8 +120734,8 @@ MonoBehaviour:
   brakeForce: 50
   maxSteeringChange: 16
   roadGripMultiplier: 1
-  grassGripMultiplier: 0.3
-  grassSpeedMultiplier: 0.2
+  grassGripMultiplier: 0.6
+  grassSpeedMultiplier: 0.5
   distance: 0
   discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}
@@ -130900,7 +130900,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 1186580790}
   LRWheelMesh: {fileID: 1061588162}
   RRWheelMesh: {fileID: 2137386645}
-  driveSpeed: 500
+  driveSpeed: 1000
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -130908,8 +130908,8 @@ MonoBehaviour:
   brakeForce: 50
   maxSteeringChange: 16
   roadGripMultiplier: 1
-  grassGripMultiplier: 0.3
-  grassSpeedMultiplier: 0.2
+  grassGripMultiplier: 0.6
+  grassSpeedMultiplier: 0.5
   distance: 0
   discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}
@@ -143780,7 +143780,7 @@ MonoBehaviour:
   RFWheelMesh: {fileID: 98882015336291168}
   LRWheelMesh: {fileID: 2772111883996338974}
   RRWheelMesh: {fileID: 1882875695973266193}
-  driveSpeed: 500
+  driveSpeed: 1000
   maxSteeringAngle: 50
   downforce: 300
   forwardStiffness: 3
@@ -143788,8 +143788,8 @@ MonoBehaviour:
   brakeForce: 50
   maxSteeringChange: 16
   roadGripMultiplier: 1
-  grassGripMultiplier: 0.3
-  grassSpeedMultiplier: 0.2
+  grassGripMultiplier: 0.6
+  grassSpeedMultiplier: 0.5
   distance: 0
   discountedDistance: 0
   acceleration: {x: 0, y: 0, z: 0}

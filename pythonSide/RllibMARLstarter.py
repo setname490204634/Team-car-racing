@@ -15,14 +15,22 @@ from ray.tune.registry import register_env
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.core.rl_module.default_model_config import DefaultModelConfig
 from unityEnv.UnityMultiCarEnv import UnityMultiCarEnv
+from unityEnv.envUtils import get_next_env_folder
+from torch.utils.tensorboard import SummaryWriter
+import torch
+
 
 MODEL_DIR = os.path.abspath("./pythonSide/models")
+LOG_DIR = os.path.abspath("./pythonSide/training_logs")
+log_dir = get_next_env_folder(LOG_DIR)
+tb_writer = SummaryWriter(log_dir=log_dir)
+
+os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 NUM_AGENTS = 4
 GRAY_SCALE_OBS_HISTORY = True
 
-import torch
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
@@ -82,7 +90,8 @@ config = (
         env_config={}
     )
     .env_runners(
-        num_env_runners=1, rollout_fragment_length=4096
+        num_env_runners=1,
+        rollout_fragment_length=512,
     )
     # 8192
     # 4096
@@ -147,7 +156,24 @@ if args.paramCount:
 
 for i in range(1000000):
     result = algo.train()
-    print(f"Iter {i}")
+
+    learners = result.get("learners", {}).get("shared_policy", {})
+    env = result.get("env_runners", {})
+
+    def log(name, value):
+        if value is not None:
+            tb_writer.add_scalar(name, value, i)
+
+    log("loss/total", learners.get("total_loss"))
+    log("loss/policy", learners.get("policy_loss"))
+    log("loss/value", learners.get("vf_loss"))
+    log("loss/value_unclipped", learners.get("vf_loss_unclipped"))
+
+    log("train/entropy", learners.get("entropy"))
+    log("train/kl", learners.get("mean_kl_loss"))
+    log("train/grad_norm", learners.get("gradients_default_optimizer_global_norm"))
+    log("train/lr", learners.get("default_optimizer_learning_rate"))
+    log("train/clip_param", learners.get("curr_kl_coeff"))
+
     if i % 50 == 0:
         path = algo.save(f"{MODEL_DIR}/checkpoint_{i}")
-        print(f"Checkpoint saved to {path}")

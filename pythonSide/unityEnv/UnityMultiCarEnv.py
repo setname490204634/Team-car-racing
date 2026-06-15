@@ -108,7 +108,7 @@ class UnityMultiCarEnv(MultiAgentEnv):
         )
         self.obs_receiver.start()
 
-        self.sendCommandToUnity(CommandCode.ChangeMap, 6)
+        self.sendCommandToUnity(CommandCode.ChangeMap, 0) #6 and 4 are 6 turn tracks
         self.sendCommandToUnity(CommandCode.SetMaxSteeringChange, 16)
 
         if run_headless:
