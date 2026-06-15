@@ -236,34 +236,34 @@ class UnityMultiCarEnv(MultiAgentEnv):
             terminated[aid] = term
             truncated[aid] = trunc
             
-        #observation sanity check
-        if "agent_0" in obs:
-            o = obs["agent_0"]  # (H, W, 6) in HWC format
+        # #observation sanity check
+        # if "agent_0" in obs:
+        #     o = obs["agent_0"]  # (H, W, 6) in HWC format
 
-            # Convert back to uint8 for display only
-            o = (o * 255.0).clip(0, 255).astype(np.uint8)
+        #     # Convert back to uint8 for display only
+        #     o = (o * 255.0).clip(0, 255).astype(np.uint8)
 
-            # RGB image - channels 0-2 (already HWC, no transpose needed)
-            rgb = o[..., :3]
-            rgb = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        #     # RGB image - channels 0-2 (already HWC, no transpose needed)
+        #     rgb = o[..., :3]
+        #     rgb = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
-            # Individual grayscale channels
-            gray1 = cv2.cvtColor(o[..., 3], cv2.COLOR_GRAY2BGR)
-            gray2 = cv2.cvtColor(o[..., 4], cv2.COLOR_GRAY2BGR)
-            gray3 = cv2.cvtColor(o[..., 5], cv2.COLOR_GRAY2BGR)
+        #     # Individual grayscale channels
+        #     gray1 = cv2.cvtColor(o[..., 3], cv2.COLOR_GRAY2BGR)
+        #     gray2 = cv2.cvtColor(o[..., 4], cv2.COLOR_GRAY2BGR)
+        #     gray3 = cv2.cvtColor(o[..., 5], cv2.COLOR_GRAY2BGR)
 
-            # Make larger for viewing
-            scale = 3
+        #     # Make larger for viewing
+        #     scale = 3
 
-            rgb   = cv2.resize(rgb,   None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
-            gray1 = cv2.resize(gray1, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
-            gray2 = cv2.resize(gray2, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
-            gray3 = cv2.resize(gray3, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+        #     rgb   = cv2.resize(rgb,   None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+        #     gray1 = cv2.resize(gray1, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+        #     gray2 = cv2.resize(gray2, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+        #     gray3 = cv2.resize(gray3, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
 
-            combined = np.hstack([rgb, gray1, gray2, gray3])
+        #     combined = np.hstack([rgb, gray1, gray2, gray3])
 
-            cv2.imshow("Observation", combined)
-            cv2.waitKey(1)
+        #     cv2.imshow("Observation", combined)
+        #     cv2.waitKey(1)
             
         return obs, rewards, terminated, truncated
 

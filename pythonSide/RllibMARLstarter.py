@@ -1,5 +1,7 @@
 import os
 import warnings
+import sys
+import argparse
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["RAY_DEDUP_LOGS"] = "1"
@@ -17,7 +19,7 @@ from unityEnv.UnityMultiCarEnv import UnityMultiCarEnv
 MODEL_DIR = os.path.abspath("./pythonSide/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-NUM_AGENTS = 1
+NUM_AGENTS = 4
 GRAY_SCALE_OBS_HISTORY = True
 
 import torch
@@ -80,11 +82,14 @@ config = (
         env_config={}
     )
     .env_runners(
-        num_env_runners=2, rollout_fragment_length=512
+        num_env_runners=1, rollout_fragment_length=4096
     )
+    # 8192
+    # 4096
+    # 2048
     .training(
         lr=1.5e-4,
-        train_batch_size=8192, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
+        train_batch_size=4096, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
         gamma=0.99,
         use_gae=True,
         lambda_=0.95,
@@ -117,14 +122,28 @@ config = (
 
 algo = config.build_algo()
 
+# Load checkpoint if provided as command-line argument
+parser = argparse.ArgumentParser()
+parser.add_argument("--checkpoint", type=str, default=None, help="Path to checkpoint to load")
+parser.add_argument("--paramCount", type=str, default=None, help="will print out param count")
+args = parser.parse_args()
+
+if args.checkpoint:
+    checkpoint_path = os.path.abspath(args.checkpoint)
+    algo.restore(checkpoint_path)
+    print(f"Checkpoint loaded from: {checkpoint_path}")
+else:
+    print("Starting training from scratch")
+
 #show param count
-module = algo.get_module("shared_policy")
+if args.paramCount:
+    module = algo.get_module("shared_policy")
 
-print("Total params:",
-      sum(p.numel() for p in module.parameters()))
+    print("Total params:",
+        sum(p.numel() for p in module.parameters()))
 
-for name, p in module.named_parameters():
-    print(f"{name:70} {list(p.shape)} {p.numel():,}")
+    for name, p in module.named_parameters():
+        print(f"{name:70} {list(p.shape)} {p.numel():,}")
 
 for i in range(1000000):
     result = algo.train()
