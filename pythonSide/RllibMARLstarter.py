@@ -15,7 +15,7 @@ from ray.tune.registry import register_env
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.core.rl_module.default_model_config import DefaultModelConfig
 from unityEnv.UnityMultiCarEnv import UnityMultiCarEnv
-from unityEnv.envUtils import get_next_env_folder
+from unityEnv.envUtils import get_next_env_folder #the function is more general so its used here too
 from torch.utils.tensorboard import SummaryWriter
 import torch
 
@@ -62,26 +62,6 @@ policies = {
 def policy_mapping_fn(agent_id, *args, **kwargs):
     return "shared_policy"
 
-#per team policy
-# policies = {
-#     "team_0_policy": (None, obs_space, act_space, {}),
-#     "team_1_policy": (None, obs_space, act_space, {}),
-#     "team_2_policy": (None, obs_space, act_space, {}),
-#     "team_3_policy": (None, obs_space, act_space, {}),
-# }
-
-# # Mapping agents to team policies
-# def policy_mapping_fn(agent_id, *args, **kwargs):
-#     idx = int(agent_id.split("_")[1])
-#     if idx in [0,1]:
-#         return "team_0_policy"
-#     elif idx in [2,3]:
-#         return "team_1_policy"
-#     elif idx in [4,5]:
-#         return "team_2_policy"
-#     else:  # idx in [6,7]
-#         return "team_3_policy"
-
 config = (
     PPOConfig()
     .framework("torch")
@@ -98,7 +78,7 @@ config = (
     # 2048
     .training(
         lr=1.5e-4,
-        train_batch_size=4096, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
+        train_batch_size=2048, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
         gamma=0.99,
         use_gae=True,
         lambda_=0.95,
@@ -155,6 +135,7 @@ if args.paramCount:
         print(f"{name:70} {list(p.shape)} {p.numel():,}")
 
 for i in range(1000000):
+    print(f"iter: {i}")
     result = algo.train()
 
     learners = result.get("learners", {}).get("shared_policy", {})
@@ -175,5 +156,5 @@ for i in range(1000000):
     log("train/lr", learners.get("default_optimizer_learning_rate"))
     log("train/clip_param", learners.get("curr_kl_coeff"))
 
-    if i % 50 == 0:
+    if i % 20 == 0:
         path = algo.save(f"{MODEL_DIR}/checkpoint_{i}")

@@ -267,17 +267,16 @@ public class gameControlScript : MonoBehaviour
                 inputProvider = obj.GetComponent<ICarInputProvider>(),
                 controller = obj.GetComponent<CarController>(),
                 raceState = new CarRaceState(),
-                segmentIndex = 1, // always start from the 1, that coresponds to the middle of start tile
+                segmentIndex = 1,
                 carAppearance = obj.GetComponent<CarAppearance>()
             };
 
             //0 and 1, 2 and 3...
             //pairs teammates using modulo magic
             List<int> teammatesID = new List<int>();
-            if (assignedCarObjects.Count > index + 1)
+            int teammateID = (index % 2 == 0) ? index + 1 : index - 1;
+            if (teammateID < assignedCarObjects.Count)
             {
-                int teammateID = index + 1;
-                if (teammateID % 2 == 0) teammateID -= 2;
                 teammatesID.Add(teammateID);
             }
             entry.rewards = new RewardsCalculator(entry, this, this.currentSegmentHandler, teammatesID);

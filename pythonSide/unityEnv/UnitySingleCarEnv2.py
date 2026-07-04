@@ -110,7 +110,7 @@ class UnityCarEnv(MultiAgentEnv):
         if self.mapSwitchCount % self.changeMapEvery == 0:
             self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
         
-        self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
+        self.sendCommandToUnity(CommandCode.Reset)
         self.sendCommandToUnity(CommandCode.ChangeCarColoursRandomly)
         self.sendCommandToUnity(CommandCode.StartSimulation)
 

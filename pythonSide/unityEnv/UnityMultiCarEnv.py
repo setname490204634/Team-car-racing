@@ -23,7 +23,7 @@ class UnityMultiCarEnv(MultiAgentEnv):
         base_log_dir: str = r"pythonSide\env_logs",
         debug: bool = False,
         run_headless: bool = False,
-        maxSteps: int = 512,
+        maxSteps: int = 256,
         grayScaleHisotry: bool = True
     ):
 
@@ -41,7 +41,7 @@ class UnityMultiCarEnv(MultiAgentEnv):
                 maxSteps=maxSteps,
                 logdir=log_dir,
                 debug=debug,
-                fatalCollision=True,
+                fatalCollision=False,
                 grayScaleHisotry=grayScaleHisotry
             )
             for i, aid in enumerate(self.agent_ids)
@@ -149,10 +149,12 @@ class UnityMultiCarEnv(MultiAgentEnv):
         if self.mapSwitchCount % self.changeMapEvery == 0:
             self.sendCommandToUnity(CommandCode.ChangeMap, random.randint(0, self.maxMapIndex))
         
-        self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
-        self.sendCommandToUnity(CommandCode.ChangeCarColoursRandomly)
-        # self.sendCommandToUnity(CommandCode.ShuffleCars)
-        # self.sendCommandToUnity(CommandCode.Reset)
+        # self.sendCommandToUnity(CommandCode.ResetCarToRandomStartLocation)
+        # self.sendCommandToUnity(CommandCode.ChangeCarColoursRandomly)
+        
+        self.sendCommandToUnity(CommandCode.ShuffleCars)
+        self.sendCommandToUnity(CommandCode.Reset)
+        
         self.sendCommandToUnity(CommandCode.StartSimulation)
 
         while not self.obs_receiver.has_min_observations(self.agentCount):

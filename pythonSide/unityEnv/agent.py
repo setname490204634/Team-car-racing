@@ -5,6 +5,9 @@ from torch.utils.tensorboard import SummaryWriter
 import os
 import matplotlib.pyplot as plt
 
+plt.rcParams["path.simplify"] = False
+plt.rcParams["agg.path.chunksize"] = 0
+
 REWARDDEBUG = False
 REWARDDEBUGWEIGHTED = False
 
@@ -58,10 +61,11 @@ class agent:
 
         # debug plotting
         self.plot_rewards = [
-            "progressReward",
-            "speedRewardV",
-            "collisionPenalty",
-            "grassPenalty"
+            "accelerationRewardI",
+            "accelerationRewardII",
+            "accelerationRewardIII",
+            "accelerationRewardIV",
+            "accelerationRewardV",
         ]
 
         self.reward_history = {name: [] for name in self.plot_rewards}
@@ -200,6 +204,13 @@ class agent:
             cv2.imshow(f"Unity Observation {self.agent_id}", bgr)
             cv2.waitKey(1)
             
+            #image saving
+            # import time
+
+            # os.makedirs("debug_images", exist_ok=True)
+            # filename = f"debug_images/frame_{time.time_ns()}.png"
+            # cv2.imwrite(filename, bgr)
+            
             if REWARDDEBUG:
                 self._update_plot(obs_packet.rewards)
 
@@ -249,9 +260,12 @@ class agent:
         self.current_step = 0
         
         #reset plot
-        # self.reward_history = {name: [] for name in self.plot_rewards}
-        # self.time_steps = []
+        self.reward_history = {name: [] for name in self.plot_rewards}
+        self.time_steps = []
 
+
+        self.plot_initialized = False
+        
         # if self.plot_initialized:
         #     self.ax.cla()
         #     self.plot_initialized = False
@@ -266,7 +280,7 @@ class agent:
             self.lines[name] = line
 
         self.ax.legend()
-        self.ax.set_title("Live Reward Components")
+        self.ax.set_title("")
         self.ax.set_xlabel("Step")
         self.ax.set_ylabel("Value")
 
