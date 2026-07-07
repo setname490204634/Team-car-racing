@@ -1,344 +1,175 @@
 # DOCUMENTATION
-- Unity side is used as simulation for cars, it can take driving input from network connection as well as send observations including visual. Python side recieves observations calculates instructions and sends them back to unity side.
-
-- comments in code and the code itself is part of documentation
-
-## files and folders
-
-### /TeamRacing/Assets
-#### /Scenes
-- Cars.unity, includes car prefabs
-- Freeplay.unity, used to test car driving and maps, it has 1 car connected to user input in the unity.
-- RoadTiles.unity, contains road tiles prefabs, it is used to edit and add tiles
-- Maps.unity, here are build maps from tiles also in prefab form
-- MainScene.unity, used to run enviroment
-
-#### /Roads
-- TilePoints.cs, script to asign checkpoints to a single road tile
-- contains road tiles prefabs
-- grass, road, wall, finish line materials
-- wall prefabs
-- halfway hitbox (as checkpoint)
-
-#### /Maps
-- MapManager.cs, holds a list of map prefabs and has functions to replace current map
-- MapSegmentHandler.cs, from tiles with checkpoints creates list of checkpoints in order of the track direction. It also provides functions to get directions based on the checkpoints. For example if i am at checkpoint A and next is B, the functions will create vector in direction from A to B. There are more options.
-- contains maps prefabs
-
-#### /Cars
-- contains car prefabs
-- contains car tyre texture
-- contains car colours as materials
-- contains mirror prefabs
-
-- ICarInputProvider.cs, interface that is used by a car to request input
-- ICarObserver.cs, used to request output from car sensors, cameras speed, steering
-- ICarRewardProvider.cs, used for rewards
-
-- CarController.cs, handles the driving in depth described later
-
-- AgentInputProvider.cs, simple implementation of ICarInputProvider for agents
-- PlayerCarInput.cs, WSAD input implemented as ICarInputProvider
-
-- Mirror.cs, script that is used for mirrors, it uses camera and plane to render texture on
-- CarAppearance.cs, changes material of all childrens of the object, with list of exceptions.
-
-- CarFollowCamera.cs, used to move camera with car
-
-#### /AITraining
-- CarAgentHandler.cs, represents unity instance of agent, connects cameras to output and agent input to car controller.
-- CarObservationSerializer.cs, packs observation into byte array.
-- CarObservationTransmitter.cs, sends packed observation via network.
-- CarEntry.cs, holds information about 1 car that is taking place in the race.
-- CarRaceState.cs, holds information about car laps and lap times.
-- CommandConstants.cs,  conatains enum with command constants that inmplement communication protocol.
-- FreeCameraController.cs, used to move camera with wsad and mouse to observe how the cars behave from 3rd person.
-- GameControlScript.cs, manages enviroment input/output, handles restarting and the game, game loop.
-- Rewards.cs, class that holds reward states and calcualtes them for a car. It is part of CarEntry class.
-- UnityMainThreadDispatcher.cs, used to execute tasks on main thread.
-- Buffers.cs, used to buffer packets from communication.
-
-### /pythonSide
-
-- callbacks.py, use to add extra behaviour during the training. Namely logging, pausing and unpausing the simulation.
-- CNNs.py, contains used CNN networks.
-- CommandConstants.py, conatains enum with command constants that inmplement communication protocol.
-- modleTester.py, used to check what the model is doing on the track as well as to continue training for a saved model.
-- trainingStarter.py, used to create the model with callbacks and CNN. It will start trainging.
-- sender.py, sends car driving instructions to unity.
-- reciever.py, recievs and unpacks observation from unity.
-- rewards.py, python equivalent of Rewards.cs it data class that holds rewards. It also has reward weights that are used in the training.
-- UnitySingleCarEnv.py, gym like enviroment that uses unity.
-
-### Important files in depth
-
-### /pythonSide/rewards.py and /TeamRacing/Assets/AITraining/Rewards.cs
-
-- rewards are in depth descrived in folder /extraRewardInfo
-
-#### TeamRacing/Assets/AITraining/GameControlScript.cs + TeamRacing/pythonSide/main.py + recievers
-- Here is the main loop that controls the simulation and connects everything together
-- the program works on 4 threads each having its loop
-- - 1 reciever loop one on python side, listening for observations
-- - 1 reciever loop one on unity side, listening for commands and car instructions
-- - it has to be in separate loop to not lose packets in case the main thread would be too busy. Both loops store the recieved packets to buffers from where the main threads collect it.
-- - Unity main thread that runs update method(s), this update method is called based on framerate and is not dependent on the time running in the simulation, the simulation could be stopped and the update would still be called. The loop works efectively works like this:
-- - 1. send observations
-- - 2. recieve driving instructions from python
-- - 3. simulate
-- - 4. back to 1.
-- - This code snipped shows the order and logic of the operations (simplified)
-```C#
-void Update()
-    {
-        // This empties the command buffer and runs the commands (command to start the game for example)
-        var commands = commandBuffer.ConsumeAll();
-         // checks if the simulation is stopped or running
-        if (state == State.Running)
-        {
-            //every framesPerObservation frame get instructions and sends observations
-            if (tickCount % framesPerObservation == 0) //this is true only every framesPerObservation frame
-            {
-                if (observationsSent == false) // this is here to check if the observations were send so its not duplicite
-                {
-                    // send observations
-                    transmitter.CollectObservations();
-                    transmitter.SendObservations();
-                    observationsSent = true;
-                }
-                // Wait until we have full instruction set
-                while (instructionBuffer.HasAll() != true)
-                {
-                    return; //if the instructions are not complete this will exit the update. that will result to getting here the next frame, since observationsSent is true this works as wait loop for python side to send car instructions.
-                }
-                observationsSent = false;
-                var instructions = instructionBuffer.ConsumeAll();// empty car instruction buffer
-                ApplyCarInputs(instructions);
-            }
-            Physics.Simulate(fixedDt);//simulate next physics frame
-            tickCount++;
-            HandleCarCollisions();// ask cars if they collided, or passed checkpoins. this will flip some flags to keep track of laps, lap times, negative crash rewards...
-        }
-    }
-```
-- - python main loop
-- - 1. wait to recieve observations
-- - 2. computate driving instructions based on observations
-- - 3. send instructions
-- - 4. back to 1.
-
-#### TeamRacing/Assets/cars/carController.cs
-- controls how the car behaves, it works based on unity wheel collider with modifications, like downforce, surface based grip, custom breaking...
-- this snipped shows how the car works in detail (simplified)
-```C#
-void FixedUpdate()
-{
-   CarInput input = inputProvider.getInput(); //the input provider has stored input from agent for example
-   ApplySteering(input); //simply turns the wheels, if the input has speed sensitive steering devides the steering input by a constant.
-
-   // Surface grip multipliers
-   AdjustWheelGripAndSpeed(Wheels);
-
-   // Throttle / brake logic
-   ApplyMotorTorqueAndBrakes(throttleInput);
-
-   // Downforce, its linear instead of real world quadratic relation
-   float currentDownforce = downforce * rb.linearVelocity.magnitude;
-   rb.AddForce(-transform.up * currentDownforce);
-
-   // Apply final grip scaling
-   SetWheelFriction(FrontWheels, gripMultiplierWithDownforce * 0.9f); //reducing the front wheel grip results in understeer slide instead of oversteer. Counter intuitively reducing grip makes the car more controllable.
-   SetWheelFriction(BackWheels, gripMultiplierWithDownforce);
-
-   UpdateAllWheelVisuals();//visual mode rotation and steering
-}
-```
-## Editing roads, maps, cars
-
-### Edit and Add Roads
-
-1. Open the Road Tiles Scene
-   - Navigate to `Assets/Scenes/RoadTiles.unity` and open it in Unity.
-
-2. Editing Road Tiles
-   - All road segments in this scene are prefabs.  
-   - When you modify a road prefab, make sure to click "Apply to All Prefabs" (top right of the Inspector window) to propagate your changes across all instances on every map.
-
-3. Tile Grid and Sizes  
-   - The road system is based on a 10x10 tile grid.  
-   - There are two main road widths:
-     - 10-tile wide roads with walls.
-     - 20-tile wide roads with grass and walls.
-   - To check the exact measurements, inspect the road prefabs in the scene.
-
-4. Grass and Surface Notes  
-   - Road tiles do not include grass — it’s added later during map creation to reduce the number of rendered planes and improve performance.  
-   - All road meshes are placed 0.01 units above ground level to prevent grass-road clipping.
-
-5. Saving and Prefab Creation  
-   - If you create a new road or modify an existing one, make sure to save it as a prefab.  
-   - Add new or updated road prefabs to the `/Assets/Roads` directory.
-
-### Add or Edit Maps
-
-1. Open the Maps Scene  
-   - Navigate to `Assets/Scenes/Maps.unity` and open it in Unity.
-
-2. Building the Map  
-   - Build the layout by tiling road prefabs from the `/Assets/Roads` folder. 
-   - Place the start tile on (0, 0, 0) with 0 rotation as well so the maps could be swapped. 
-   - Adjust and align them according to your map design.
-   - Add halfway bitbox somewhere on the map to make the lap counter work
-
-3. Scaling the Map  
-   - Once the map is complete, select the parent map object.  
-   - Scale the entire map by 1.2x to fit the intended world proportions.
-
-4. Saving the Map as a Prefab  
-   - After completing and scaling your map, make it into a prefab.  
-   - Save it in the `/Assets/Maps` directory.
-
-### Car Creation and Editing Guide
-
-#### Creating a New Car
-
-1. Add a new car GameObject
-   - In Unity’s Hierarchy, create a new empty GameObject.
-   - Name it appropriately
-
-2. Add Wheel Colliders
-   - Each car requires four Wheel Colliders.
-   - Create 4 empty child objects named:
-     - `WheelCollider_FL` (Front Left)
-     - `WheelCollider_FR` (Front Right)
-     - `WheelCollider_RL` (Rear Left)
-     - `WheelCollider_RR` (Rear Right)
-   - Add the Wheel Collider component to each of them.
-   - Position them exactly where the wheels should be located.
-
-3. **Attach Car Controller Script**
-   - Add the `CarController` script to the car’s main object.
-   - Set parameters such as:
-     - `Drive Speed`
-     - `Brake Force`
-     - `Downforce`
-   - Assign the four Wheel Colliders to their respective fields in the script.
-
-4. Add Colliders
-   - To handle physical collisions, add a Box Collider to the main car object.
-   - Adjust its size to cover the body of the car properly.
-
-5. Car Appearance
-   - Add the `CarAppearance` script to the main object.
-   - In the script fields:
-     - Assign the Body Material (used for coloring).
-     - Assign Ignored Renderers, such as wheels or mirrors, that should not change color.
-
-#### Optional Add-ons
-
-1. **Mirrors**
-   - You can either:
-     - Use a Mirror Prefab from the project, or  
-     - Add the `Mirror.cs` script manually.
-   - If adding manually:
-     - Create a plane for the mirror surface.
-     - Assign a Camera in the `Mirror.cs` script.
-     - Adjust reflection angle and field of view as needed.
-
-2. Manual (WSAD) Control
-   - Add the `PlayerCarInput.cs` script.
-   - This allows the car to be driven using keyboard.
-   - Optionally, enable speed sensitive steering in the inspector.
-
-3. AI Agent Integration
-   - To make the car controllable by the AI system:
-     - Add `AgentInputProvider.cs`.
-     - Add `CarAgentHandler.cs`.
-   - Assign camera in the CarAgentHandler.
-   - Configure any additional parameters such as camera resolution.
-
-
-## Networking and python integration
-
-Unity side is used as simulation for cars, it can take driving input from network connection as well as send output including visual.
-
-### Python Side
-
-* **sender.py**: Sends driving instructions and control commands to Unity:
-
-  * `send_car_instruction(car_id: int, steering: int, throttle: int)` — sends 32-bit car ID + 1-byte steering + 1-byte throttle.
-  * `send_command(command_byte: int)` — sends single-byte commands for control like reset or shuffle.
-* **reciever.py**: Receives RGB24 camera observations from Unity and extracts header information (speed, steering, car ID, reward). Returns a NumPy array representing the image.
-
-### Communication Protocol
-
-- bytes are unsigned (0-255)
-- Observation Packet (Unity -> Python)
-
-  * 10 bytes Header: 
-    * 1 byte speed
-    * 1 byte steering
-    * 4 bytes car ID (int32, little-endian)
-    * 50 bytes reward (float, little-endian)
-  * RGB24 camera image 128x64
-
-- Driving Instruction Packet (Python -> Unity)
-
-  * 4 bytes car ID (int32, little-endian)
-  * 1 byte steering
-  * 1 byte throttle
-
-- Game Control Packet (Python -> Unity)
-
-   * 1 byte command number
-   * 1 byte extra value (if command does not have options value is ignored)
-
-
-### Example Usage
-
-#### Python Side
-
-```python
-import sender
-import reciever
-
-# Send command to Unity
-sender.send_command(0, 0)  # Reset Cars
-
-# Send driving instructions
-sender.send_car_instruction(car_id=3, steering=120, throttle=200)
-
-# Receive observation
-header, image = reciever.receive_observations()
-```
-
-### Unity Game Commands
-
-- after every command the game has to be reset, except pause and unpause
-- `0` and `6` work both as reset
-- commands are defined by protocol:
-
-| **First Byte** | **Second Byte** | **Description** |
-|-----------------|------------------|-----------------|
-| `0` | `-` | Reset all cars to the start block |
-| `1` | `-` | Randomly shuffle car starting positions |
-| `2` | `x` | set lap count to x |
-| `3` | `x` | Swap map to maps[x] |
-| `4` | `x` | Swap map randomly |
-| `5` | `-` | Change car colours randomly |
-| `6` | `-` | Reset all cars to random locations on the map |
-| `10` | `-` | Start the game |
-| `11` | `-` | Pause the game |
-| `12` | `-` | Unpause the game |
-| `20` | `x` | Set the simulation refresh rate (that translates to delta time) |
-| `21` | `x` | Send car observations every x frames |
-| `22` | `x` | Set max steer change per tick (max change is 256) |
-| `30` | `-` | Set the simulation speed to normal speed|
-| `31` | `-` | Speed up the simulation to maximum |
-
-- CommandConstants.cs and CommandConstants.py implement this protocol but the files are technically independent so the programmer must ensure the values match.
-
-### Notes
-
-* RGB24 format ensures 8 bits per channel with no transparency.
-* When picking porst the python loops through ports untill it finds 3 free ports
+
+This project uses Unity as the simulation backend and Python/RLlib as the training and control side. Unity sends camera and state observations over TCP, Python computes actions, and those actions are sent back to Unity for the next simulation step.
+
+The code itself is the main source of truth; comments and this document are meant to complement it.
+
+## Repository layout
+
+### TeamRacing/Assets
+
+#### Scenes
+- Cars.unity: contains the car prefabs used in the simulation.
+- Freeplay.unity: lightweight scene for manual driving and map testing.
+- RoadTiles.unity: used to edit and preview road tiles and track pieces.
+- Maps.unity: used to assemble maps from road prefabs.
+- MainScene.unity: the main scene used to run training/inference.
+
+#### Roads
+- TilePoints.cs: assigns checkpoint/segment metadata to a single road tile.
+- Road prefabs and materials: road, grass, wall, and finish-line assets.
+- Halfway hitbox/checkpoint: used by the track logic to support lap progression.
+
+#### Maps
+- MapManager.cs: stores available map prefabs and handles switching maps.
+- MapSegmentHandler.cs: converts road tiles into a ordered list of track segments and provides spatial directions between checkpoints.
+
+#### Cars
+- CarController.cs: main physics and driving controller for each car.
+- ICarInputProvider.cs: interface for car input providers.
+- AgentInputProvider.cs: input provider used by AI agents.
+- PlayerCarInput.cs: keyboard input provider for human driving.
+- CarAppearance.cs: applies visuals/materials to the car body.
+- CarFollowCamera.cs: camera follow script.
+
+#### AITraining
+- CarAgentHandler.cs: connects Unity-side car state and cameras to the AI agent wrapper.
+- CarObservationSerializer.cs: packs the observation payload into bytes.
+- CarObservationTransmitter.cs: sends observation packets to Python over TCP.
+- CarEntry.cs: per-car runtime state including controller, rewards, and race progress.
+- CarRaceState.cs: per-car lap and timing state.
+- CommandConstants.cs: command protocol enum shared with Python.
+- FreeCameraController.cs: free camera for manual inspection.
+- gameControlScript.cs: main environment loop, networking, reset/start/stop logic, and placement/lap handling.
+- Rewards.cs: reward-state container and reward calculation logic.
+- UnityMainThreadDispatcher.cs: helper for dispatching work back to the Unity main thread.
+- buffers.cs: packet buffering helpers.
+
+### pythonSide
+
+Current training entrypoints are:
+- RllibMARLstarter.py: single-policy PPO training for the shared-policy setup.
+- coopcompeMARLstarter.py: team-based PPO setup with two policies, `team_0_policy` and `team_1_policy`.
+
+Other important files:
+- unityEnv/UnityMultiCarEnv.py: Gymnasium-compatible multi-agent environment that launches Unity and manages reset/step loops.
+- unityEnv/reciever.py: TCP receiver for observation packets from Unity.
+- unityEnv/sender.py: TCP sender for driving instructions and control commands.
+- unityEnv/CommandConstants.py: Python-side copy of the command enum.
+- unityEnv/rewards.py: Python-side reward container used by the environment wrapper.
+- unityEnv/agent.py: per-agent observation/action wrapper used by the environment.
+- verify_obs.py: small sanity check for observation shape and environment wiring.
+
+## Main runtime loop
+
+The system is driven by a loop in Unity and a loop in Python.
+
+### Unity side
+The main loop runs in `gameControlScript.cs` and roughly does the following:
+1. Consume queued control commands from the command buffer.
+2. If the simulation is running, collect and send observations every `framesPerObservation` frames.
+3. Wait until car instructions for the current step have arrived.
+4. Apply the received inputs to the cars.
+5. Simulate the next physics step.
+6. Update segment progress and placement/lap state.
+
+### Python side
+The environment wrapper in `pythonSide/unityEnv/UnityMultiCarEnv.py` does the following:
+1. Wait until observations are available.
+2. Convert them into agent observations.
+3. Compute actions from the policy.
+4. Send actions back to Unity.
+5. Repeat for the next step.
+
+## Physics and car control
+
+The main car controller is `TeamRacing/Assets/Cars/CarController.cs`.
+
+It uses wheel colliders and applies:
+- steering and speed-sensitive steering
+- throttle and brake torque
+- surface-based grip multipliers
+- downforce
+- wheel friction adjustments
+
+This is the code path that makes the vehicles behave physically in the simulation.
+
+## Lap and placement logic
+
+Lap counting and placement are handled in `gameControlScript.cs`.
+
+The current behavior is:
+- `segmentProgress` is a cumulative value that increases when a car moves to the next segment.
+- A lap is counted when the car reaches the finish-line segment and its cumulative progress reaches the next full lap threshold.
+- Placement is computed by sorting cars by their current `segmentProgress` value, highest first.
+
+This is the current mechanism used for ranking cars during a race.
+
+## Networking and protocol
+
+### Unity -> Python observations
+The observation payload is created by `CarObservationSerializer.cs` and sent by `CarObservationTransmitter.cs`.
+
+Current packet structure:
+- 1 byte: speed
+- 1 byte: steering
+- 4 bytes: car ID (`int32`, little-endian)
+- 50 floats encoded as reward values in the header
+- RGB image bytes for the camera frame
+
+The Python receiver parses this in `pythonSide/unityEnv/reciever.py`.
+
+### Python -> Unity instructions
+`pythonSide/unityEnv/sender.py` sends instructions as:
+- 4 bytes: car index (`int32`, little-endian)
+- 1 byte: steering
+- 1 byte: throttle
+
+### Python -> Unity control commands
+Control commands are 2-byte packets:
+- first byte: command ID
+- second byte: optional value
+
+The command values are defined in both:
+- `TeamRacing/Assets/AITraining/CommandConstants.cs`
+- `pythonSide/unityEnv/CommandConstants.py`
+
+### Current command values
+
+| First byte | Second byte | Description |
+|---|---:|---|
+| 0 | x | Reset all cars |
+| 1 | x | Shuffle car starting positions |
+| 2 | x | Set lap count |
+| 3 | x | Switch to map index `x` |
+| 4 | x | Switch to a random map |
+| 5 | x | Change car colours randomly |
+| 6 | x | Reset cars to random locations |
+| 10 | x | Start simulation |
+| 11 | x | Stop simulation |
+| 12 | x | Continue simulation |
+| 20 | x | Set simulation refresh rate to `x`|
+| 21 | x | Set observations-per-frame interval to `x`|
+| 22 | x | Set max steering change per tick to `x`|
+| 30 | x | Set realtime mode |
+| 31 | x | Set unlimited simulation speed |
+
+## Training entrypoints
+
+### Single-policy training
+Run:
+- `python pythonSide/RllibMARLstarter.py --checkpoint pythonSide/checkpoints/checkpoint_550`
+
+This uses one shared policy for all agents.
+
+### Team-based training
+Run:
+- `python pythonSide/coopcompeMARLstarter.py --checkpoint pythonSide/checkpoints/checkpoint_550`
+
+This uses two team policies, `team_0_policy` and `team_1_policy`, and seeds them from the checkpoint module path when a checkpoint is supplied.
+
+## Notes
+
+- The Python side currently expects the Unity executable at `TeamRacing/builds/TeamRacing.exe` unless overridden in the environment wrapper.
+- The environment wraps the Unity process automatically and starts the TCP servers for control, car instructions, and observations.
+- The current observation shape is configured in `UnityMultiCarEnv.py` and may be grayscale-history dependent.

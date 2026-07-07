@@ -56,7 +56,7 @@ def make_env(config):
 
 register_env("UnityMultiCarEnv-v0", make_env)
 
-if GRAY_SCALE_OBS_HISTORY:
+if GRAY_SCALE_OBS_HISTORY: 
     obs_shape = (64, 128, 6)
 else:
     obs_shape = (64, 128, 12)
