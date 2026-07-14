@@ -28,7 +28,7 @@ tb_writer = SummaryWriter(log_dir=log_dir)
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-NUM_AGENTS = 4
+NUM_AGENTS = 1
 GRAY_SCALE_OBS_HISTORY = True
 
 
@@ -62,6 +62,26 @@ policies = {
 def policy_mapping_fn(agent_id, *args, **kwargs):
     return "shared_policy"
 
+#per team policy
+# policies = {
+#     "team_0_policy": (None, obs_space, act_space, {}),
+#     "team_1_policy": (None, obs_space, act_space, {}),
+#     "team_2_policy": (None, obs_space, act_space, {}),
+#     "team_3_policy": (None, obs_space, act_space, {}),
+# }
+
+# # Mapping agents to team policies
+# def policy_mapping_fn(agent_id, *args, **kwargs):
+#     idx = int(agent_id.split("_")[1])
+#     if idx in [0,1]:
+#         return "team_0_policy"
+#     elif idx in [2,3]:
+#         return "team_1_policy"
+#     elif idx in [4,5]:
+#         return "team_2_policy"
+#     else:  # idx in [6,7]
+#         return "team_3_policy"
+
 config = (
     PPOConfig()
     .framework("torch")
@@ -78,7 +98,7 @@ config = (
     # 2048
     .training(
         lr=1.5e-4,
-        train_batch_size=2048, #this is not a batch size but env steps in some cases, so for 8 cars the batch size is 8 times this number
+        train_batch_size=4096, #this is not a batch size but env steps in some cases
         gamma=0.99,
         use_gae=True,
         lambda_=0.95,
@@ -133,6 +153,19 @@ if args.paramCount:
 
     for name, p in module.named_parameters():
         print(f"{name:70} {list(p.shape)} {p.numel():,}")
+        
+    module = algo.get_module("shared_policy")
+
+    print("\n===== MODEL STRUCTURE =====")
+    print(module)
+
+    print("\n===== NAMED MODULES =====")
+    for name, layer in module.named_modules():
+        print(name, ":", layer)
+
+    print("\n===== PARAMETERS =====")
+    for name, p in module.named_parameters():
+        print(f"{name:80} {list(p.shape)}")
 
 for i in range(1000000):
     print(f"iter: {i}")
@@ -156,5 +189,5 @@ for i in range(1000000):
     log("train/lr", learners.get("default_optimizer_learning_rate"))
     log("train/clip_param", learners.get("curr_kl_coeff"))
 
-    if i % 20 == 0:
+    if i % 50 == 0:
         path = algo.save(f"{MODEL_DIR}/checkpoint_{i}")

@@ -123,16 +123,16 @@ class Rewards:
             throttleSmoothnessPenalty = 0.0,
 
             outOfBoundsPenalty = 0.0,
-            collisionPenalty = 10.0,
+            collisionPenalty = 100.0,
             grassPenalty = 1.0,
 
             teamDistancePenalty = 0.0,
             lapTimePenalty = 0.0,
             teamLapTimePenalty = 0.0,
             finalPlacementReward = 0.0,
-            currentPlacementReward = 0.02,
+            currentPlacementReward = 0.0,
             teamFinalPlacementReward = 0.0,
-            currentTeamPlacementReward = 0.005,
+            currentTeamPlacementReward = 0.0,
             tickPenalty = 0.0,
 
             speedReward = 0.0,
